@@ -21,7 +21,7 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 <a class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-wgh-green focus:text-white focus:px-3 focus:py-2 focus:rounded" href="#main"><?php esc_html_e( 'Skip to content', 'wghshop' ); ?></a>
 
 <?php if ( wghs_opt( 'wghs_promo_on', true ) && wghs_opt( 'wghs_promo_text' ) ) : ?>
-<div class="bg-green-fade bg-[length:200%_auto] animate-shimmer text-white text-center text-[12px] sm:text-xs font-medium tracking-wide py-2 px-4">
+<div class="bg-wgh-green text-white text-center text-[12px] sm:text-xs font-medium tracking-wide py-2 px-4">
 	<?php echo esc_html( wghs_opt( 'wghs_promo_text' ) ); ?>
 </div>
 <?php endif; ?>
@@ -52,7 +52,7 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 				$cart_count = WC()->cart ? WC()->cart->get_cart_contents_count() : 0; ?>
 			<a href="<?php echo esc_url( function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url( '/cart' ) ); ?>" class="relative text-wgh-ink/80 hover:text-wgh-green p-2" aria-label="<?php esc_attr_e( 'View cart', 'wghshop' ); ?>">
 				<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 3H2" stroke-linecap="round"/></svg>
-				<span class="wghs-cart-bubble absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-green-fade text-white text-[10px] font-bold grid place-items-center<?php echo $cart_count ? '' : ' opacity-0'; ?>"><span class="wghs-cart-count" data-count="<?php echo esc_attr( $cart_count ); ?>"><?php echo esc_html( $cart_count ); ?></span></span>
+				<span class="wghs-cart-bubble absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-wgh-green text-white text-[10px] font-bold grid place-items-center<?php echo $cart_count ? '' : ' opacity-0'; ?>"><span class="wghs-cart-count" data-count="<?php echo esc_attr( $cart_count ); ?>"><?php echo esc_html( $cart_count ); ?></span></span>
 			</a>
 			<?php endif; ?>
 			<a href="<?php echo esc_url( $shop_url ); ?>" class="hidden sm:inline-flex btn-primary text-xs px-5 py-2.5"><?php esc_html_e( 'Shop all', 'wghshop' ); ?></a>

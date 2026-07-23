@@ -130,3 +130,38 @@ function wghs_brand_terms( $limit = 8 ) {
 	usort( $terms, function ( $a, $b ) { return $b->count <=> $a->count; } );
 	return array_slice( $terms, 0, $limit );
 }
+
+/**
+ * Byline meta for blog listings: category, date, reading time.
+ */
+function wghs_post_meta() {
+	$cats = get_the_category();
+	echo '<p class="wghs-meta">';
+	if ( $cats ) {
+		echo '<span class="wghs-meta__cat">' . esc_html( $cats[0]->name ) . '</span>';
+		echo '<span aria-hidden="true">&middot;</span>';
+	}
+	echo '<time datetime="' . esc_attr( get_the_date( 'c' ) ) . '">' . esc_html( get_the_date() ) . '</time>';
+	echo '<span aria-hidden="true">&middot;</span>';
+	echo '<span>' . esc_html( wghs_reading_time() ) . '</span>';
+	echo '</p>';
+}
+
+/**
+ * Reading time from the post body, at 200 words per minute.
+ */
+function wghs_reading_time( $post_id = null ) {
+	$post_id = $post_id ? $post_id : get_the_ID();
+	$words   = str_word_count( wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) ) );
+	$mins    = max( 1, (int) ceil( $words / 200 ) );
+	/* translators: %d: estimated minutes to read the article. */
+	return sprintf( _n( '%d min read', '%d min read', $mins, 'wghshop' ), $mins );
+}
+
+/**
+ * WhatsApp deep link. Wraps the existing helper under the name the
+ * blog templates call, so either name works.
+ */
+function wghs_whatsapp_link( $message = '' ) {
+	return function_exists( 'wghs_wa_link' ) ? wghs_wa_link( $message ) : '';
+}

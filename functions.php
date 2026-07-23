@@ -63,6 +63,12 @@ function wghs_assets() {
 	}
 	wp_localize_script( 'wghshop-main', 'TPG', $wghs_l10n );
 
+	// Ad slot loader. Only on the blog, where the rail lives.
+	if ( is_home() || is_single() || is_archive() || is_search() ) {
+		wp_enqueue_script( 'wghshop-adslots', WGHS_URI . '/assets/js/adslots.js', array(), WGHS_VERSION, true );
+		wp_localize_script( 'wghshop-adslots', 'WGHS_ADS', array( 'root' => esc_url_raw( rest_url() ) ) );
+	}
+
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
 	}

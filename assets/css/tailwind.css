@@ -1,144 +1,222 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   BASE. White page. Green is an accent, never a wallpaper.
+   ========================================================================== */
 @layer base {
   html { scroll-behavior: smooth; }
   body {
-    @apply bg-wgh-ink text-wgh-ink font-body antialiased;
-    background-image:
-      radial-gradient(1100px 520px at 12% -8%, rgba(61,123,255,.16), transparent 60%),
-      radial-gradient(900px 480px at 92% 4%, rgba(155,92,255,.14), transparent 60%);
-    background-attachment: fixed;
+    @apply bg-white text-wgh-ink antialiased;
+    font-family: Figtree, system-ui, -apple-system, sans-serif;
   }
-  h1,h2,h3,h4,h5 { @apply font-display font-bold tracking-tight; }
+  h1, h2, h3, h4, h5 { @apply font-semibold tracking-tight text-wgh-ink; }
   a { @apply transition-colors duration-200; }
-  ::selection { background: #3D7BFF; color: #fff; }
-  .woocommerce-message,.woocommerce-info,.woocommerce-error{
-    @apply font-body text-sm rounded-xl border border-wgh-line bg-wgh-line2 text-wgh-ink px-4 py-3 mb-6;
-    border-left: 3px solid #3D7BFF;
+  ::selection { background: #0E8C5A; color: #fff; }
+  .woocommerce-message, .woocommerce-info, .woocommerce-error {
+    @apply rounded-lg border border-wgh-line bg-wgh-line2 px-4 py-3 text-sm text-wgh-ink;
   }
 }
 
 @layer components {
-  .wrap { @apply mx-auto w-full max-w-7xl px-5 sm:px-8; }
-  .eyebrow { @apply font-mono text-xs uppercase tracking-[0.25em] text-wgh-green; }
-  .gradient-text { @apply bg-green-fade bg-clip-text text-transparent; }
 
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200; }
-  .btn-primary { @apply btn text-white bg-green-fade bg-[length:200%_auto] hover:shadow-glow hover:-translate-y-0.5; }
-  .btn-amber { @apply btn bg-wgh-gold text-wgh-ink hover:brightness-110 hover:-translate-y-0.5; }
-  .btn-ghost { @apply btn border border-wgh-line text-wgh-ink hover:border-wgh-green hover:text-wgh-green; }
-  .btn-wa { @apply btn bg-[#25D366] text-white hover:brightness-110; }
+  /* ---------- Shell ---------- */
+  .wrap { @apply mx-auto w-full max-w-shell px-5 sm:px-8; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.18em] text-wgh-green; }
 
-  .card { @apply rounded-2xl border border-wgh-line bg-wgh-line2/80 backdrop-blur-sm shadow-card; }
-  .card-glow { @apply card relative overflow-hidden; }
-  .chip { @apply inline-flex items-center gap-1 rounded-full border border-wgh-line bg-wgh-greenPale px-3 py-1 text-[11px] font-medium text-wgh-ink2; }
-  .chip-grad { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold text-white bg-green-fade; }
+  /* ---------- Buttons. Green = act. Gold is never a button. ---------- */
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-200; }
+  .btn-primary { @apply btn bg-wgh-green text-white hover:bg-wgh-greenV; }
+  .btn-ghost   { @apply btn border border-wgh-lineStrong text-wgh-ink hover:border-wgh-green hover:text-wgh-green; }
+  .btn-wa      { @apply btn bg-[#25D366] text-white hover:brightness-105; }
 
-  .section-title{ @apply font-display text-3xl sm:text-4xl font-bold leading-tight; }
-  .menu-link{ @apply text-sm font-medium text-wgh-ink/80 hover:text-wgh-ink relative; }
-  .input{ @apply w-full rounded-xl border border-wgh-line bg-wgh-bg px-4 py-3 text-sm text-wgh-ink placeholder:text-wgh-ink2 focus:border-wgh-green focus:outline-none; }
+  .card  { @apply rounded-lg border border-wgh-line bg-white shadow-soft; }
+  .chip  { @apply inline-flex items-center gap-1 rounded-full border border-wgh-line bg-white px-3 py-1 text-[11px] font-medium text-wgh-ink2; }
+  .section-title { @apply text-3xl sm:text-4xl font-bold leading-tight; }
+  .menu-link { @apply relative text-sm font-medium text-wgh-ink2 hover:text-wgh-ink; }
+  .input { @apply w-full rounded-lg border border-wgh-lineStrong bg-white px-4 py-3 text-sm text-wgh-ink placeholder:text-wgh-ink3 focus:border-wgh-green focus:outline-none; }
 
-  /* Product card */
-  ul.products{ @apply grid grid-cols-2 lg:grid-cols-4 gap-5 list-none m-0 p-0; }
-  ul.products li.product{ @apply m-0; }
-  .pcard{ @apply card-glow flex flex-col h-full transition-all duration-300 hover:-translate-y-1.5 hover:border-wgh-green/50 hover:shadow-glow; }
-  .pcard__media{ @apply relative block aspect-[4/3] bg-gradient-to-br from-wgh-greenPale to-wgh-bg overflow-hidden; }
-  .pcard__media img{ @apply w-full h-full object-contain p-3; }
-  .pcard__body{ @apply flex flex-col gap-1.5 p-4 flex-1; }
-  .pcard__brand{ @apply font-mono text-[10px] uppercase tracking-widest text-wgh-green; }
-  .pcard__title{ @apply font-display text-[15px] font-semibold leading-snug line-clamp-2 text-wgh-ink; }
-  .pcard .price{ @apply font-display text-wgh-ink text-lg font-bold; }
-  .pcard .price del{ @apply text-wgh-ink2 text-sm font-normal mr-1; }
-  .pcard .price ins{ @apply no-underline gradient-text; }
-  .pcard__stock{ @apply text-[11px] font-medium text-wgh-green; }
-  .pcard__stock.is-out{ @apply text-wgh-ink2; }
+  /* ---------- Product card ---------- */
+  .pcard { @apply card flex h-full flex-col overflow-hidden transition-all duration-200 hover:border-wgh-green hover:shadow-card; }
+  .pcard__media { @apply relative block aspect-[4/3] overflow-hidden bg-wgh-line2; }
+  .pcard__media img { @apply h-full w-full object-contain p-3; }
+  .pcard__body { @apply flex flex-1 flex-col gap-1.5 p-4; }
+  .pcard__brand { @apply text-[10px] font-semibold uppercase tracking-widest text-wgh-green; }
+  .pcard__title { @apply line-clamp-2 text-[15px] font-semibold leading-snug text-wgh-ink; }
+  .pcard .price { @apply text-lg font-bold text-wgh-goldInk; }
+  .pcard .price del { @apply mr-1 text-sm font-normal text-wgh-ink3; }
+  .pcard .price ins { @apply no-underline text-wgh-goldInk; }
+  .pcard__stock { @apply text-[11px] font-medium text-wgh-green; }
+  .pcard__stock.is-out { @apply text-wgh-ink3; }
 
-  /* Long-form content */
-  .prose-aur{ @apply text-wgh-ink/85 leading-relaxed; }
-  .prose-aur > * + *{ @apply mt-4; }
-  .prose-aur h2{ @apply font-display text-2xl font-bold text-wgh-ink mt-10 mb-2; }
-  .prose-aur h3{ @apply font-display text-xl font-semibold text-wgh-ink mt-8 mb-2; }
-  .prose-aur h4{ @apply font-display text-lg font-semibold text-wgh-ink mt-6 mb-2; }
-  .prose-aur a{ @apply text-wgh-green underline underline-offset-2 hover:opacity-80; }
-  .prose-aur strong{ @apply text-wgh-ink font-semibold; }
-  .prose-aur ul{ @apply list-disc pl-6 space-y-1.5 marker:text-wgh-green; }
-  .prose-aur ol{ @apply list-decimal pl-6 space-y-1.5 marker:text-wgh-green; }
-  .prose-aur table{ @apply w-full text-sm border border-wgh-line rounded-xl overflow-hidden; border-collapse:separate; border-spacing:0; }
-  .prose-aur th{ @apply text-left text-wgh-ink2 font-medium bg-wgh-greenPale/60 px-4 py-2 border-b border-wgh-line align-top w-2/5; }
-  .prose-aur td{ @apply px-4 py-2 border-b border-wgh-line; }
-  .prose-aur blockquote{ @apply border-l-2 border-wgh-green pl-4 italic text-wgh-ink2; }
-  .prose-aur img{ @apply rounded-xl; }
-  .prose-aur hr{ @apply border-wgh-line my-8; }
+  /* ==========================================================================
+     BLOG
+     ========================================================================== */
+
+  .wghs-kicker { @apply inline-block text-xs font-bold uppercase tracking-[0.16em] text-wgh-green; }
+  .wghs-kicker--link:hover { @apply text-wgh-greenV underline underline-offset-4; }
+  .wghs-rule { @apply my-10 border-0 border-t border-wgh-line; }
+  .wghs-img  { @apply h-full w-full object-cover; }
+  .wghs-empty { @apply py-16 text-center text-wgh-ink2; }
+
+  /* Masthead */
+  .wghs-blog__masthead { @apply border-b border-wgh-line py-10 sm:py-14; }
+  .wghs-blog__title { @apply mt-2 text-4xl sm:text-5xl font-extrabold leading-[1.05]; }
+  .wghs-blog__standfirst { @apply mt-4 max-w-measure text-lg leading-relaxed text-wgh-ink2; }
+
+  /* Two column shell: content + sticky rail */
+  .wghs-blog__body,
+  .wghs-single { @apply grid grid-cols-1 gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14; }
+  .wghs-blog__main { @apply min-w-0; }
+
+  /* Lead story */
+  .wghs-lead { @apply grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 md:items-center; }
+  .wghs-lead__media { @apply block aspect-[16/10] overflow-hidden rounded-lg bg-wgh-line2; }
+  .wghs-lead__title { @apply mt-2 text-2xl sm:text-3xl font-bold leading-tight; }
+  .wghs-lead__title a:hover { @apply text-wgh-green; }
+  .wghs-lead__excerpt { @apply mt-3 leading-relaxed text-wgh-ink2; }
+
+  /* River */
+  .wghs-river { @apply grid grid-cols-[96px_minmax(0,1fr)] gap-4 border-b border-wgh-line py-6 sm:grid-cols-[168px_minmax(0,1fr)] sm:gap-6; }
+  .wghs-river__media { @apply block aspect-[4/3] overflow-hidden rounded bg-wgh-line2; }
+  .wghs-river__title { @apply mt-1.5 text-base sm:text-xl font-semibold leading-snug; }
+  .wghs-river__title a:hover { @apply text-wgh-green; }
+  .wghs-river__excerpt { @apply mt-2 hidden text-sm leading-relaxed text-wgh-ink2 sm:block; }
+
+  /* Meta line */
+  .wghs-meta { @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-wgh-ink3; }
+  .wghs-meta__cat { @apply font-bold uppercase tracking-[0.14em] text-wgh-green; }
+
+  /* Read on */
+  .wghs-readon { @apply mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-wgh-green after:content-['\2192'] hover:gap-2.5 hover:text-wgh-greenV; }
+
+  /* Pagination */
+  .wghs-pagination { @apply mt-12 border-t border-wgh-line pt-8; }
+  .wghs-pagination .page-numbers { @apply inline-flex h-10 min-w-10 items-center justify-center rounded-lg border border-wgh-line px-3 text-sm text-wgh-ink2 hover:border-wgh-green hover:text-wgh-green; }
+  .wghs-pagination .page-numbers.current { @apply border-wgh-green bg-wgh-green text-white; }
+  .wghs-pagination .nav-links { @apply flex flex-wrap gap-2; }
+
+  /* ---------- Article ---------- */
+  .wghs-crumb { @apply flex items-center gap-2 pt-6 text-xs text-wgh-ink3; }
+  .wghs-crumb a:hover { @apply text-wgh-green; }
+  .wghs-article { @apply min-w-0; }
+  .wghs-article__head { @apply border-b border-wgh-line pb-7; }
+  .wghs-article__title { @apply mt-3 text-3xl sm:text-[2.6rem] font-extrabold leading-[1.12] max-w-measure; }
+  .wghs-article__standfirst { @apply mt-4 max-w-measure text-lg sm:text-xl leading-relaxed text-wgh-ink2; }
+  .wghs-byline { @apply mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-wgh-ink2; }
+  .wghs-byline__author { @apply font-semibold text-wgh-ink; }
+  .wghs-byline__sep { @apply text-wgh-ink3; }
+  .wghs-byline__updated { @apply ml-1 rounded-full bg-wgh-greenPale px-2.5 py-0.5 text-xs font-semibold text-wgh-greenInk; }
+  .wghs-article__lede { @apply my-8; }
+  .wghs-article__lede img { @apply w-full rounded-lg; }
+  .wghs-article__lede figcaption { @apply mt-2 text-xs text-wgh-ink3; }
+  .wghs-article__body { @apply max-w-measure; }
+
+  /* Prose. Reads like an article, not documentation. */
+  .wghs-prose { @apply text-[1.0625rem] leading-[1.75] text-wgh-ink; }
+  .wghs-prose > * + * { @apply mt-5; }
+  .wghs-prose > p:first-of-type { @apply text-lg leading-relaxed; }
+  .wghs-prose h2 { @apply mt-12 mb-1 text-2xl font-bold; }
+  .wghs-prose h3 { @apply mt-9 mb-1 text-xl font-semibold; }
+  .wghs-prose h4 { @apply mt-7 mb-1 text-lg font-semibold; }
+  .wghs-prose a { @apply text-wgh-green underline decoration-wgh-green/35 underline-offset-[3px] hover:decoration-wgh-green; }
+  .wghs-prose strong { @apply font-semibold text-wgh-ink; }
+  .wghs-prose ul { @apply list-disc space-y-2 pl-6 marker:text-wgh-green; }
+  .wghs-prose ol { @apply list-decimal space-y-2 pl-6 marker:text-wgh-green; }
+  .wghs-prose blockquote { @apply border-l-[3px] border-wgh-green pl-5 text-lg italic text-wgh-ink2; }
+  .wghs-prose img { @apply rounded-lg; }
+  .wghs-prose hr { @apply my-10 border-wgh-line; }
+  .wghs-prose figcaption { @apply mt-2 text-xs text-wgh-ink3; }
+  .wghs-prose table { @apply w-full border-collapse text-sm; }
+  .wghs-prose thead th { @apply border-b-2 border-wgh-ink bg-transparent px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-wgh-ink2; }
+  .wghs-prose th { @apply px-3 py-2 text-left align-top font-semibold; }
+  .wghs-prose td { @apply border-b border-wgh-line px-3 py-2 align-top; }
+  .wghs-prose tbody tr:hover { @apply bg-wgh-line2; }
+
+  /* Tags */
+  .wghs-tags { @apply mt-10 flex flex-wrap gap-2 border-t border-wgh-line pt-6; }
+  .wghs-tags a { @apply chip hover:border-wgh-green hover:text-wgh-green; }
+
+  /* In article CTA. The one place green goes solid. */
+  .wghs-cta { @apply my-10 rounded-lg bg-wgh-green px-6 py-7 text-white sm:px-8; }
+  .wghs-cta__eyebrow { @apply text-xs font-bold uppercase tracking-[0.16em] text-white/70; }
+  .wghs-cta__title { @apply mt-2 text-xl sm:text-2xl font-bold leading-snug; }
+  .wghs-cta__sub { @apply mt-2 text-sm leading-relaxed text-white/85; }
+  .wghs-cta__row { @apply mt-5 flex flex-col gap-3 sm:flex-row; }
+  .wghs-btn { @apply inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition; }
+  .wghs-btn--primary { @apply bg-white text-wgh-greenInk hover:bg-wgh-goldPale; }
+  .wghs-btn--ghost { @apply border border-white/45 text-white hover:bg-white/10; }
+
+  /* ---------- Sticky rail ---------- */
+  .wghs-rail { @apply relative; }
+  .wghs-rail__sticky { @apply sticky top-24 flex flex-col gap-6; max-height: calc(100vh - 7rem); overflow-y: auto; scrollbar-width: thin; }
+  .wghs-rail__sticky::-webkit-scrollbar { width: 4px; }
+  .wghs-rail__sticky::-webkit-scrollbar-thumb { background: #EDEAE0; border-radius: 4px; }
+
+  .wghs-railcard { @apply rounded-lg border border-wgh-line bg-white p-4; }
+  .wghs-railcard--flush { @apply border-0 p-0; }
+  .wghs-railcard--trust { @apply bg-wgh-greenPale border-transparent; }
+  .wghs-railcard__label { @apply mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-ink3; }
+
+  .wghs-railshop { @apply flex flex-col gap-3; }
+  .wghs-railshop a { @apply grid grid-cols-[56px_minmax(0,1fr)] items-center gap-3; }
+  .wghs-railshop__img { @apply block aspect-square overflow-hidden rounded border border-wgh-line bg-wgh-line2; }
+  .wghs-railshop__img img { @apply h-full w-full object-contain p-1; }
+  .wghs-railshop__meta { @apply flex min-w-0 flex-col; }
+  .wghs-railshop__name { @apply truncate text-[13px] font-medium leading-snug text-wgh-ink; }
+  .wghs-railshop__price { @apply text-sm font-bold text-wgh-goldInk; }
+  .wghs-railshop a:hover .wghs-railshop__name { @apply text-wgh-green; }
+
+  .wghs-railsteps { @apply flex list-decimal flex-col gap-2 pl-4 text-[13px] leading-snug text-wgh-greenInk marker:font-bold; }
+  .wghs-railcta { @apply mt-4 flex w-full items-center justify-center rounded-lg border border-wgh-green px-4 py-2.5 text-[13px] font-semibold text-wgh-green hover:bg-wgh-green hover:text-white; }
+  .wghs-railcta--wa { @apply border-transparent bg-[#25D366] text-white hover:bg-[#1EBE5A] hover:text-white; }
+
+  /* Ad slots. The plugin injects markup, we only own the frame. */
+  .wgh-adslot { @apply overflow-hidden rounded-lg; }
+  .wgh-adslot:empty { @apply hidden; }
+  .wgh-adslot--sidebar, .wgh-adslot--sidebar-b { @apply w-full; }
+  .wghs-infeed, .wghs-inarticle { @apply my-8 border-y border-wgh-line py-6; }
+  .wgh-ad-card { @apply block overflow-hidden rounded-lg border border-wgh-line; }
+  .wgh-ad-card__media img { @apply w-full; }
+
+  /* ---------- Related ---------- */
+  .wghs-related { @apply border-t border-wgh-line bg-wgh-line2 py-12; }
+  .wghs-related__title { @apply mb-6 text-xl font-bold; }
+  .wghs-related__grid { @apply grid grid-cols-1 gap-7 sm:grid-cols-3; }
+  .wghs-related__media { @apply mb-3 block aspect-[16/10] overflow-hidden rounded-lg bg-white; }
+  .wghs-related__item h3 { @apply text-base font-semibold leading-snug; }
+  .wghs-related__item h3 a:hover { @apply text-wgh-green; }
+  .wghs-related__item time { @apply mt-1 block text-xs text-wgh-ink3; }
 }
 
-/* ===========================================================
-   WooCommerce runtime classes (outside @layer so never tree-shaken)
-   =========================================================== */
-/* WooCommerce clearfix pseudo-elements become phantom grid cells: remove them */
-ul.products::before,ul.products::after,.woocommerce ul.products::before,.woocommerce ul.products::after,.woocommerce-page ul.products::before,.woocommerce-page ul.products::after{content:none!important;display:none!important;}
-/* Neutralise WooCommerce float/percentage widths that squeeze grid items */
-ul.products li.product,.woocommerce ul.products[class*="columns-"] li.product,.woocommerce-page ul.products[class*="columns-"] li.product{float:none;clear:none;width:100%;margin:0;padding:0;}
+/* ==========================================================================
+   WooCommerce runtime classes. Outside @layer so they are never tree shaken.
+   ========================================================================== */
+ul.products { @apply grid grid-cols-2 lg:grid-cols-4 gap-5 list-none m-0 p-0; }
+ul.products li.product { @apply m-0; }
+.woocommerce ul.products::before, .woocommerce ul.products::after { content: none !important; display: none !important; }
 
-.woocommerce a.button,.woocommerce button.button,.woocommerce input.button,.woocommerce #respond input#submit,.woocommerce a.button.alt,.woocommerce button.button.alt,.woocommerce input.button.alt,.woocommerce #place_order,.woocommerce button[name="update_cart"]{
-  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:0;cursor:pointer;border-radius:.75rem;padding:.75rem 1.5rem;font-size:.875rem;font-weight:600;color:#fff;background-image:linear-gradient(120deg,#3D7BFF,#9B5CFF 55%,#2BD6F0);transition:all .2s;
+.woocommerce a.button, .woocommerce button.button, .woocommerce input.button,
+.woocommerce #respond input#submit, .woocommerce a.button.alt,
+.woocommerce button.button.alt, .woocommerce input.button.alt,
+.woocommerce #place_order, .woocommerce button[name="update_cart"] {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border: 0; cursor: pointer; border-radius: .5rem; padding: .75rem 1.5rem;
+  font-size: .875rem; font-weight: 600; color: #fff; background: #0E8C5A;
+  transition: background .2s;
 }
-.woocommerce a.button:hover,.woocommerce button.button:hover,.woocommerce #place_order:hover{filter:brightness(1.08);transform:translateY(-1px);}
-.woocommerce input[type="text"],.woocommerce input[type="email"],.woocommerce input[type="tel"],.woocommerce input[type="password"],.woocommerce input[type="number"],.woocommerce select,.woocommerce textarea,.woocommerce .input-text,.woocommerce input.qty{
-  border-radius:.75rem;border:1px solid #28324F;background:#0C1322;padding:.625rem 1rem;font-size:.875rem;color:#EAF1FF;
+.woocommerce a.button:hover, .woocommerce button.button:hover, .woocommerce #place_order:hover { background: #0A6E47; }
+
+.woocommerce .input-text, .woocommerce input[type=text], .woocommerce input[type=email],
+.woocommerce input[type=tel], .woocommerce input[type=number], .woocommerce select, .woocommerce textarea {
+  border-radius: .5rem; border: 1px solid #D7D2C4; background: #fff;
+  padding: .625rem 1rem; font-size: .875rem; color: #14201A;
 }
-.woocommerce form .form-row label{font-size:.875rem;color:#94A3C4;margin-bottom:.25rem;}
-.select2-container--default .select2-selection--single{border-radius:.75rem!important;border:1px solid #28324F!important;background:#0C1322!important;height:auto!important;padding:.55rem .5rem!important;}
-.select2-container--default .select2-selection--single .select2-selection__rendered{color:#EAF1FF!important;}
-.select2-dropdown{background:#0C1322!important;border-color:#28324F!important;color:#EAF1FF!important;}
-.select2-container--default .select2-results__option--highlighted{background:#3D7BFF!important;}
-
-.woocommerce div.product .product_title{font-family:"Space Grotesk",sans-serif;font-size:2rem;line-height:1.1;font-weight:700;}
-.woocommerce div.product p.price,.woocommerce div.product span.price{font-family:"Space Grotesk",sans-serif;font-size:1.6rem;font-weight:700;background:linear-gradient(120deg,#3D7BFF,#9B5CFF,#2BD6F0);-webkit-background-clip:text;background-clip:text;color:transparent;margin:.75rem 0;}
-.woocommerce div.product div.images{border-radius:1rem;overflow:hidden;border:1px solid #28324F;background:#0C1322;}
-.woocommerce div.product div.images img{width:100%;object-fit:contain;aspect-ratio:4/3;padding:1.25rem;background:#0C1322;}
-.woocommerce div.product .woocommerce-product-details__short-description{color:#94A3C4;line-height:1.7;}
-.woocommerce div.product .stock.in-stock{color:#2BD6F0!important;font-weight:600;font-size:.9rem;}
-.woocommerce span.onsale{background:#FFB23E!important;color:#0A0E1A!important;border-radius:9999px!important;min-height:0!important;min-width:0!important;padding:.25rem .75rem!important;font-weight:700!important;font-size:.75rem!important;line-height:1.4!important;margin:.75rem!important;}
-.woocommerce div.product .woocommerce-tabs ul.tabs{display:flex;flex-wrap:wrap;gap:.5rem;padding:0;margin:0 0 1.5rem;border:0;}
-.woocommerce div.product .woocommerce-tabs ul.tabs::before{display:none;}
-.woocommerce div.product .woocommerce-tabs ul.tabs li{background:transparent;border:1px solid #28324F;border-radius:9999px;margin:0;padding:0;}
-.woocommerce div.product .woocommerce-tabs ul.tabs li::before,.woocommerce div.product .woocommerce-tabs ul.tabs li::after{display:none;}
-.woocommerce div.product .woocommerce-tabs ul.tabs li a{color:rgba(234,241,255,.8);font-size:.875rem;font-weight:500;padding:.5rem 1.25rem;}
-.woocommerce div.product .woocommerce-tabs ul.tabs li.active{border-color:#3D7BFF;}
-.woocommerce div.product .woocommerce-tabs ul.tabs li.active a{color:#3D7BFF;}
-.woocommerce div.product .woocommerce-tabs .panel{border:1px solid #28324F;border-radius:1rem;background:#121A2E;padding:1.5rem;margin-bottom:2.5rem;color:rgba(234,241,255,.85);line-height:1.7;}
-.woocommerce table.woocommerce-product-attributes{border-color:#28324F;}
-.woocommerce table.woocommerce-product-attributes th,.woocommerce table.woocommerce-product-attributes td{border-color:#28324F!important;padding:.5rem .75rem;font-size:.9rem;}
-.woocommerce table.woocommerce-product-attributes th{color:#94A3C4;}
-
-.woocommerce .woocommerce-result-count{color:#94A3C4;font-size:.875rem;margin-bottom:1.5rem;}
-.woocommerce .woocommerce-ordering select{border-radius:.75rem;border:1px solid #28324F;background:#0C1322;color:#EAF1FF;padding:.6rem 1rem;font-size:.875rem;}
-nav.woocommerce-pagination ul{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:2.5rem;border:0!important;}
-nav.woocommerce-pagination ul li{border:0!important;}
-nav.woocommerce-pagination ul li a,nav.woocommerce-pagination ul li span{border-radius:9999px!important;border:1px solid #28324F!important;padding:.5rem 1rem!important;color:#EAF1FF!important;}
-nav.woocommerce-pagination ul li span.current{background:#3D7BFF!important;color:#fff!important;border-color:#3D7BFF!important;}
-
-.woocommerce table.shop_table{border-radius:1rem;overflow:hidden;border:1px solid #28324F!important;background:rgba(18,26,46,.6);border-collapse:separate;border-spacing:0;width:100%;font-size:.9rem;}
-.woocommerce table.shop_table th{border:0!important;border-bottom:1px solid #28324F!important;font-family:"JetBrains Mono",monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#94A3C4!important;padding:1rem!important;text-align:left;}
-.woocommerce table.shop_table td{border:0!important;border-bottom:1px solid #28324F!important;padding:1rem!important;color:#EAF1FF;background:transparent!important;}
-.woocommerce .cart-collaterals .cart_totals{border:1px solid #28324F;border-radius:1rem;background:#121A2E;padding:1.5rem;}
-.woocommerce-checkout #payment{background:#0C1322!important;border:1px solid #28324F;border-radius:1rem;}
-.woocommerce-MyAccount-navigation ul{display:flex;flex-direction:column;gap:.25rem;padding:0;margin:0;list-style:none;}
-.woocommerce-MyAccount-navigation ul li a{display:block;border-radius:.75rem;padding:.625rem 1rem;font-size:.875rem;color:rgba(234,241,255,.8);}
-.woocommerce-MyAccount-navigation ul li.is-active a{background:#18233D;color:#3D7BFF;}
-
-/* Cart: loop add-to-cart buttons, added-to-cart link, drawer pieces */
-.pcard__actions .button,.pcard__actions a.add_to_cart_button{
-  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;width:100%;border:0;cursor:pointer;border-radius:.75rem;padding:.625rem 1rem;font-size:.75rem;font-weight:600;color:#fff;background-image:linear-gradient(120deg,#3D7BFF,#9B5CFF 55%,#2BD6F0);transition:all .2s;
-}
-.pcard__actions .button:hover{filter:brightness(1.08);}
-.pcard__actions a.add_to_cart_button.loading{opacity:.6;pointer-events:none;}
-.pcard__actions a.added_to_cart{
-  display:inline-flex;align-items:center;justify-content:center;width:100%;border-radius:.75rem;border:1px solid #2BD6F0;color:#2BD6F0;padding:.55rem 1rem;font-size:.75rem;font-weight:600;
-}
-.pcard__actions a.added_to_cart::after{content:" \2192";}
-#wghs-cart-drawer .button{width:100%;}
+.woocommerce div.product .product_title { font-size: 2rem; line-height: 1.15; font-weight: 700; }
+.woocommerce div.product p.price, .woocommerce div.product span.price { font-size: 1.6rem; font-weight: 700; color: #6B4905; margin: .75rem 0; }
+.woocommerce div.product div.images { border-radius: .75rem; overflow: hidden; border: 1px solid #EDEAE0; background: #fff; }
+.woocommerce div.product .stock.in-stock { color: #0E8C5A !important; font-weight: 600; }
+.woocommerce span.onsale { background: #E2A013 !important; color: #14201A !important; border-radius: 9999px !important; padding: .25rem .75rem !important; min-height: 0 !important; min-width: 0 !important; font-weight: 700 !important; font-size: .75rem !important; line-height: 1.4 !important; margin: .75rem !important; }
