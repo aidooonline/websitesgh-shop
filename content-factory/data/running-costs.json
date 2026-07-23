@@ -1,0 +1,206 @@
+{
+  "generated": "2026-07-23",
+  "verified_month": "July 2026",
+  "tariff_source": "PURC 2026 Second Quarter Tariff Review Decision, uplifted by the 3.49 per cent electricity increase effective 1 July 2026",
+  "mains_volts": 230,
+  "tariffs_ghs_per_kwh": {
+    "lifeline_0_30": 0.8993,
+    "res_0_300": 2.0375,
+    "res_301_plus": 2.6923
+  },
+  "rate_used": 2.0375,
+  "socket_ceilings": [
+    {
+      "socket": "Type G",
+      "amps": 13,
+      "max_watts": 2990
+    },
+    {
+      "socket": "Type D",
+      "amps": 6,
+      "max_watts": 1380
+    },
+    {
+      "socket": "Advertised claim of 4500W",
+      "amps": 19.6,
+      "max_watts": 4500,
+      "note": "Would need 19.6A at 230V, which is 1.5x a Type G socket and 3.3x a Type D. Not physically deliverable on Ghanaian mains."
+    },
+    {
+      "socket": "Advertised claim of 8000W",
+      "amps": 34.8,
+      "max_watts": 8000,
+      "note": "Would need 34.8A at 230V, which is 2.7x a Type G socket and 5.8x a Type D. Not physically deliverable on Ghanaian mains."
+    }
+  ],
+  "rows": [
+    {
+      "appliance": "Hot plate, double burner",
+      "real_watts": 2000,
+      "minutes_per_day": 45,
+      "kwh_per_month": 45.0,
+      "ghs_per_month": 91.69,
+      "ghs_per_year": 1100.25
+    },
+    {
+      "appliance": "Rice cooker, 5L",
+      "real_watts": 900,
+      "minutes_per_day": 45,
+      "kwh_per_month": 20.25,
+      "ghs_per_month": 41.26,
+      "ghs_per_year": 495.11
+    },
+    {
+      "appliance": "Hot plate, single burner",
+      "real_watts": 1000,
+      "minutes_per_day": 40,
+      "kwh_per_month": 20.0,
+      "ghs_per_month": 40.75,
+      "ghs_per_year": 489.0
+    },
+    {
+      "appliance": "Deep fryer, 2.5L",
+      "real_watts": 1800,
+      "minutes_per_day": 20,
+      "kwh_per_month": 18.0,
+      "ghs_per_month": 36.68,
+      "ghs_per_year": 440.1
+    },
+    {
+      "appliance": "Steam iron, 1450W",
+      "real_watts": 1450,
+      "minutes_per_day": 20,
+      "kwh_per_month": 14.5,
+      "ghs_per_month": 29.54,
+      "ghs_per_year": 354.52
+    },
+    {
+      "appliance": "Dry iron, 1200W",
+      "real_watts": 1200,
+      "minutes_per_day": 20,
+      "kwh_per_month": 12.0,
+      "ghs_per_month": 24.45,
+      "ghs_per_year": 293.4
+    },
+    {
+      "appliance": "Electric kettle, 2L",
+      "real_watts": 2000,
+      "minutes_per_day": 10,
+      "kwh_per_month": 10.0,
+      "ghs_per_month": 20.38,
+      "ghs_per_year": 244.5
+    },
+    {
+      "appliance": "Hair dryer, 2000W",
+      "real_watts": 2000,
+      "minutes_per_day": 10,
+      "kwh_per_month": 10.0,
+      "ghs_per_month": 20.38,
+      "ghs_per_year": 244.5
+    },
+    {
+      "appliance": "Microwave oven, 20L",
+      "real_watts": 1100,
+      "minutes_per_day": 15,
+      "kwh_per_month": 8.25,
+      "ghs_per_month": 16.81,
+      "ghs_per_year": 201.71
+    },
+    {
+      "appliance": "Electric kettle, 1.8L",
+      "real_watts": 2000,
+      "minutes_per_day": 8,
+      "kwh_per_month": 8.0,
+      "ghs_per_month": 16.3,
+      "ghs_per_year": 195.6
+    },
+    {
+      "appliance": "Handheld garment steamer",
+      "real_watts": 1000,
+      "minutes_per_day": 10,
+      "kwh_per_month": 5.0,
+      "ghs_per_month": 10.19,
+      "ghs_per_year": 122.25
+    },
+    {
+      "appliance": "Blender, 2.5L with dry mill",
+      "real_watts": 750,
+      "minutes_per_day": 12,
+      "kwh_per_month": 4.5,
+      "ghs_per_month": 9.17,
+      "ghs_per_year": 110.03
+    },
+    {
+      "appliance": "Rechargeable standing fan",
+      "real_watts": 25,
+      "minutes_per_day": 360,
+      "kwh_per_month": 4.5,
+      "ghs_per_month": 9.17,
+      "ghs_per_year": 110.03
+    },
+    {
+      "appliance": "Sandwich maker",
+      "real_watts": 750,
+      "minutes_per_day": 10,
+      "kwh_per_month": 3.75,
+      "ghs_per_month": 7.64,
+      "ghs_per_year": 91.69
+    },
+    {
+      "appliance": "LED strip light, 10M",
+      "real_watts": 24,
+      "minutes_per_day": 300,
+      "kwh_per_month": 3.6,
+      "ghs_per_month": 7.33,
+      "ghs_per_year": 88.02
+    },
+    {
+      "appliance": "Blender, 2L commercial",
+      "real_watts": 600,
+      "minutes_per_day": 10,
+      "kwh_per_month": 3.0,
+      "ghs_per_month": 6.11,
+      "ghs_per_year": 73.35
+    },
+    {
+      "appliance": "Facial steamer",
+      "real_watts": 300,
+      "minutes_per_day": 10,
+      "kwh_per_month": 1.5,
+      "ghs_per_month": 3.06,
+      "ghs_per_year": 36.67
+    },
+    {
+      "appliance": "Rechargeable LED lamp",
+      "real_watts": 10,
+      "minutes_per_day": 240,
+      "kwh_per_month": 1.2,
+      "ghs_per_month": 2.44,
+      "ghs_per_year": 29.34
+    },
+    {
+      "appliance": "Laptop cooling pad",
+      "real_watts": 5,
+      "minutes_per_day": 240,
+      "kwh_per_month": 0.6,
+      "ghs_per_month": 1.22,
+      "ghs_per_year": 14.67
+    },
+    {
+      "appliance": "Hair straightener",
+      "real_watts": 45,
+      "minutes_per_day": 10,
+      "kwh_per_month": 0.22,
+      "ghs_per_month": 0.46,
+      "ghs_per_year": 5.5
+    },
+    {
+      "appliance": "Rechargeable hair clipper",
+      "real_watts": 10,
+      "minutes_per_day": 15,
+      "kwh_per_month": 0.07,
+      "ghs_per_month": 0.15,
+      "ghs_per_year": 1.83
+    }
+  ]
+}
