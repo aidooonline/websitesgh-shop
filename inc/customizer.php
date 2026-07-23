@@ -25,9 +25,9 @@ function wghs_customize_register( $wp_customize ) {
 	) );
 
 	$contact_fields = array(
-		'wghs_phone'      => array( 'label' => 'Phone number', 'default' => '' ),
-		'wghs_whatsapp'   => array( 'label' => 'WhatsApp number (intl, e.g. 233XXXXXXXXX)', 'default' => '' ),
-		'wghs_email'      => array( 'label' => 'Email', 'default' => 'info@wghshop.com' ),
+		'wghs_phone'      => array( 'label' => 'Phone number', 'default' => '0542148020' ),
+		'wghs_whatsapp'   => array( 'label' => 'WhatsApp number (intl, e.g. 233XXXXXXXXX)', 'default' => '233542148020' ),
+		'wghs_email'      => array( 'label' => 'Email', 'default' => '' ),
 		'wghs_address'    => array( 'label' => 'Location text', 'default' => 'Accra, Ghana' ),
 		'wghs_pickup'     => array( 'label' => 'Pickup point note', 'default' => 'Pickup available - meeting point in Accra (confirmed on order).' ),
 		'wghs_fb'         => array( 'label' => 'Facebook URL', 'default' => '' ),

@@ -51,7 +51,7 @@ class WGHS_Gateway_WhatsApp extends WC_Payment_Gateway {
 				'title'       => __( 'WhatsApp number or profile link', 'wghshop' ),
 				'type'        => 'text',
 				'description' => __( 'International format e.g. 233XXXXXXXXX, or a wa.me link. Leave empty to use the number from Appearance > Customize > WebsitesGH Shop Settings > Contact & Social.', 'wghshop' ),
-				'default'     => '',
+				'default'     => '233542148020',
 			),
 			'status' => array(
 				'title'   => __( 'New order status', 'wghshop' ),

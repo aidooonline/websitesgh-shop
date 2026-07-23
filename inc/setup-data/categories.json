@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "name": "Kitchen & Home",
+    "slug": "kitchen-home",
+    "desc": "Blenders, rice cookers, kettles and hot plates for the Ghanaian kitchen, delivered in Accra.",
+    "image": ""
+  },
+  {
+    "name": "Laundry & Garment Care",
+    "slug": "laundry-garment-care",
+    "desc": "Irons, steamers and drying racks. Pay on delivery across Accra.",
+    "image": ""
+  },
+  {
+    "name": "Phones & Audio",
+    "slug": "phones-audio",
+    "desc": "Power banks, earbuds, speakers and charging accessories.",
+    "image": ""
+  },
+  {
+    "name": "Computing",
+    "slug": "computing",
+    "desc": "Mice, keyboards, flash drives and laptop accessories.",
+    "image": ""
+  },
+  {
+    "name": "Personal Care",
+    "slug": "personal-care",
+    "desc": "Clippers, dryers, straighteners and grooming tools.",
+    "image": ""
+  },
+  {
+    "name": "School & Bags",
+    "slug": "school-bags",
+    "desc": "School backpack sets, lunch bags and laptop bags.",
+    "image": ""
+  },
+  {
+    "name": "Lighting & Power",
+    "slug": "lighting-power",
+    "desc": "Rechargeable lamps, LED strips, fans and extension boards.",
+    "image": ""
+  }
+]

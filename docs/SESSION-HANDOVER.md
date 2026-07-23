@@ -18,6 +18,18 @@ No WordPress install exists yet at shop.websitesgh.com.
   WooCommerce core emits some Product schema on its own. Everything beyond that is to build.
 - Live websitesgh fonts are **Figtree**, not Hanken Grotesk. Earlier notes were stale.
 
+## Seeded catalogue
+50 placeholder products across 7 categories, built by
+`content-factory/engine/build_seed_catalogue.py`. Price range GHS 45 to 950.
+
+**Every price is a placeholder** derived from observed Ghana asking prices, not a
+confirmed dealer quote. Replace each one after the dealer calls. Prices are edited in
+WordPress under Products, or in bulk from the Products list. The generator script never
+needs to run again once the store is seeded.
+
+Contact defaults are set to WhatsApp `233542148020` in two places: the Customizer
+(`wghs_whatsapp`) and the gateway setting. Change either from the admin, no code needed.
+
 ## Open decisions
 - Hosting: confirm the host can take a second WordPress install on the subdomain.
 - Confirm whether Adanse is to be installed here rather than rebuilding GEO from scratch.
