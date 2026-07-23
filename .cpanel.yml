@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/public_html/shop.websitesgh.com/wp-content/themes/websitesgh-shop
+    - /bin/mkdir -p $DEPLOYPATH
+    - /usr/bin/rsync -a --delete --exclude=.git --exclude=node_modules --exclude=.cpanel.yml --exclude=content-factory --exclude=google-ads --exclude=docs ./ $DEPLOYPATH/

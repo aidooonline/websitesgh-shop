@@ -1,0 +1,13 @@
+{
+  "name": "wghshop-theme",
+  "version": "1.0.0",
+  "description": "WebsitesGH Shop - custom WooCommerce theme (Plug Into Quality)",
+  "private": true,
+  "scripts": {
+    "dev": "tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/main.css --watch",
+    "build": "tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/main.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

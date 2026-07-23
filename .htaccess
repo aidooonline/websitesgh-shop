@@ -1,0 +1,14 @@
+# TechPlug GH theme - protect repository internals and build files
+# Block all access to the .git directory (critical when the theme folder is a git checkout)
+RedirectMatch 404 /\.git
+
+# Block direct access to housekeeping/build files
+<FilesMatch "^(\.gitignore|\.cpanel\.yml|package\.json|package-lock\.json|tailwind\.config\.js|README\.md)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

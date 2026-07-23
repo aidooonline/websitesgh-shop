@@ -1,0 +1,3 @@
+config/wp.env
+__pycache__/
+*.pyc
