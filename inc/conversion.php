@@ -176,7 +176,8 @@ function wghs_sticky_order_bar() {
 			<span><?php echo wp_kses_post( $product->get_price_html() ); ?></span>
 			<small><?php esc_html_e( 'Pay on delivery', 'wghshop' ); ?></small>
 		</div>
-		<a class="wghs-orderbar__btn" href="<?php echo esc_url( '?add-to-cart=' . $product->get_id() ); ?>" data-wghs-event="orderbar_add">
+		<?php $bar_url = apply_filters( 'wghs_orderbar_url', '?add-to-cart=' . $product->get_id(), $product ); ?>
+		<a class="wghs-orderbar__btn" href="<?php echo esc_url( $bar_url ); ?>" <?php echo false !== strpos( $bar_url, 'wa.me' ) ? 'target="_blank" rel="noopener"' : ''; ?> data-wghs-event="orderbar_whatsapp">
 			<?php esc_html_e( 'Order now', 'wghshop' ); ?>
 		</a>
 	</div>
