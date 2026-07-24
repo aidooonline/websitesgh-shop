@@ -220,3 +220,9 @@ ul.products li.product { @apply m-0; }
 .woocommerce div.product div.images { border-radius: .75rem; overflow: hidden; border: 1px solid #EDEAE0; background: #fff; }
 .woocommerce div.product .stock.in-stock { color: #0E8C5A !important; font-weight: 600; }
 .woocommerce span.onsale { background: #E2A013 !important; color: #14201A !important; border-radius: 9999px !important; padding: .25rem .75rem !important; min-height: 0 !important; min-width: 0 !important; font-weight: 700 !important; font-size: .75rem !important; line-height: 1.4 !important; margin: .75rem !important; }
+
+/* Mobile money blocks */
+.wghs-momo-number { @apply mt-2 rounded-lg border border-wgh-line bg-wgh-goldPale px-4 py-3 text-sm text-wgh-goldInk; }
+.wghs-momo-thanks { @apply my-8 rounded-lg border border-wgh-line bg-wgh-line2 p-6; }
+.wghs-momo-thanks h2 { @apply mb-3 text-lg font-bold; }
+.wghs-momo-thanks ol { @apply mb-5 list-decimal space-y-2 pl-5 text-sm leading-relaxed marker:font-bold marker:text-wgh-green; }

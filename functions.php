@@ -99,6 +99,7 @@ require WGHS_DIR . '/inc/template-tags.php';
 if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/woocommerce.php';
 	require WGHS_DIR . '/inc/whatsapp-gateway.php';
+	require WGHS_DIR . '/inc/momo-gateway.php';
 }
 
 /** Excerpt tweaks. */
