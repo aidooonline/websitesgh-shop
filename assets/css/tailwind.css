@@ -318,3 +318,34 @@ ul.products li.product { @apply m-0; }
 .wghs-cartwa__note { @apply mt-2 text-xs leading-relaxed text-wgh-ink3; }
 .wghs-cartwa__alt { @apply mt-3 text-center text-xs; }
 .wghs-cartwa__alt a { @apply text-wgh-ink3 underline underline-offset-2 hover:text-wgh-green; }
+
+/* WooCommerce grid overrides. Core ships floats and percentage widths that
+   crush the cards into slivers; kill them with prejudice. */
+.woocommerce ul.products li.product,
+.woocommerce-page ul.products li.product,
+ul.products li.product {
+  width: 100% !important; float: none !important; margin: 0 !important; clear: none !important;
+}
+.woocommerce ul.products, .woocommerce-page ul.products {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 1.25rem !important; margin: 0 !important; padding: 0 !important;
+}
+@media (min-width: 1024px) {
+  .woocommerce ul.products, .woocommerce-page ul.products {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+.woocommerce ul.products li.product a img { margin: 0 !important; }
+.woocommerce ul.products li.product .button { margin-top: .5rem !important; }
+.woocommerce .related.products ul.products,
+.woocommerce .up-sells ul.products { margin-top: 1rem !important; }
+
+/* Description tab and any Woo panel: give the prose system's spacing. */
+.woocommerce-Tabs-panel > h2:first-child { display: none; } /* duplicate "Description" heading */
+.woocommerce-Tabs-panel { @apply text-[15px] leading-relaxed; }
+.woocommerce-Tabs-panel > * + * { @apply mt-4; }
+.woocommerce-Tabs-panel h3 { @apply mt-8 mb-1 text-xl font-bold; }
+.woocommerce-Tabs-panel h4 { @apply mt-6 mb-1 text-base font-semibold; }
+.woocommerce-Tabs-panel p { @apply text-wgh-ink2; }
+.woocommerce div.product .woocommerce-tabs ul.tabs li.active { border-bottom-color: #0E8C5A !important; }

@@ -28,7 +28,7 @@ function wghs_setup_page() {
 	?>
 	<div class="wrap">
 		<h1>WebsitesGH Shop Setup</h1>
-		<p>One click creates the full store: product categories (with tile images), all pages (policies, About, Contact, Deals, How to Order), the primary menu, GHS currency, WooCommerce pages, all 31 products with stock and prices, branded product images in the Media Library, and the hero and deals banners. Re-running is safe: existing items are skipped.</p>
+		<p>One click creates the full store: product categories (with tile images), all pages (policies, About, Contact, How to Order, Price Index, Running Costs, Guides), the primary menu, GHS currency, WooCommerce pages, all 31 products with stock and prices, branded product images in the Media Library, and the hero and deals banners. Re-running is safe: existing items are skipped.</p>
 		<p><em>All images land in Media Library / Customizer / category settings, so you can replace any of them later.</em></p>
 		<?php if ( $report ) : ?>
 			<div class="notice notice-success"><p><strong>Setup finished.</strong></p><pre style="white-space:pre-wrap"><?php echo esc_html( $report ); ?></pre></div>
@@ -143,7 +143,25 @@ function wghs_run_setup() {
 			$made++;
 		}
 	}
-	$log[] = sprintf( 'Pages: %d created (policies, About, Contact, Deals, How to Order).', $made );
+	$log[] = sprintf( 'Pages: %d created (policies, About, Contact, How to Order, data pages).', $made );
+
+	/* 3b. Guides page as the posts page, and publish the seed articles. */
+	$guides = get_page_by_path( 'guides' );
+	if ( ! $guides ) {
+		$gid = wp_insert_post( array(
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Guides',
+			'post_name'   => 'guides',
+		) );
+	} else {
+		$gid = $guides->ID;
+	}
+	if ( $gid && ! is_wp_error( $gid ) ) {
+		update_option( 'page_for_posts', (int) $gid );
+		$log[] = 'Guides page set as the posts page.';
+	}
+	$log[] = wghs_seed_articles();
 
 	/* 4. Primary menu */
 	if ( ! wp_get_nav_menu_object( 'Primary' ) ) {
@@ -152,7 +170,8 @@ function wghs_run_setup() {
 			$items = array(
 				'Home'         => home_url( '/' ),
 				'Shop'         => function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' ),
-				'Deals'        => home_url( '/deals/' ),
+				'Guides'       => home_url( '/guides/' ),
+				'Price Index'  => home_url( '/price-index/' ),
 				'How to Order' => home_url( '/how-to-order/' ),
 				'About'        => home_url( '/about/' ),
 				'Contact'      => home_url( '/contact/' ),
@@ -686,4 +705,35 @@ function wghs_brandify() {
 	set_transient( 'wghs_setup_report', implode( "\n", $log ), 300 );
 	wp_safe_redirect( admin_url( 'tools.php?page=wghs-setup' ) );
 	exit;
+}
+
+
+/**
+ * Publish the seed articles from inc/setup-data/articles.json.
+ * Safe to re-run: existing slugs are skipped.
+ *
+ * @return string Log line.
+ */
+function wghs_seed_articles() {
+	$file = WGHS_DIR . '/inc/setup-data/articles.json';
+	if ( ! file_exists( $file ) ) { return 'Articles: seed file missing, skipped.'; }
+	$articles = json_decode( (string) file_get_contents( $file ), true );
+	if ( ! is_array( $articles ) ) { return 'Articles: seed file unreadable, skipped.'; }
+	$made = 0;
+	foreach ( $articles as $a ) {
+		if ( empty( $a['slug'] ) || get_page_by_path( $a['slug'], OBJECT, 'post' ) ) { continue; }
+		$id = wp_insert_post( array(
+			'post_type'    => 'post',
+			'post_status'  => 'publish',
+			'post_title'   => $a['title'],
+			'post_name'    => $a['slug'],
+			'post_excerpt' => $a['excerpt'] ?? '',
+			'post_content' => $a['content'] ?? '',
+		) );
+		if ( $id && ! is_wp_error( $id ) && ! empty( $a['category'] ) ) {
+			wp_set_post_terms( $id, array( $a['category'] ), 'category' );
+			$made++;
+		}
+	}
+	return sprintf( 'Articles: %d published.', $made );
 }
