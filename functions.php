@@ -105,6 +105,7 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/conversion.php';
 	require WGHS_DIR . '/inc/schema.php';
 	require WGHS_DIR . '/inc/tracking.php';
+	require WGHS_DIR . '/inc/attribution.php';
 }
 
 /** Excerpt tweaks. */
