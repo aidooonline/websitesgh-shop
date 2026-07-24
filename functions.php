@@ -95,6 +95,7 @@ require WGHS_DIR . '/inc/customizer.php';
 if ( is_admin() ) {
 	require WGHS_DIR . '/inc/setup.php';
 }
+require WGHS_DIR . '/inc/illustrations.php';
 require WGHS_DIR . '/inc/template-tags.php';
 if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/woocommerce.php';

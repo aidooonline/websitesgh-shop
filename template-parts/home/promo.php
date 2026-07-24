@@ -7,7 +7,7 @@ $img = (int) wghs_opt( 'wghs_promo_image' );
 		<div class="relative p-8 sm:p-12 flex flex-col justify-center">
 			<span class="chip-grad mb-4 self-start">Deals &amp; Offers</span>
 			<h2 class="section-title">This week&rsquo;s <span class="text-wgh-green">best prices</span></h2>
-			<p class="text-wgh-ink2 mt-4 max-w-md leading-relaxed">Discounted units, bulk pricing for teams and student bundles. Limited stock, refreshed weekly.</p>
+			<p class="text-wgh-ink2 mt-4 max-w-md leading-relaxed">Real prices, verified this month. Stock held with Accra dealers so it moves the same day.</p>
 			<a href="<?php echo esc_url( home_url( '/deals' ) ); ?>" class="btn-amber mt-7 self-start">See current deals</a>
 		</div>
 		<div class="relative min-h-[240px] bg-gradient-to-br from-wgh-greenPale to-wgh-bg">

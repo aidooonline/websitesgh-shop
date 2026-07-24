@@ -73,15 +73,8 @@ function wghs_image_or_placeholder( $attachment_id, $size = 'large', $class = ''
 	echo wghs_placeholder_svg( $class );
 }
 
-/** Inline branded placeholder (used only when no media is set; not a stored file). */
-function wghs_placeholder_svg( $class = '' ) {
-	return '<div class="' . esc_attr( $class ) . ' flex items-center justify-center bg-wgh-bg">'
-		. '<svg viewBox="0 0 64 64" width="64" height="64" fill="none" aria-hidden="true">'
-		. '<rect x="8" y="14" width="48" height="30" rx="3" stroke="#28324F" stroke-width="2"/>'
-		. '<rect x="4" y="46" width="56" height="4" rx="2" fill="#28324F"/>'
-		. '<path d="M26 29l5 5 8-9" stroke="#3D7BFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
-		. '</svg></div>';
-}
+/* wghs_placeholder_svg now lives in inc/illustrations.php, which draws a
+   category aware illustration instead of one generic dark theme icon. */
 
 /** Product count for a WC category term. */
 function wghs_cat_count( $term ) {

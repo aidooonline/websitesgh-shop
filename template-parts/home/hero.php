@@ -16,11 +16,11 @@ if ( function_exists( 'wc_get_products' ) ) {
 		<div class="animate-riseIn">
 			<span class="chip-grad mb-5"><?php echo esc_html( wghs_opt( 'wghs_hero_eyebrow', 'We check the numbers' ) ); ?></span>
 			<h1 class="text-4xl sm:text-5xl font-bold leading-[1.08]">
-				<?php echo esc_html( wghs_opt( 'wghs_hero_title', 'Premium UK Used' ) ); ?>
+				<?php echo esc_html( wghs_opt( 'wghs_hero_title', 'Appliances and electronics' ) ); ?>
 				<span class="text-wgh-green"><?php echo esc_html( wghs_opt( 'wghs_hero_title2', 'Delivered Across Ghana.' ) ); ?></span>
 			</h1>
 			<p class="mt-5 text-wgh-ink2 text-base sm:text-lg max-w-xl leading-relaxed">
-				<?php echo esc_html( wghs_opt( 'wghs_hero_sub', 'Tested, graded and warranty-backed HP, Dell and Lenovo business products. Pay by MoMo, bank transfer or on delivery in Accra.' ) ); ?>
+				<?php echo esc_html( wghs_opt( 'wghs_hero_sub', 'Blenders, kettles, irons, power banks and more. We check the specifications before we sell them. Pay the rider when it reaches you.' ) ); ?>
 			</p>
 			<div class="mt-8 flex flex-wrap gap-3">
 				<a href="<?php echo esc_url( $shop_url ); ?>" class="btn-primary">Browse products
@@ -29,9 +29,9 @@ if ( function_exists( 'wc_get_products' ) ) {
 				<a href="<?php echo esc_url( home_url( '/how-to-order' ) ); ?>" class="btn-ghost">How to order</a>
 			</div>
 			<div class="mt-9 flex flex-wrap gap-x-7 gap-y-3 text-sm text-wgh-ink2">
-				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> Tested &amp; graded</span>
-				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> 1&ndash;3 month warranty</span>
-				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> Pay on delivery (Accra)</span>
+				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> Pay on delivery</span>
+				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> Same day in Accra</span>
+				<span class="flex items-center gap-2"><span class="text-wgh-green">&#10003;</span> Check it before you pay</span>
 			</div>
 		</div>
 

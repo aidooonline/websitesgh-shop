@@ -26,7 +26,7 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 </div>
 <?php endif; ?>
 
-<header id="site-header" class="sticky top-0 z-40 border-b border-wgh-line bg-wgh-ink/85 backdrop-blur-md">
+<header id="site-header" class="sticky top-0 z-40 border-b border-wgh-line bg-white/95 backdrop-blur-md">
 	<div class="wrap flex items-center justify-between gap-4 h-16">
 		<div class="flex items-center gap-3">
 			<button id="wghs-menu-toggle" class="lg:hidden text-wgh-ink p-2 -ml-2" aria-label="<?php esc_attr_e( 'Open menu', 'wghshop' ); ?>" aria-expanded="false">

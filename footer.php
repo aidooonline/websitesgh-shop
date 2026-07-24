@@ -13,7 +13,7 @@ $shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 
 		<div>
 			<?php wghs_logo(); ?>
 			<p class="mt-4 text-sm text-wgh-ink2 max-w-xs leading-relaxed">
-				<?php esc_html_e( 'Quality UK used products for students, professionals and businesses across Ghana. Tested, graded and warranty-backed.', 'wghshop' ); ?>
+				<?php esc_html_e( 'Appliances and electronics for Ghana. We check the specifications before we sell them, and you pay when it reaches you.', 'wghshop' ); ?>
 			</p>
 			<div class="flex gap-3 mt-5">
 				<?php

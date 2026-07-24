@@ -55,7 +55,7 @@ function wghs_customize_register( $wp_customize ) {
 	$wp_customize->add_setting( 'wghs_hero_title2', array( 'default' => 'Delivered across Ghana.', 'sanitize_callback' => 'sanitize_text_field' ) );
 	$wp_customize->add_control( 'wghs_hero_title2', array( 'label' => 'Headline (line 2, gradient)', 'section' => 'wghs_hero', 'type' => 'text' ) );
 
-	$wp_customize->add_setting( 'wghs_hero_sub', array( 'default' => 'Tested, graded and warranty-backed business products for students, professionals and teams. Pay by MoMo, bank transfer or on delivery in Accra.', 'sanitize_callback' => 'sanitize_textarea_field' ) );
+	$wp_customize->add_setting( 'wghs_hero_sub', array( 'default' => 'Blenders, kettles, irons, power banks and more. We check the specifications before we sell them. Pay the rider when it reaches you.', 'sanitize_callback' => 'sanitize_textarea_field' ) );
 	$wp_customize->add_control( 'wghs_hero_sub', array( 'label' => 'Subtext', 'section' => 'wghs_hero', 'type' => 'textarea' ) );
 
 	$wp_customize->add_setting( 'wghs_hero_image', array( 'sanitize_callback' => 'absint' ) );

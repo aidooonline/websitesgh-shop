@@ -232,3 +232,27 @@ ul.products li.product { @apply m-0; }
 .wghs-wa-order__btn { @apply inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1EBE5A] sm:w-auto; }
 .wghs-wa-order__note { @apply mt-2 text-xs leading-relaxed text-wgh-ink3; }
 .pcard__wa { @apply mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-[#25D366] px-3 py-2 text-xs font-semibold text-[#128C4A] transition hover:bg-[#25D366] hover:text-white; }
+
+/* Illustrations */
+.wghs-art { @apply flex h-full w-full items-center justify-center; }
+.wghs-art svg { @apply h-full w-full max-h-[220px] max-w-[220px]; }
+.pcard__media .wghs-art svg { @apply max-h-[150px] max-w-[150px]; }
+.wghs-railshop__img .wghs-art svg { @apply max-h-[44px] max-w-[44px]; }
+.wghs-related__media .wghs-art svg,
+.wghs-river__media .wghs-art svg { @apply max-h-[90px] max-w-[90px]; }
+
+/* Soft brand texture. Keeps large white areas from reading as unfinished. */
+.wghs-tex { position: relative; }
+.wghs-tex::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(14,140,90,.07), transparent 42%),
+    radial-gradient(circle at 88% 8%, rgba(226,160,19,.07), transparent 40%);
+}
+.wghs-tex > * { position: relative; z-index: 1; }
+
+/* Hairline dot grid, used behind the hero visual */
+.wghs-dots {
+  background-image: radial-gradient(#D7D2C4 1px, transparent 1px);
+  background-size: 18px 18px;
+}
