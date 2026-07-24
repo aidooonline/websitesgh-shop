@@ -103,6 +103,8 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/momo-gateway.php';
 	require WGHS_DIR . '/inc/whatsapp-product.php';
 	require WGHS_DIR . '/inc/conversion.php';
+	require WGHS_DIR . '/inc/schema.php';
+	require WGHS_DIR . '/inc/tracking.php';
 }
 
 /** Excerpt tweaks. */

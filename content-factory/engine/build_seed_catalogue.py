@@ -162,33 +162,82 @@ def sku_for(name, cat):
     return "WGH-" + prefix + "-" + slugify(name)[:28].upper().replace("-", "")[:16]
 
 
+CATEGORY_INTROS = {
+    "Kitchen & Home": (
+        "<h3>The honest version</h3>"
+        "<p>Kitchen appliances in Ghana are sold on inflated wattage numbers. A Ghanaian "
+        "Type G socket delivers at most 2,990W (230V x 13A), so any box claiming 4500W or "
+        "8000W is quoting a peak marketing figure, not real draw. We publish realistic "
+        "continuous figures instead, and the running cost that follows from them at the "
+        "PURC rate of GHS 2.04 per kWh effective 1 July 2026.</p>"
+    ),
+    "Laundry & Garment Care": (
+        "<h3>What ironing actually costs</h3>"
+        "<p>Anything that makes heat is expensive to run. A 1200W dry iron used 20 minutes "
+        "a day costs about GHS 24 a month at the current PURC rate, and a 1450W steam iron "
+        "about GHS 30. Worth knowing before you choose, and nobody else tells you.</p>"
+    ),
+    "Phones & Audio": (
+        "<h3>About capacity numbers</h3>"
+        "<p>Power banks never deliver their advertised mAh. Cells run at 3.7V, USB output "
+        "is 5V, and conversion loses energy as heat, so real delivered charge is roughly "
+        "52 to 63 per cent of the box number. Every brand works this way. We are the shop "
+        "that says so, and our stated charge counts are based on the real figure.</p>"
+    ),
+    "Computing": (
+        "<h3>Small tools, checked properly</h3>"
+        "<p>Storage sizes, connector types and battery claims on accessories are checked "
+        "before listing. Where a spec cannot be verified we say so on the product rather "
+        "than repeating the box.</p>"
+    ),
+    "Personal Care": (
+        "<h3>Grooming tools, honestly rated</h3>"
+        "<p>Hair dryers are heat appliances, which makes them the most power hungry item "
+        "in this category: a 2000W dryer at 10 minutes a day costs about GHS 20 a month. "
+        "Clippers and straighteners cost pennies by comparison.</p>"
+    ),
+    "School & Bags": (
+        "<h3>Timed for the term</h3>"
+        "<p>GES has confirmed basic schools resume on 8 September 2026 and SHS on 18 "
+        "September 2026. Sets ordered before those dates deliver in time for the first "
+        "day, same day within Accra. Sizes are sold by school level so there is no "
+        "guessing.</p>"
+    ),
+    "Lighting & Power": (
+        "<h3>Built for light-off moments</h3>"
+        "<p>Rechargeable lamps and fans are rated here by how long they actually run on a "
+        "charge, and they cost almost nothing on the grid: a rechargeable LED lamp used "
+        "four hours a night is about GHS 2.44 a month at the current PURC rate.</p>"
+    ),
+}
+
 def description(name, price, short, cat):
-    """GEO shaped description: Quick Answer capsule, then detail, then Q and A."""
+    """Category aware description: Quick Answer, category-specific honesty
+    block, delivery, and questions. Body varies by category so no two
+    categories read the same."""
+    intro = CATEGORY_INTROS.get(cat, "")
     return (
         "<p><strong>Quick answer.</strong> The {name} sells for GHS {price} at "
         "WebsitesGH Shop, delivered anywhere in Accra with pay on delivery. "
-        "{short}. Order on the site or on WhatsApp and pay the rider when it "
+        "{short}. Order on the site or on WhatsApp, and pay the rider when it "
         "reaches you.</p>"
+        + intro +
         "<h3>What you get</h3>"
-        "<p>{short}. Supplied new in box. We hold stock with Accra dealers and "
-        "dispatch the same day on orders confirmed before 4pm, so you are not "
-        "waiting weeks for a shipment to arrive.</p>"
+        "<p>{short}. Supplied new in box, held with Accra dealers, dispatched the "
+        "same day on orders confirmed before 4pm.</p>"
         "<h3>Delivery and payment</h3>"
-        "<p>Same day delivery in Accra and Tema on confirmed orders. Two to four "
-        "working days nationwide. Pay on delivery, or by mobile money and bank "
-        "transfer if you prefer. You check the item before you pay.</p>"
+        "<p>Same day in Accra and Tema on confirmed orders, two to four working "
+        "days nationwide. Pay on delivery is the default: you inspect the item "
+        "before any money changes hands. Mobile money to 054 214 8020 if you "
+        "prefer to pay ahead.</p>"
         "<h3>Questions people ask</h3>"
         "<h4>How much is the {name} in Ghana?</h4>"
-        "<p>GHS {price} at WebsitesGH Shop, including delivery within Accra. "
-        "Price verified for the current month and updated whenever our dealer "
-        "cost changes.</p>"
+        "<p>GHS {price} at WebsitesGH Shop, including delivery within Accra, "
+        "verified for the current month and updated whenever our dealer cost "
+        "changes. See the full price index for every product.</p>"
         "<h4>Do I pay before delivery?</h4>"
-        "<p>No. Pay on delivery is the default. The rider brings the item, you "
-        "inspect it, then you pay. Mobile money and bank transfer are available "
-        "if you would rather pay ahead.</p>"
-        "<h4>How long does delivery take in Accra?</h4>"
-        "<p>Same day for orders confirmed before 4pm, otherwise next morning. "
-        "Nationwide delivery takes two to four working days.</p>"
+        "<p>No. The rider brings it, you inspect it, then you pay. If it is "
+        "wrong, hand it back and pay nothing.</p>"
     ).format(name=name, price=price, short=short)
 
 

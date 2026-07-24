@@ -34,8 +34,20 @@ Contact defaults are set to WhatsApp `233542148020` in two places: the Customize
 - Hosting: confirm the host can take a second WordPress install on the subdomain.
 - Confirm whether Adanse is to be installed here rather than rebuilding GEO from scratch.
 
+## Sprint status
+Sprints 2 through 5 code complete. Theme is live on the subdomain (docroot is
+~/shop.websitesgh.com, NOT under public_html). Schema layer (inc/schema.php)
+owns Product, Offer, FAQPage, BreadcrumbList; an SEO plugin owns WebSite,
+Organization, Article; WooCommerce core schema is disabled. llms.txt is served
+by rewrite (flush permalinks once after pulling). Tracking (inc/tracking.php)
+ships silent until GA4 and Google Ads IDs are set in Customize > Tracking.
+Conversion engine in inc/conversion.php. Openverse image sideloader retuned
+for appliances; run it from Tools > Setup to fetch licensed photos with saved
+attribution. Two flagship articles ready in content-factory/articles.
+
 ## Next up
-Sprint 1. See `docs/SPRINTS.md`.
+Publish the two articles, set tracking IDs, place a live test order end to
+end, then Sprint 6 launch tasks. Real product photos still beat everything.
 
 ## Hard rules
 - Never add WooCommerce to websitesgh.com. It breaks the page cache the directory depends on.

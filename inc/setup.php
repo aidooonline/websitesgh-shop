@@ -44,7 +44,7 @@ function wghs_setup_page() {
 			</form>
 			<hr>
 			<h2>Switch to brand categories</h2>
-			<p>Re-assigns every product to its brand category only (HP, Dell, Lenovo, MacBooks) and deletes the old purpose categories (UK Used, Business, Student). Run this once after activating v2 so the shop, header and homepage group by brand.</p>
+			<p>Legacy tool from the TechPlug fork. Not used in this shop.</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="wghs_brandify">
 				<?php wp_nonce_field( 'wghs_brandify' ); ?>
@@ -52,7 +52,7 @@ function wghs_setup_page() {
 			</form>
 			<hr>
 			<h2>Refresh category tile images</h2>
-			<p>Applies the distinct per-category artwork (UK Used, Business, Student, MacBooks, HP, Dell, Lenovo, Accessories) to the homepage category tiles. Overwrites the current tile image for each category and stores the new images in the Media Library, where you can replace them later.</p>
+			<p>Legacy tool from the TechPlug fork. Category tiles now use the built in illustration set.</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="wghs_refresh_cat_images">
 				<?php wp_nonce_field( 'wghs_refresh_cat_images' ); ?>
@@ -333,11 +333,64 @@ function wghs_fetch_images() {
 	exit;
 }
 
-/** Model search phrase from a product name, e.g. "HP EliteBook 840 G7 products". */
+/**
+ * Openverse search phrase from a product name. Strips sizes, wattages and
+ * counts down to the generic object, which is what open photo libraries
+ * actually have: "electric kettle", not "1.8L Stainless Steel Electric Kettle".
+ */
 function wghs_image_model( $name ) {
-	$model = trim( explode( ' - ', $name )[0] );
-	$model = preg_replace( '/\((Touch|Non-touch)\)/i', '', $model );
-	return trim( preg_replace( '/\s+/', ' ', $model ) ) . ' products';
+	$n = strtolower( (string) $name );
+	$terms = array(
+		'blender'            => 'electric blender kitchen',
+		'rice cooker'        => 'rice cooker',
+		'kettle'             => 'electric kettle',
+		'hot plate'          => 'electric hot plate cooker',
+		'microwave'          => 'microwave oven',
+		'sandwich'           => 'sandwich toaster',
+		'fryer'              => 'deep fryer',
+		'cookware'           => 'cooking pots set',
+		'flask'              => 'food flask lunch box',
+		'steam iron'         => 'steam iron',
+		'iron'               => 'clothes iron',
+		'steamer'            => 'garment steamer',
+		'drying rack'        => 'clothes drying rack',
+		'lint'               => 'lint remover fabric',
+		'power bank'         => 'power bank charger',
+		'earbud'             => 'wireless earbuds',
+		'headset'            => 'bluetooth earbuds case',
+		'speaker'            => 'bluetooth speaker portable',
+		'charger'            => 'usb wall charger',
+		'cable'              => 'usb charging cable',
+		'car phone holder'   => 'car phone mount',
+		'ring light'         => 'ring light tripod',
+		'mouse'              => 'wireless computer mouse',
+		'keyboard'           => 'wireless keyboard mouse',
+		'flash drive'        => 'usb flash drive',
+		'laptop stand'       => 'aluminium laptop stand',
+		'usb hub'            => 'usb hub',
+		'webcam'             => 'usb webcam',
+		'cooling pad'        => 'laptop cooling pad',
+		'clipper'            => 'hair clipper barber',
+		'hair dryer'         => 'hair dryer',
+		'straightener'       => 'hair straightener flat iron',
+		'shaver'             => 'electric shaver',
+		'facial steamer'     => 'facial steamer',
+		'scale'              => 'bathroom scale digital',
+		'backpack'           => 'school backpack',
+		'school'             => 'school backpack kids',
+		'lunch bag'          => 'insulated lunch bag',
+		'emergency lamp'     => 'rechargeable led lamp',
+		'led strip'          => 'led strip light',
+		'fan'                => 'rechargeable standing fan',
+		'extension'          => 'power strip extension board',
+	);
+	foreach ( $terms as $needle => $query ) {
+		if ( false !== strpos( $n, $needle ) ) { return $query; }
+	}
+	// Fallback: strip leading size tokens and take the last three words.
+	$clean = preg_replace( '/\b\d+(\.\d+)?(l|ml|w|mah|gb|m)\b/i', '', $n );
+	$words = array_slice( array_filter( explode( ' ', trim( $clean ) ) ), -3 );
+	return implode( ' ', $words );
 }
 
 /**
@@ -369,7 +422,7 @@ function wghs_fetch_openverse_image( $query ) {
 			$t = strtolower( (string) ( $r['title'] ?? '' ) );
 			$s = 0;
 			if ( $token && false !== strpos( $t, $token ) ) { $s += 2; }
-			if ( false !== strpos( $t, 'products' ) || false !== strpos( $t, 'notebook' ) || false !== strpos( $t, 'thinkpad' ) || false !== strpos( $t, 'elitebook' ) || false !== strpos( $t, 'latitude' ) ) { $s += 1; }
+			if ( false !== strpos( $t, 'product' ) || false !== strpos( $t, 'white background' ) || false !== strpos( $t, 'isolated' ) ) { $s += 1; }
 			return $s;
 		};
 		return $score( $b ) <=> $score( $a );
@@ -503,27 +556,8 @@ function wghs_fetch_commons_image( $query ) {
  */
 function wghs_image_aliases( $model ) {
 	$map = array(
-		'HP EliteBook 840 G8' => array( 'HP EliteBook 840 G7' ),
-		'HP EliteBook 840 G7' => array( 'HP EliteBook 840 G8' ),
-		'HP EliteBook 830 G8' => array( 'HP EliteBook 830 G7', 'HP EliteBook 840 G8' ),
-		'HP EliteBook 830 G7' => array( 'HP EliteBook 830 G8', 'HP EliteBook 840 G7' ),
-		'Dell Latitude 5320'  => array( 'Dell Latitude 5420', 'Dell Latitude 5520' ),
-		'Dell Latitude 5420'  => array( 'Dell Latitude 5520', 'Dell Latitude 5320' ),
-		'Dell Latitude 5520'  => array( 'Dell Latitude 5420', 'Dell Latitude 5320' ),
-		'Dell Latitude 5421'  => array( 'Dell Latitude 5420', 'Dell Latitude 5520' ),
-		'Dell Latitude 5300'  => array( 'Dell Latitude 5400', 'Dell Latitude 5500' ),
-		'Dell Latitude 5400'  => array( 'Dell Latitude 5500', 'Dell Latitude 5300' ),
-		'Dell Latitude 5500'  => array( 'Dell Latitude 5400', 'Dell Latitude 5501' ),
-		'Dell Latitude 5501'  => array( 'Dell Latitude 5500' ),
-		'Dell Latitude 3300'  => array( 'Dell Latitude 3310', 'Dell Latitude 3400' ),
-		'Dell Latitude 3310'  => array( 'Dell Latitude 3300', 'Dell Latitude 3400' ),
-		'Dell Latitude 3400'  => array( 'Dell Latitude 3310' ),
-		'Dell Latitude 3420'  => array( 'Dell Latitude 3400' ),
-		'Dell Latitude 7420'  => array( 'Dell Latitude 7400' ),
-		'Dell Latitude 7400'  => array( 'Dell Latitude 7420' ),
-		'Dell Latitude 7490'  => array( 'Dell Latitude 7480' ),
-		'Lenovo ThinkPad L14' => array( 'Lenovo ThinkPad T14', 'Lenovo ThinkPad L15' ),
-		'Lenovo ThinkPad T14' => array( 'Lenovo ThinkPad T490', 'Lenovo ThinkPad L14' ),
+		// Related products fall back to same-category, handled by WooCommerce default.
+
 	);
 	$base = trim( str_replace( ' products', '', $model ) );
 	return isset( $map[ $base ] ) ? $map[ $base ] : array();
@@ -612,10 +646,7 @@ function wghs_brandify() {
 	if ( ! class_exists( 'WooCommerce' ) ) { wp_die( 'WooCommerce must be active.' ); }
 	@set_time_limit( 300 );
 
-	$map = array(
-		
-		'Apple'  => 'MacBooks',
-	);
+	$map = array();
 
 	/* Ensure brand terms exist. */
 	$brand_ids = array();
