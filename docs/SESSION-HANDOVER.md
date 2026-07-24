@@ -45,6 +45,25 @@ Conversion engine in inc/conversion.php. Openverse image sideloader retuned
 for appliances; run it from Tools > Setup to fetch licensed photos with saved
 attribution. Two flagship articles ready in content-factory/articles.
 
+## Attribution intelligence (inc/attribution.php + inc/tracking.php)
+- Ref code loop: every WhatsApp tap gets a human reference (WG-XXXX) stamped
+  into the prefilled message as "Order ref". The code the customer sends in
+  chat is the code on the row. Admin has a Find ref box: paste, row appears,
+  one click Sold. DB version 1.1 adds the ref column.
+- On-site orders with a click id auto-convert (matching pending click or a
+  fresh converted row). Owner only confirms pure-WhatsApp sales.
+- Export button emits Google Ads offline conversion CSV (TimeZone=+0000),
+  incremental, never uploads a row twice. Conversion name must match the
+  import action in Google Ads (Customize > Tracking).
+- Product intelligence strip: taps / sold / close rate per product, 30 days.
+- Follow-up radar: pending rows 1 to 7 days old flagged; owner searches the
+  ref in WhatsApp to revive the thread.
+- Meta Pixel seeded (Customize > Tracking): PageView, ViewContent, AddToCart,
+  InitiateCheckout, Purchase (refresh guarded), and Contact on WhatsApp taps.
+  Set the ID at launch so retargeting audiences fill before any Meta spend.
+- Future upgrade documented: WhatsApp Business API + Meta CAPI for Business
+  Messaging (action_source business_messaging) when volume justifies it.
+
 ## Next up
 Publish the two articles, set tracking IDs, place a live test order end to
 end, then Sprint 6 launch tasks. Real product photos still beat everything.

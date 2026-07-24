@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 function wghs_ga4_id() { return trim( (string) get_theme_mod( 'wghs_ga4_id', '' ) ); }
 function wghs_gads_id() { return trim( (string) get_theme_mod( 'wghs_gads_id', '' ) ); }
+function wghs_meta_pixel() { return preg_replace( '/\D/', '', (string) get_theme_mod( 'wghs_meta_pixel', '' ) ); }
 
 add_action( 'customize_register', function ( $wp_customize ) {
 	$wp_customize->add_section( 'wghs_tracking', array(
@@ -32,6 +33,7 @@ add_action( 'customize_register', function ( $wp_customize ) {
 		'wghs_ga4_id'     => __( 'GA4 Measurement ID (G-...)', 'wghshop' ),
 		'wghs_gads_id'    => __( 'Google Ads ID (AW-...)', 'wghshop' ),
 		'wghs_gads_label' => __( 'Google Ads purchase conversion label', 'wghshop' ),
+		'wghs_meta_pixel' => __( 'Meta Pixel ID (numbers only)', 'wghshop' ),
 	);
 	foreach ( $fields as $id => $label ) {
 		$wp_customize->add_setting( $id, array( 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ) );
@@ -190,3 +192,100 @@ add_action( 'wp_footer', function () {
 	</script>
 	<?php
 }, 30 );
+
+/* --------------------------------------------------------------------------
+ * Meta Pixel. Seeded before any Meta spend so the retargeting audiences
+ * (product viewers, cart abandoners, WhatsApp tappers) are already months
+ * deep the day the first ad runs. Silent until the ID is set.
+ * ------------------------------------------------------------------------ */
+
+add_action( 'wp_head', function () {
+	$px = wghs_meta_pixel();
+	if ( ! $px ) { return; }
+	?>
+	<script>
+	!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+	n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+	n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+	t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+	document,'script','https://connect.facebook.net/en_US/fbevents.js');
+	fbq('init', '<?php echo esc_js( $px ); ?>');
+	fbq('track', 'PageView');
+	</script>
+	<?php
+}, 6 );
+
+/** ViewContent on single products. */
+add_action( 'wp_footer', function () {
+	if ( ! wghs_meta_pixel() || ! function_exists( 'is_product' ) || ! is_product() ) { return; }
+	$product = wc_get_product( get_queried_object_id() );
+	if ( ! $product ) { return; }
+	printf(
+		'<script>fbq("track","ViewContent",{content_ids:[%s],content_type:"product",content_name:%s,value:%s,currency:"%s"});</script>',
+		wp_json_encode( (string) $product->get_id() ),
+		wp_json_encode( $product->get_name() ),
+		wp_json_encode( (float) $product->get_price() ),
+		esc_js( get_woocommerce_currency() )
+	);
+} );
+
+/** AddToCart, reusing the session stash from the GA4 hook. */
+add_action( 'wp_footer', function () {
+	if ( ! wghs_meta_pixel() || ! function_exists( 'WC' ) || ! WC()->session ) { return; }
+	$item = WC()->session->get( 'wghs_pending_atc_meta' );
+	if ( ! $item ) { return; }
+	WC()->session->set( 'wghs_pending_atc_meta', null );
+	printf(
+		'<script>fbq("track","AddToCart",{content_ids:[%s],content_type:"product",value:%s,currency:"%s"});</script>',
+		wp_json_encode( (string) $item['item_id'] ),
+		wp_json_encode( (float) $item['price'] * (int) $item['quantity'] ),
+		esc_js( get_woocommerce_currency() )
+	);
+}, 21 );
+add_action( 'woocommerce_add_to_cart', function ( $key, $product_id, $qty ) {
+	if ( ! wghs_meta_pixel() ) { return; }
+	$product = wc_get_product( $product_id );
+	if ( $product ) { WC()->session->set( 'wghs_pending_atc_meta', wghs_ga_item( $product, $qty ) ); }
+}, 10, 3 );
+
+/** InitiateCheckout. */
+add_action( 'woocommerce_before_checkout_form', function () {
+	if ( ! wghs_meta_pixel() || ! WC()->cart ) { return; }
+	printf(
+		'<script>fbq("track","InitiateCheckout",{value:%s,currency:"%s",num_items:%d});</script>',
+		wp_json_encode( (float) WC()->cart->get_total( 'edit' ) ),
+		esc_js( get_woocommerce_currency() ),
+		(int) WC()->cart->get_cart_contents_count()
+	);
+} );
+
+/** Purchase, same refresh guard pattern via separate meta key. */
+add_action( 'woocommerce_thankyou', function ( $order_id ) {
+	if ( ! wghs_meta_pixel() ) { return; }
+	$order = wc_get_order( $order_id );
+	if ( ! $order || 'yes' === $order->get_meta( '_wghs_meta_tracked' ) ) { return; }
+	$order->update_meta_data( '_wghs_meta_tracked', 'yes' );
+	$order->save();
+	$ids = array();
+	foreach ( $order->get_items() as $line ) { $ids[] = (string) $line->get_product_id(); }
+	printf(
+		'<script>fbq("track","Purchase",{content_ids:%s,content_type:"product",value:%s,currency:"%s"});</script>',
+		wp_json_encode( $ids ),
+		wp_json_encode( (float) $order->get_total() ),
+		esc_js( $order->get_currency() )
+	);
+}, 6 );
+
+/** WhatsApp tap as Contact: the almost-ordered retargeting audience. */
+add_action( 'wp_footer', function () {
+	if ( ! wghs_meta_pixel() ) { return; }
+	?>
+	<script>
+	document.addEventListener('click', function (e) {
+		var a = e.target.closest('a[href*="wa.me"]');
+		if (!a || typeof fbq !== 'function') { return; }
+		fbq('track', 'Contact', { content_name: a.getAttribute('data-wghs-event') || 'whatsapp' });
+	}, true);
+	</script>
+	<?php
+}, 31 );

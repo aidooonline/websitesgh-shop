@@ -59,16 +59,18 @@ function wghs_attr_install() {
 		conv_value DECIMAL(10,2) NOT NULL DEFAULT 0,
 		order_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 		exported TINYINT(1) NOT NULL DEFAULT 0,
+		ref VARCHAR(12) NOT NULL DEFAULT '',
 		PRIMARY KEY  (id),
 		KEY status (status),
 		KEY click_id (click_id(32)),
-		KEY created_at (created_at)
+		KEY created_at (created_at),
+		KEY ref (ref)
 	) {$charset};" );
-	update_option( 'wghs_attr_db_version', '1.0' );
+	update_option( 'wghs_attr_db_version', '1.1' );
 }
 add_action( 'after_switch_theme', 'wghs_attr_install' );
 add_action( 'admin_init', function () {
-	if ( '1.0' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
+	if ( '1.1' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
 } );
 
 /* --------------------------------------------------------------------------
@@ -93,10 +95,28 @@ add_action( 'wp_footer', function () {
 			return m ? decodeURIComponent(m[1]) : '';
 		}
 		/* 2. Log every WhatsApp tap. sendBeacon so the navigation is never blocked. */
+		function mkref() {
+			var abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', out = '';
+			for (var i = 0; i < 4; i++) { out += abc[Math.floor(Math.random() * abc.length)]; }
+			return 'WG-' + out;
+		}
 		document.addEventListener('click', function (e) {
 			var a = e.target.closest('a[href*="wa.me"]');
 			if (!a) { return; }
+			/* Stamp a human order reference into the prefilled text. Reads as
+			   customer service, works as attribution: the code the customer
+			   sends is the code on the row in WooCommerce > Attribution. */
+			var ref = mkref();
+			try {
+				var u = new URL(a.href);
+				var t = u.searchParams.get('text') || '';
+				if (t.indexOf('Order ref:') === -1) {
+					u.searchParams.set('text', t + (t ? '\n' : '') + 'Order ref: ' + ref);
+					a.href = u.toString();
+				}
+			} catch (err) { /* leave the link untouched */ }
 			var payload = {
+				ref: ref,
 				click_id: ck('gclid') || ck('gbraid') || ck('wbraid'),
 				click_type: ck('gclid') ? 'gclid' : (ck('gbraid') ? 'gbraid' : (ck('wbraid') ? 'wbraid' : '')),
 				product_id: parseInt(a.getAttribute('data-product-id') || (document.body.className.match(/postid-(\d+)/) || [0,0])[1], 10) || 0,
@@ -151,6 +171,7 @@ add_action( 'rest_api_init', function () {
 				'utm_source'   => substr( sanitize_text_field( $p['utm_source'] ?? '' ), 0, 60 ),
 				'utm_medium'   => substr( sanitize_text_field( $p['utm_medium'] ?? '' ), 0, 60 ),
 				'utm_campaign' => substr( sanitize_text_field( $p['utm_campaign'] ?? '' ), 0, 120 ),
+				'ref'          => substr( preg_replace( '/[^A-Z0-9-]/', '', strtoupper( (string) ( $p['ref'] ?? '' ) ) ), 0, 12 ),
 			) );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		},
@@ -239,8 +260,30 @@ function wghs_attr_admin_page() {
 	$status = isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'pending';
 	if ( ! in_array( $status, array( 'pending', 'converted', 'dismissed', 'all' ), true ) ) { $status = 'pending'; }
 
-	$where = 'all' === $status ? '1=1' : $wpdb->prepare( 'status = %s', $status );
+	$ref_q = isset( $_GET['ref'] ) ? strtoupper( preg_replace( '/[^A-Za-z0-9-]/', '', wp_unslash( $_GET['ref'] ) ) ) : '';
+	if ( $ref_q ) {
+		$where = $wpdb->prepare( 'ref = %s', $ref_q );
+	} else {
+		$where = 'all' === $status ? '1=1' : $wpdb->prepare( 'status = %s', $status );
+	}
 	$rows  = $wpdb->get_results( "SELECT * FROM {$table} WHERE {$where} ORDER BY created_at DESC LIMIT 300" );
+
+	// Product intelligence: which products convert from chat, which only chat.
+	$intel = $wpdb->get_results(
+		"SELECT product_name,
+			COUNT(*) taps,
+			SUM(status='converted') sold,
+			ROUND(100 * SUM(status='converted') / COUNT(*)) rate
+		FROM {$table}
+		WHERE product_name <> '' AND created_at > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)
+		GROUP BY product_name HAVING taps >= 2
+		ORDER BY sold DESC, taps DESC LIMIT 8"
+	);
+	// Follow up list: warm chats going cold. Older than a day, younger than a week.
+	$followups = (int) $wpdb->get_var(
+		"SELECT COUNT(*) FROM {$table} WHERE status='pending'
+		AND created_at BETWEEN DATE_SUB(UTC_TIMESTAMP(), INTERVAL 7 DAY) AND DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY)"
+	);
 
 	$counts = $wpdb->get_results( "SELECT status, COUNT(*) n FROM {$table} GROUP BY status", OBJECT_K );
 	$n      = function ( $k ) use ( $counts ) { return isset( $counts[ $k ] ) ? (int) $counts[ $k ]->n : 0; };
@@ -253,6 +296,33 @@ function wghs_attr_admin_page() {
 		<h1><?php esc_html_e( 'Attribution', 'wghshop' ); ?></h1>
 		<p><?php esc_html_e( 'Every ad-tracked WhatsApp tap and on-site order. On-site orders auto-convert. For WhatsApp sales: set the value if it differs, then click Sold. Export sends only new converted rows with a Google click ID.', 'wghshop' ); ?></p>
 
+		<?php if ( $intel ) : ?>
+		<table class="widefat" style="max-width:720px;margin:10px 0">
+			<thead><tr>
+				<th><?php esc_html_e( 'Product (last 30 days)', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'WhatsApp taps', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'Sold', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'Close rate', 'wghshop' ); ?></th>
+			</tr></thead>
+			<tbody>
+			<?php foreach ( $intel as $i ) : ?>
+				<tr>
+					<td><?php echo esc_html( $i->product_name ); ?></td>
+					<td><?php echo (int) $i->taps; ?></td>
+					<td><strong><?php echo (int) $i->sold; ?></strong></td>
+					<td><?php echo (int) $i->rate; ?>%</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<p class="description"><?php esc_html_e( 'High taps with a low close rate means the page or the price is losing the chat. High close rate means put ad budget and stock there.', 'wghshop' ); ?></p>
+		<?php endif; ?>
+		<?php if ( $followups > 0 && 'pending' === $status && ! $ref_q ) : ?>
+			<div class="notice notice-warning inline"><p>
+				<?php printf( esc_html__( '%d warm chats are going cold (tapped WhatsApp 1 to 7 days ago, no sale marked). Open WhatsApp, search the ref code from the row, and follow up in that thread.', 'wghshop' ), (int) $followups ); ?>
+			</p></div>
+		<?php endif; ?>
+
 		<ul class="subsubsub">
 			<?php foreach ( array( 'pending' => __( 'Pending', 'wghshop' ), 'converted' => __( 'Converted', 'wghshop' ), 'dismissed' => __( 'Dismissed', 'wghshop' ), 'all' => __( 'All', 'wghshop' ) ) as $k => $label ) : ?>
 				<li><a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wghs-attribution', 'status' => $k ), admin_url( 'admin.php' ) ) ); ?>" <?php echo $k === $status ? 'class="current"' : ''; ?>>
@@ -261,6 +331,11 @@ function wghs_attr_admin_page() {
 			<?php endforeach; ?>
 		</ul>
 
+		<form method="get" style="float:left;margin:6px 12px 6px 0">
+			<input type="hidden" name="page" value="wghs-attribution">
+			<input type="search" name="ref" value="<?php echo esc_attr( $ref_q ); ?>" placeholder="<?php esc_attr_e( 'Find ref e.g. WG-4F7K', 'wghshop' ); ?>">
+			<button class="button"><?php esc_html_e( 'Find', 'wghshop' ); ?></button>
+		</form>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="float:right;margin:6px 0">
 			<input type="hidden" name="action" value="wghs_attr_export">
 			<?php wp_nonce_field( 'wghs_attr_export' ); ?>
@@ -275,6 +350,7 @@ function wghs_attr_admin_page() {
 				<th><?php esc_html_e( 'Product', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Placement', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Source', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'Ref', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Click ID', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Value (GHS)', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Status', 'wghshop' ); ?></th>
@@ -282,7 +358,7 @@ function wghs_attr_admin_page() {
 			</tr></thead>
 			<tbody>
 			<?php if ( ! $rows ) : ?>
-				<tr><td colspan="8"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
+				<tr><td colspan="9"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
 			<?php endif; ?>
 			<?php foreach ( $rows as $r ) : ?>
 				<tr data-id="<?php echo (int) $r->id; ?>">
@@ -290,6 +366,7 @@ function wghs_attr_admin_page() {
 					<td><?php echo esc_html( $r->product_name ?: '#' . $r->product_id ); ?><?php echo $r->order_id ? ' <a href="' . esc_url( admin_url( 'post.php?post=' . (int) $r->order_id . '&action=edit' ) ) . '">#' . (int) $r->order_id . '</a>' : ''; ?></td>
 					<td><?php echo esc_html( $r->placement ); ?></td>
 					<td><?php echo esc_html( trim( $r->utm_source . ' / ' . $r->utm_campaign, ' /' ) ?: ( $r->click_id ? 'google' : 'direct' ) ); ?></td>
+					<td><strong><?php echo esc_html( $r->ref ); ?></strong></td>
 					<td><?php echo $r->click_id ? '<code title="' . esc_attr( $r->click_id ) . '">' . esc_html( substr( $r->click_id, 0, 10 ) ) . '&hellip;</code> <small>' . esc_html( $r->click_type ) . '</small>' : '<small>' . esc_html__( 'none', 'wghshop' ) . '</small>'; ?></td>
 					<td><input type="number" step="0.01" class="wghs-attr-value small-text" value="<?php echo esc_attr( $r->conv_value > 0 ? $r->conv_value : $r->price ); ?>" <?php disabled( 'converted' === $r->status && $r->exported ); ?>></td>
 					<td><strong><?php echo esc_html( $r->status ); ?></strong><?php echo $r->exported ? ' &middot; ' . esc_html__( 'exported', 'wghshop' ) : ''; ?></td>
