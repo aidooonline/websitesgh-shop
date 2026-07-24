@@ -9,9 +9,9 @@
  *           WhatsApp. The message carries every line item, quantities and the
  *           total. No checkout form in the way.
  *
- * WhatsApp only, per the owner's instruction. There is no checkout link
- * anywhere in the journey. MoMo happens inside the WhatsApp conversation:
- * the number is in the message flow and on the site pages.
+ * WhatsApp is the primary path. A quiet text link under the cart button
+ * keeps the checkout form available for buyers without WhatsApp or those
+ * paying by MoMo ahead. The primary journey stays at two steps.
  *
  * The ref-stamping script in inc/attribution.php fires on ANY wa.me link, so
  * both paths are tracked with no extra wiring.
@@ -72,6 +72,11 @@ function wghs_cart_whatsapp_button() {
 	</a>
 	<p class="wghs-cartwa__note">
 		<?php esc_html_e( 'Your full order goes in one message. We confirm, deliver, and you pay the rider.', 'wghshop' ); ?>
+	</p>
+	<p class="wghs-cartwa__alt">
+		<a href="<?php echo esc_url( wc_get_checkout_url() ); ?>">
+			<?php esc_html_e( 'No WhatsApp? Order with the form instead. Same pay on delivery.', 'wghshop' ); ?>
+		</a>
 	</p>
 	<?php
 }
