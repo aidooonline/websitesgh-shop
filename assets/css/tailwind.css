@@ -349,3 +349,19 @@ ul.products li.product {
 .woocommerce-Tabs-panel h4 { @apply mt-6 mb-1 text-base font-semibold; }
 .woocommerce-Tabs-panel p { @apply text-wgh-ink2; }
 .woocommerce div.product .woocommerce-tabs ul.tabs li.active { border-bottom-color: #0E8C5A !important; }
+
+/* Card: WhatsApp primary, everything else quiet */
+.pcard__sale { @apply absolute left-3 top-3 z-10 rounded-full bg-wgh-gold px-2.5 py-1 text-[11px] font-bold text-wgh-ink; }
+.pcard__pricerow { @apply flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1; }
+.pcard__actions { @apply mt-3 flex flex-col gap-2; }
+.pcard__wa { @apply flex items-center justify-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#1EBE5A]; }
+.pcard__minor { @apply flex items-center justify-center gap-2 text-[11px] text-wgh-ink3; }
+.pcard__minor a, .pcard__minor .button { @apply bg-transparent p-0 text-[11px] font-medium text-wgh-ink3 underline underline-offset-2 hover:text-wgh-green; }
+/* Woo's loop add-to-cart is an <a class="button">; strip its chrome inside the card */
+.woocommerce ul.products li.product .pcard__minor a.button,
+.woocommerce ul.products li.product .pcard__minor a.added_to_cart {
+  background: transparent !important; color: #9AA39C !important; padding: 0 !important;
+  font-size: 11px !important; font-weight: 500 !important; text-decoration: underline !important;
+  text-underline-offset: 2px; border-radius: 0 !important; display: inline !important;
+}
+.woocommerce ul.products li.product .pcard__minor a.button:hover { color: #0E8C5A !important; }
