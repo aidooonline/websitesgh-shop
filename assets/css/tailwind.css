@@ -256,3 +256,59 @@ ul.products li.product { @apply m-0; }
   background-image: radial-gradient(#D7D2C4 1px, transparent 1px);
   background-size: 18px 18px;
 }
+
+/* Conversion mechanisms */
+.wghs-qa { @apply mb-4 rounded-lg border-l-[3px] border-wgh-green bg-wgh-greenPale px-4 py-3 text-[15px] leading-relaxed text-wgh-greenInk; }
+.wghs-claim { @apply my-5 rounded-lg border border-wgh-line bg-wgh-goldPale/60 p-4; }
+.wghs-claim__label { @apply text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-goldInk; }
+.wghs-claim__title { @apply mt-1 text-[15px] font-bold text-wgh-ink; }
+.wghs-claim__body { @apply mt-1.5 text-sm leading-relaxed text-wgh-ink2; }
+.wghs-runcost { @apply my-5 flex items-baseline gap-4 rounded-lg border border-wgh-line p-4; }
+.wghs-runcost__label { @apply shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-ink3; }
+.wghs-runcost__figure { @apply text-2xl font-extrabold text-wgh-green; }
+.wghs-runcost__figure span { @apply text-sm font-medium text-wgh-ink3; }
+.wghs-runcost__note { @apply text-xs leading-relaxed text-wgh-ink3; }
+.wghs-truststrip { @apply mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-wgh-line pt-4 text-[13px] font-medium text-wgh-ink2; }
+.wghs-truststrip li { @apply flex items-center gap-1.5; }
+.wghs-truststrip svg { @apply text-wgh-green; }
+
+/* Sticky mobile order bar */
+.wghs-orderbar { @apply fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-wgh-line bg-white/95 px-4 py-3 backdrop-blur-md; padding-bottom: calc(.75rem + env(safe-area-inset-bottom)); }
+.wghs-orderbar__price { @apply flex flex-col leading-tight; }
+.wghs-orderbar__price span { @apply text-lg font-bold text-wgh-goldInk; }
+.wghs-orderbar__price small { @apply text-[11px] text-wgh-ink3; }
+.wghs-orderbar__btn { @apply rounded-lg bg-wgh-green px-6 py-3 text-sm font-bold text-white; }
+
+/* Product FAQ */
+.wghs-pfaq { @apply mt-10 max-w-measure; }
+.wghs-pfaq h2 { @apply mb-4 text-xl font-bold; }
+.wghs-pfaq__item { @apply border-b border-wgh-line py-3; }
+.wghs-pfaq__item summary { @apply cursor-pointer list-none text-[15px] font-semibold text-wgh-ink hover:text-wgh-green; }
+.wghs-pfaq__item summary::-webkit-details-marker { display: none; }
+.wghs-pfaq__item p { @apply mt-2 text-sm leading-relaxed text-wgh-ink2; }
+
+/* Proof block */
+.wghs-proof { @apply grid grid-cols-1 gap-8 rounded-xl border border-wgh-line bg-wgh-greenPale/50 p-8 sm:p-12 lg:grid-cols-2 lg:gap-12; }
+.wghs-proof__figure { @apply mt-3 text-6xl sm:text-7xl font-extrabold tracking-tight text-wgh-green; }
+.wghs-proof__caption { @apply mt-4 max-w-md text-[15px] leading-relaxed text-wgh-ink2; }
+.wghs-proof__sidehead { @apply text-sm font-bold text-wgh-ink; }
+.wghs-proof__facts { @apply mt-4 flex flex-col gap-3 text-sm leading-relaxed text-wgh-ink2; }
+.wghs-proof__facts li { @apply border-l-2 border-wgh-gold pl-3; }
+.wghs-proof__facts strong { @apply text-wgh-ink; }
+
+/* Steps */
+.wghs-step { @apply rounded-lg border border-wgh-line bg-white p-6; }
+.wghs-step__num { @apply flex h-9 w-9 items-center justify-center rounded-full bg-wgh-green text-sm font-bold text-white; }
+.wghs-step__title { @apply mt-4 text-lg font-bold; }
+.wghs-step__body { @apply mt-2 text-sm leading-relaxed text-wgh-ink2; }
+
+/* Price table */
+.wghs-pricetable { @apply w-full border-collapse text-sm; }
+.wghs-pricetable thead th { @apply border-b-2 border-wgh-ink px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-wgh-ink2; }
+.wghs-pricetable td { @apply border-b border-wgh-line px-3 py-2.5 align-middle; }
+.wghs-pricetable tbody tr:hover { @apply bg-wgh-line2; }
+.wghs-pricetable td a { @apply font-medium text-wgh-ink hover:text-wgh-green; }
+.wghs-pricetable__price { @apply font-bold text-wgh-goldInk; }
+.wghs-pricetable__in { @apply text-xs font-semibold text-wgh-green; }
+.wghs-pricetable__out { @apply text-xs text-wgh-ink3; }
+.wghs-pricetable__go { @apply text-xs font-semibold text-wgh-green; }

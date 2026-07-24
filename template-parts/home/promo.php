@@ -1,17 +1,27 @@
-<?php if ( ! defined( 'ABSPATH' ) ) { exit; }
-$img = (int) wghs_opt( 'wghs_promo_image' );
+<?php
+/**
+ * Proof block. One original number set huge. This is the banner no
+ * competitor can copy without doing the research.
+ *
+ * @package WebsitesGHShop
+ */
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
-<section class="wrap py-4 sm:py-6">
-	<div class="card-glow relative grid lg:grid-cols-2 items-stretch overflow-hidden">
-		<div class="absolute inset-0 bg-green-fade"></div>
-		<div class="relative p-8 sm:p-12 flex flex-col justify-center">
-			<span class="chip-grad mb-4 self-start">Deals &amp; Offers</span>
-			<h2 class="section-title">This week&rsquo;s <span class="text-wgh-green">best prices</span></h2>
-			<p class="text-wgh-ink2 mt-4 max-w-md leading-relaxed">Real prices, verified this month. Stock held with Accra dealers so it moves the same day.</p>
-			<a href="<?php echo esc_url( home_url( '/deals' ) ); ?>" class="btn-amber mt-7 self-start">See current deals</a>
+<section class="wrap py-14 sm:py-20">
+	<div class="wghs-proof">
+		<div class="wghs-proof__main">
+			<p class="eyebrow"><?php esc_html_e( 'We check the numbers', 'wghshop' ); ?></p>
+			<p class="wghs-proof__figure">GHS 6.11</p>
+			<p class="wghs-proof__caption"><?php esc_html_e( 'What a 2L blender actually costs to run per month in Ghana: about 600W real draw, 10 minutes a day, at the PURC rate from 1 July 2026.', 'wghshop' ); ?></p>
 		</div>
-		<div class="relative min-h-[240px] bg-gradient-to-br from-wgh-greenPale to-wgh-bg">
-			<?php wghs_image_or_placeholder( $img, 'large', 'absolute inset-0 w-full h-full object-cover' ); ?>
+		<div class="wghs-proof__side">
+			<p class="wghs-proof__sidehead"><?php esc_html_e( 'While we are being honest:', 'wghshop' ); ?></p>
+			<ul class="wghs-proof__facts">
+				<li><strong>8000W</strong> <?php esc_html_e( 'on a blender box is impossible. A Ghanaian socket tops out at 2,990W.', 'wghshop' ); ?></li>
+				<li><strong>30,000mAh</strong> <?php esc_html_e( 'on a power bank delivers about 15,500mAh to your phone. Physics, not a fault.', 'wghshop' ); ?></li>
+				<li><strong>GHS 91.69</strong> <?php esc_html_e( 'a month is what a double burner hot plate really costs to run. Nobody tells you that either.', 'wghshop' ); ?></li>
+			</ul>
+			<a class="wghs-readon" href="<?php echo esc_url( home_url( '/how-to-order/' ) ); ?>"><?php esc_html_e( 'How buying from us works', 'wghshop' ); ?></a>
 		</div>
 	</div>
 </section>

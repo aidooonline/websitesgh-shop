@@ -33,5 +33,17 @@
     "slug": "terms",
     "title": "Terms",
     "content": "<h2>Prices</h2>\n<p>All prices are in Ghana cedis and include VAT where it applies. Delivery cost is\nseparate and is confirmed on the call before dispatch. Prices change when our dealer\ncost changes, and the price that applies is the one confirmed on your call.</p>\n\n<h2>Orders</h2>\n<p>An order placed on the site is a request, not a contract. It becomes an order\nwhen we call you and confirm the item, the price and the delivery window. If we\ncannot supply an item we tell you on that call rather than sending a substitute.</p>\n\n<h2>Stock</h2>\n<p>Stock figures on the site are our best current information. If an item sells out\nbetween your order and our call, we tell you and offer an alternative or cancel it\nat no cost to you.</p>\n\n<h2>Product information</h2>\n<p>We publish specifications we have checked and we say so where a manufacturer\nclaim is not accurate. Where we quote a figure we show the source or the working.\nIf you find an error on this site, tell us and we will correct it.</p>\n\n<h2>Delivery</h2>\n<p>Delivery times are targets, not guarantees. Traffic, weather and location affect\nthem. We keep you informed rather than leaving you waiting.</p>\n\n<h2>Returns</h2>\n<p>See <a href=\"/returns/\">Returns</a>.</p>"
+  },
+  {
+    "slug": "price-index",
+    "title": "Ghana Appliance Price Index",
+    "content": "<p>The table below is generated live from our catalogue, so it is always current against the shop itself.</p>",
+    "template": "page-templates/page-price-index.php"
+  },
+  {
+    "slug": "running-costs",
+    "title": "What Appliances Cost to Run in Ghana",
+    "content": "<p>Electricity in Ghana is billed per kilowatt hour, and the PURC reviews the rate quarterly. This table applies the current residential rate to realistic daily use.</p>",
+    "template": "page-templates/page-running-costs.php"
   }
 ]
