@@ -1,6 +1,6 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { exit; }
 $items = array(
-	array('M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.7 5.7 21l2.3-7.1-6-4.5h7.6z','Tested &amp; graded','Every laptop inspected and graded before listing.'),
+	array('M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.7 5.7 21l2.3-7.1-6-4.5h7.6z','Tested &amp; graded','Every products inspected and graded before listing.'),
 	array('M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6z','Warranty-backed','1 to 3 months warranty, 48-hour returns on faults.'),
 	array('M3 7h18v10H3zM3 11h18','Flexible payment','MoMo, bank transfer, or pay on delivery in Accra.'),
 	array('M5 12h14M13 6l6 6-6 6','Fast delivery','Same/next-day in Accra and Tema, nationwide courier.'),

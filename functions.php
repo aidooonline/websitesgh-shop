@@ -100,6 +100,7 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/woocommerce.php';
 	require WGHS_DIR . '/inc/whatsapp-gateway.php';
 	require WGHS_DIR . '/inc/momo-gateway.php';
+	require WGHS_DIR . '/inc/whatsapp-product.php';
 }
 
 /** Excerpt tweaks. */

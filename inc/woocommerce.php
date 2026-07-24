@@ -93,7 +93,7 @@ function wghs_minicart_items_html() {
 			);
 		}
 		printf(
-			'<div class="flex items-center justify-between pt-4 text-sm"><span class="text-wgh-ink2">%s</span><span class="font-display font-bold gradient-text text-lg">%s</span></div>',
+			'<div class="flex items-center justify-between pt-4 text-sm"><span class="text-wgh-ink2">%s</span><span class="font-display font-bold text-wgh-green text-lg">%s</span></div>',
 			esc_html__( 'Subtotal', 'wghshop' ),
 			wp_kses_post( WC()->cart->get_cart_subtotal() )
 		);

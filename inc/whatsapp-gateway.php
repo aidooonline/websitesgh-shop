@@ -197,7 +197,7 @@ function wghs_wa_buy_redirect() {
 	$spec  = trim( wp_strip_all_tags( $product->get_short_description() ) );
 
 	$lines   = array();
-	$lines[] = 'Hello WebsitesGH Shop, I want to buy this laptop:';
+	$lines[] = 'Hello WebsitesGH Shop, I want to buy this products:';
 	$lines[] = '';
 	$lines[] = $product->get_name();
 	if ( $spec ) { $lines[] = $spec; }

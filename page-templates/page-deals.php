@@ -38,7 +38,7 @@ $on_sale = function_exists( 'wc_get_product_ids_on_sale' ) ? wc_get_product_ids_
 			wp_reset_postdata();
 		}
 	} else {
-		echo '<div class="card p-10 text-center"><p class="text-wgh-ink2">No active deals right now. New offers drop weekly - check back soon or <a class="text-wgh-green" href="' . esc_url( wc_get_page_permalink( 'shop' ) ) . '">browse all laptops</a>.</p></div>';
+		echo '<div class="card p-10 text-center"><p class="text-wgh-ink2">No active deals right now. New offers drop weekly - check back soon or <a class="text-wgh-green" href="' . esc_url( wc_get_page_permalink( 'shop' ) ) . '">browse all products</a>.</p></div>';
 	}
 	?>
 </div>

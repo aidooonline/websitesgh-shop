@@ -25,7 +25,7 @@ function tpgb_page_title() { return apply_filters( 'tpgb_page_title', 'Guides an
 function tpgb_menu_label() { return apply_filters( 'tpgb_menu_label', 'Blog' ); }
 function tpgb_per_page()   { return (int) apply_filters( 'tpgb_per_page', 12 ); }
 function tpgb_eyebrow()    { return apply_filters( 'tpgb_eyebrow', 'Journal' ); }
-function tpgb_intro()      { return apply_filters( 'tpgb_intro', 'Reviews, comparisons and honest buyer guides for UK-used business laptops in Ghana. Real specs, real prices, updated as new stock lands.' ); }
+function tpgb_intro()      { return apply_filters( 'tpgb_intro', 'Reviews, comparisons and honest buyer guides for UK-used business products in Ghana. Real specs, real prices, updated as new stock lands.' ); }
 
 /* ---------------------------------------------------------------------------
  * Activation: create (or adopt) the hub page, then flush rewrites.

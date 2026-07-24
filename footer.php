@@ -13,7 +13,7 @@ $shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 
 		<div>
 			<?php wghs_logo(); ?>
 			<p class="mt-4 text-sm text-wgh-ink2 max-w-xs leading-relaxed">
-				<?php esc_html_e( 'Quality UK used laptops for students, professionals and businesses across Ghana. Tested, graded and warranty-backed.', 'wghshop' ); ?>
+				<?php esc_html_e( 'Quality UK used products for students, professionals and businesses across Ghana. Tested, graded and warranty-backed.', 'wghshop' ); ?>
 			</p>
 			<div class="flex gap-3 mt-5">
 				<?php
@@ -31,7 +31,7 @@ $shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 
 		<div>
 			<h4 class="text-sm font-display font-semibold text-wgh-ink mb-4"><?php esc_html_e( 'Shop', 'wghshop' ); ?></h4>
 			<ul class="space-y-2.5 text-sm text-wgh-ink2">
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( $shop_url ); ?>"><?php esc_html_e( 'All laptops', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( $shop_url ); ?>"><?php esc_html_e( 'All products', 'wghshop' ); ?></a></li>
 				<?php
 				if ( taxonomy_exists( 'product_cat' ) ) {
 					$cats = get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => true, 'number' => 6 ) );
@@ -76,7 +76,7 @@ $shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 
 
 	<div class="border-t border-wgh-line">
 		<div class="wrap py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-wgh-ink2">
-			<p>&copy; <?php echo esc_html( date( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?>. <?php esc_html_e( 'Plug Into Quality.', 'wghshop' ); ?></p>
+			<p>&copy; <?php echo esc_html( date( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?>. <?php esc_html_e( 'We check the numbers.', 'wghshop' ); ?></p>
 			<p class="font-mono uppercase tracking-widest"><?php esc_html_e( 'Accra · Tema · Nationwide courier', 'wghshop' ); ?></p>
 		</div>
 	</div>

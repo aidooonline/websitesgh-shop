@@ -46,16 +46,16 @@ function wghs_customize_register( $wp_customize ) {
 		'panel' => 'wghs_panel',
 	) );
 
-	$wp_customize->add_setting( 'wghs_hero_eyebrow', array( 'default' => 'Plug Into Quality', 'sanitize_callback' => 'sanitize_text_field' ) );
+	$wp_customize->add_setting( 'wghs_hero_eyebrow', array( 'default' => 'We check the numbers', 'sanitize_callback' => 'sanitize_text_field' ) );
 	$wp_customize->add_control( 'wghs_hero_eyebrow', array( 'label' => 'Eyebrow', 'section' => 'wghs_hero', 'type' => 'text' ) );
 
-	$wp_customize->add_setting( 'wghs_hero_title', array( 'default' => 'Premium UK Used Laptops', 'sanitize_callback' => 'sanitize_text_field' ) );
+	$wp_customize->add_setting( 'wghs_hero_title', array( 'default' => 'Appliances and electronics', 'sanitize_callback' => 'sanitize_text_field' ) );
 	$wp_customize->add_control( 'wghs_hero_title', array( 'label' => 'Headline (line 1)', 'section' => 'wghs_hero', 'type' => 'text' ) );
 
-	$wp_customize->add_setting( 'wghs_hero_title2', array( 'default' => 'Delivered Across Ghana.', 'sanitize_callback' => 'sanitize_text_field' ) );
+	$wp_customize->add_setting( 'wghs_hero_title2', array( 'default' => 'Delivered across Ghana.', 'sanitize_callback' => 'sanitize_text_field' ) );
 	$wp_customize->add_control( 'wghs_hero_title2', array( 'label' => 'Headline (line 2, gradient)', 'section' => 'wghs_hero', 'type' => 'text' ) );
 
-	$wp_customize->add_setting( 'wghs_hero_sub', array( 'default' => 'Tested, graded and warranty-backed business laptops for students, professionals and teams. Pay by MoMo, bank transfer or on delivery in Accra.', 'sanitize_callback' => 'sanitize_textarea_field' ) );
+	$wp_customize->add_setting( 'wghs_hero_sub', array( 'default' => 'Tested, graded and warranty-backed business products for students, professionals and teams. Pay by MoMo, bank transfer or on delivery in Accra.', 'sanitize_callback' => 'sanitize_textarea_field' ) );
 	$wp_customize->add_control( 'wghs_hero_sub', array( 'label' => 'Subtext', 'section' => 'wghs_hero', 'type' => 'textarea' ) );
 
 	$wp_customize->add_setting( 'wghs_hero_image', array( 'sanitize_callback' => 'absint' ) );

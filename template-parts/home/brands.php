@@ -7,9 +7,9 @@ if ( ! $cats ) { return; }
 	<div class="flex items-end justify-between mb-8 gap-4">
 		<div>
 			<span class="eyebrow">Shop by brand</span>
-			<h2 class="section-title mt-2">Choose your <span class="gradient-text">brand</span></h2>
+			<h2 class="section-title mt-2">Shop by <span class="text-wgh-green">category</span></h2>
 		</div>
-		<a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="menu-link hidden sm:block text-wgh-green">All laptops &rarr;</a>
+		<a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="menu-link hidden sm:block text-wgh-green">All products &rarr;</a>
 	</div>
 	<div class="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-5 px-5 sm:mx-0 sm:px-0 sm:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none]">
 		<?php foreach ( $cats as $cat ) :
@@ -18,7 +18,7 @@ if ( ! $cats ) { return; }
 				<span class="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden bg-gradient-to-br from-wgh-greenPale to-wgh-bg flex items-center justify-center mb-2">
 					<?php wghs_image_or_placeholder( $thumb_id, 'medium', 'w-full h-full object-cover group-hover:scale-105 transition duration-500' ); ?>
 				</span>
-				<span class="font-display font-semibold text-xs text-wgh-ink group-hover:text-wgh-green transition-colors line-clamp-1"><?php echo esc_html( str_replace( ' Laptops', '', $cat->name ) ); ?></span>
+				<span class="font-display font-semibold text-xs text-wgh-ink group-hover:text-wgh-green transition-colors line-clamp-1"><?php echo esc_html( str_replace( '', '', $cat->name ) ); ?></span>
 				<span class="text-[10px] text-wgh-ink2 mt-0.5"><?php echo esc_html( $cat->count ); ?> in stock</span>
 			</a>
 		<?php endforeach; ?>

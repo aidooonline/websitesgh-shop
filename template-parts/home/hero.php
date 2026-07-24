@@ -14,16 +14,16 @@ if ( function_exists( 'wc_get_products' ) ) {
 	<div class="absolute -bottom-40 -right-32 w-[40rem] h-[40rem] rounded-full bg-wgh-greenV/10 blur-3xl pointer-events-none"></div>
 	<div class="wrap relative grid lg:grid-cols-2 gap-12 items-center py-14 sm:py-20">
 		<div class="animate-riseIn">
-			<span class="chip-grad mb-5"><?php echo esc_html( wghs_opt( 'wghs_hero_eyebrow', 'Plug Into Quality' ) ); ?></span>
+			<span class="chip-grad mb-5"><?php echo esc_html( wghs_opt( 'wghs_hero_eyebrow', 'We check the numbers' ) ); ?></span>
 			<h1 class="text-4xl sm:text-5xl font-bold leading-[1.08]">
-				<?php echo esc_html( wghs_opt( 'wghs_hero_title', 'Premium UK Used Laptops' ) ); ?>
-				<span class="gradient-text"><?php echo esc_html( wghs_opt( 'wghs_hero_title2', 'Delivered Across Ghana.' ) ); ?></span>
+				<?php echo esc_html( wghs_opt( 'wghs_hero_title', 'Premium UK Used' ) ); ?>
+				<span class="text-wgh-green"><?php echo esc_html( wghs_opt( 'wghs_hero_title2', 'Delivered Across Ghana.' ) ); ?></span>
 			</h1>
 			<p class="mt-5 text-wgh-ink2 text-base sm:text-lg max-w-xl leading-relaxed">
-				<?php echo esc_html( wghs_opt( 'wghs_hero_sub', 'Tested, graded and warranty-backed HP, Dell and Lenovo business laptops. Pay by MoMo, bank transfer or on delivery in Accra.' ) ); ?>
+				<?php echo esc_html( wghs_opt( 'wghs_hero_sub', 'Tested, graded and warranty-backed HP, Dell and Lenovo business products. Pay by MoMo, bank transfer or on delivery in Accra.' ) ); ?>
 			</p>
 			<div class="mt-8 flex flex-wrap gap-3">
-				<a href="<?php echo esc_url( $shop_url ); ?>" class="btn-primary">Browse laptops
+				<a href="<?php echo esc_url( $shop_url ); ?>" class="btn-primary">Browse products
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</a>
 				<a href="<?php echo esc_url( home_url( '/how-to-order' ) ); ?>" class="btn-ghost">How to order</a>
@@ -51,12 +51,12 @@ if ( function_exists( 'wc_get_products' ) ) {
 							<?php endif; ?>
 						</span>
 						<span class="mt-2.5 font-display text-xs font-semibold text-wgh-ink leading-snug line-clamp-2"><?php echo esc_html( $p->get_name() ); ?></span>
-						<span class="mt-1 gradient-text font-display font-bold text-sm"><?php echo wp_kses_post( $p->get_price_html() ); ?></span>
+						<span class="mt-1 text-wgh-green font-display font-bold text-sm"><?php echo wp_kses_post( $p->get_price_html() ); ?></span>
 					</a>
 				<?php endforeach; ?>
 			</div>
 			<div class="mt-4 card px-5 py-3 flex items-center justify-between">
-				<span class="flex items-center gap-2 text-sm"><span class="text-2xl font-display font-bold gradient-text">195+</span><span class="text-wgh-ink2 leading-tight text-xs">laptops in stock<br>ready to ship</span></span>
+				<span class="flex items-center gap-2 text-sm"><span class="text-2xl font-display font-bold text-wgh-green">50+</span><span class="text-wgh-ink2 leading-tight text-xs">products in stock<br>ready to ship</span></span>
 				<a href="<?php echo esc_url( $shop_url ); ?>" class="menu-link text-wgh-green">View all &rarr;</a>
 			</div>
 			<?php else : ?>

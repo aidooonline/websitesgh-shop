@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 global $product;
 if ( empty( $product ) || ! $product->is_visible() ) { return; }
 $terms = get_the_terms( $product->get_id(), 'product_cat' );
-$brand = ( $terms && ! is_wp_error( $terms ) ) ? str_replace( ' Laptops', '', $terms[0]->name ) : '';
+$brand = ( $terms && ! is_wp_error( $terms ) ) ? str_replace( '', '', $terms[0]->name ) : '';
 ?>
 <li <?php wc_product_class( '', $product ); ?>>
 	<div class="pcard">
@@ -32,7 +32,7 @@ $brand = ( $terms && ! is_wp_error( $terms ) ) ? str_replace( ' Laptops', '', $t
 					?>
 				</div>
 				<div class="pcard__actions flex flex-col gap-2">
-					<a href="<?php the_permalink(); ?>" class="btn-ghost text-xs !py-2.5"><?php esc_html_e( 'View laptop', 'wghshop' ); ?></a>
+					<a href="<?php the_permalink(); ?>" class="btn-ghost text-xs !py-2.5"><?php esc_html_e( 'View products', 'wghshop' ); ?></a>
 					<?php woocommerce_template_loop_add_to_cart(); ?>
 				</div>
 			</div>

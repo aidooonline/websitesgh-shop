@@ -54,7 +54,7 @@ function wghs_logo() {
 	printf(
 		'<a href="%1$s" class="flex items-baseline gap-1 font-display font-extrabold text-xl tracking-tight text-wgh-ink">%2$s<span class="text-wgh-green">.</span><span class="sr-only">%3$s</span></a>',
 		esc_url( home_url( '/' ) ),
-		'TechPlug<span class="gradient-text">GH</span>',
+		'WebsitesGH<span class="text-wgh-green">Shop</span>',
 		esc_html__( 'Home', 'wghshop' )
 	);
 }
@@ -124,7 +124,7 @@ class WGHS_Nav_Walker extends Walker_Nav_Menu {
 /** Brand category terms only (whitelist), for nav chips and the homepage brand row. */
 function wghs_brand_terms( $limit = 8 ) {
 	if ( ! taxonomy_exists( 'product_cat' ) ) { return array(); }
-	$slugs = array( 'hp-laptops', 'dell-laptops', 'lenovo-laptops', 'macbooks', 'laptop-accessories' );
+	$slugs = array( 'hp-products', 'dell-products', 'lenovo-products', 'macbooks', 'products-accessories' );
 	$terms = get_terms( array( 'taxonomy' => 'product_cat', 'slug' => $slugs, 'hide_empty' => true ) );
 	if ( is_wp_error( $terms ) || ! $terms ) { return array(); }
 	usort( $terms, function ( $a, $b ) { return $b->count <=> $a->count; } );

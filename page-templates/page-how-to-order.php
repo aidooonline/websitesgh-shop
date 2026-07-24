@@ -6,7 +6,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 get_header();
 $steps = array(
-	array( '01', 'Browse and choose', 'Explore graded laptops by brand, budget or use case. Each listing shows full specs, condition grade and price in GHS.' ),
+	array( '01', 'Browse and choose', 'Explore graded products by brand, budget or use case. Each listing shows full specs, condition grade and price in GHS.' ),
 	array( '02', 'Add to cart or WhatsApp', 'Add items to your cart and check out on the site, or tap "Order on WhatsApp" on any product to order directly.' ),
 	array( '03', 'Confirm details', 'We confirm availability, your delivery zone (Accra, Tema or nationwide) and the total including delivery fee.' ),
 	array( '04', 'Make payment', 'Pay by Mobile Money, bank transfer, or pay on delivery within Accra. First-time customers pay before dispatch.' ),

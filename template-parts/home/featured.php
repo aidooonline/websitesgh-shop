@@ -7,7 +7,7 @@ if ( ! $q->have_posts() ) { wp_reset_postdata(); return; }
 ?>
 <section class="wrap py-16 sm:py-20 border-t border-wgh-line">
 	<div class="flex items-end justify-between mb-8 gap-4">
-		<div><span class="eyebrow">Hand-picked</span><h2 class="section-title mt-2">Featured <span class="gradient-text">laptops</span></h2></div>
+		<div><span class="eyebrow">Hand-picked</span><h2 class="section-title mt-2">Featured <span class="text-wgh-green">products</span></h2></div>
 		<a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="menu-link hidden sm:block text-wgh-green">Shop all &rarr;</a>
 	</div>
 	<ul class="products">

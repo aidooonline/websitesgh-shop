@@ -68,7 +68,7 @@ function wghs_setup_page() {
 			</form>
 			<hr>
 			<h2>Product photos from the web</h2>
-			<p>Searches openly licensed photos (CC0 / CC-BY via Openverse) for each laptop model, uploads the best match into the Media Library with attribution, and sets it as the product image. The branded card moves into the product gallery. Runs in batches of 8; click again until all products are processed. Models without a suitable openly licensed photo keep their branded card. You can replace any image per product afterwards.</p>
+			<p>Searches openly licensed photos (CC0 / CC-BY via Openverse) for each products model, uploads the best match into the Media Library with attribution, and sets it as the product image. The branded card moves into the product gallery. Runs in batches of 8; click again until all products are processed. Models without a suitable openly licensed photo keep their branded card. You can replace any image per product afterwards.</p>
 			<?php $off = (int) get_option( 'wghs_img_offset', 0 ); $tot = class_exists( 'WooCommerce' ) ? (int) ( wp_count_posts( 'product' )->publish ?? 0 ) : 0; ?>
 			<p><em>Progress: <?php echo esc_html( $off ); ?> of <?php echo esc_html( $tot ); ?> products scanned this pass.</em></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -333,11 +333,11 @@ function wghs_fetch_images() {
 	exit;
 }
 
-/** Model search phrase from a product name, e.g. "HP EliteBook 840 G7 laptop". */
+/** Model search phrase from a product name, e.g. "HP EliteBook 840 G7 products". */
 function wghs_image_model( $name ) {
 	$model = trim( explode( ' - ', $name )[0] );
 	$model = preg_replace( '/\((Touch|Non-touch)\)/i', '', $model );
-	return trim( preg_replace( '/\s+/', ' ', $model ) ) . ' laptop';
+	return trim( preg_replace( '/\s+/', ' ', $model ) ) . ' products';
 }
 
 /**
@@ -369,7 +369,7 @@ function wghs_fetch_openverse_image( $query ) {
 			$t = strtolower( (string) ( $r['title'] ?? '' ) );
 			$s = 0;
 			if ( $token && false !== strpos( $t, $token ) ) { $s += 2; }
-			if ( false !== strpos( $t, 'laptop' ) || false !== strpos( $t, 'notebook' ) || false !== strpos( $t, 'thinkpad' ) || false !== strpos( $t, 'elitebook' ) || false !== strpos( $t, 'latitude' ) ) { $s += 1; }
+			if ( false !== strpos( $t, 'products' ) || false !== strpos( $t, 'notebook' ) || false !== strpos( $t, 'thinkpad' ) || false !== strpos( $t, 'elitebook' ) || false !== strpos( $t, 'latitude' ) ) { $s += 1; }
 			return $s;
 		};
 		return $score( $b ) <=> $score( $a );
@@ -525,7 +525,7 @@ function wghs_image_aliases( $model ) {
 		'Lenovo ThinkPad L14' => array( 'Lenovo ThinkPad T14', 'Lenovo ThinkPad L15' ),
 		'Lenovo ThinkPad T14' => array( 'Lenovo ThinkPad T490', 'Lenovo ThinkPad L14' ),
 	);
-	$base = trim( str_replace( ' laptop', '', $model ) );
+	$base = trim( str_replace( ' products', '', $model ) );
 	return isset( $map[ $base ] ) ? $map[ $base ] : array();
 }
 
@@ -546,7 +546,7 @@ function wghs_existing_query_image( $query ) {
  * then same-chassis aliases, reusing prior downloads where possible.
  */
 function wghs_fetch_model_image( $model ) {
-	$try = array_merge( array( $model ), array_map( function ( $a ) { return $a . ' laptop'; }, wghs_image_aliases( $model ) ) );
+	$try = array_merge( array( $model ), array_map( function ( $a ) { return $a . ' products'; }, wghs_image_aliases( $model ) ) );
 	foreach ( $try as $i => $query ) {
 		$alias = $i > 0;
 		$att   = wghs_existing_query_image( $query );
@@ -613,9 +613,7 @@ function wghs_brandify() {
 	@set_time_limit( 300 );
 
 	$map = array(
-		'HP'     => 'HP Laptops',
-		'Dell'   => 'Dell Laptops',
-		'Lenovo' => 'Lenovo Laptops',
+		
 		'Apple'  => 'MacBooks',
 	);
 
@@ -645,7 +643,7 @@ function wghs_brandify() {
 
 	/* Delete the purpose categories. */
 	$deleted = array();
-	foreach ( array( 'uk-used-laptops', 'business-laptops', 'student-laptops' ) as $slug ) {
+	foreach ( array( 'uk-used-products', 'business-products', 'student-products' ) as $slug ) {
 		$t = get_term_by( 'slug', $slug, 'product_cat' );
 		if ( $t ) { wp_delete_term( $t->term_id, 'product_cat' ); $deleted[] = $t->name; }
 	}

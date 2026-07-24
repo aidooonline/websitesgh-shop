@@ -39,7 +39,7 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 		<form role="search" method="get" class="hidden md:flex flex-1 max-w-md items-center gap-2" action="<?php echo esc_url( home_url( '/' ) ); ?>">
 			<div class="relative w-full">
 				<svg class="absolute left-3 top-1/2 -translate-y-1/2 text-wgh-ink2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
-				<input type="search" name="s" class="input !pl-10" placeholder="<?php esc_attr_e( 'Search laptops, brands, specs...', 'wghshop' ); ?>" value="<?php echo get_search_query(); ?>">
+				<input type="search" name="s" class="input !pl-10" placeholder="<?php esc_attr_e( 'Search products, brands, specs...', 'wghshop' ); ?>" value="<?php echo get_search_query(); ?>">
 				<input type="hidden" name="post_type" value="product">
 			</div>
 		</form>
@@ -78,7 +78,7 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 			<div class="flex items-center gap-2">
 				<span class="font-mono text-[10px] uppercase tracking-widest text-wgh-ink2 mr-1"><?php esc_html_e( 'Brands:', 'wghshop' ); ?></span>
 				<?php foreach ( $brand_terms as $bt ) : ?>
-					<a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="chip hover:border-wgh-green hover:text-wgh-green"><?php echo esc_html( str_replace( ' Laptops', '', $bt->name ) ); ?></a>
+					<a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="chip hover:border-wgh-green hover:text-wgh-green"><?php echo esc_html( str_replace( '', '', $bt->name ) ); ?></a>
 				<?php endforeach; ?>
 			</div>
 			<?php endif; ?>
@@ -116,11 +116,11 @@ $brand_terms = function_exists( 'wghs_brand_terms' ) ? wghs_brand_terms( 6 ) : a
 		<p class="font-mono text-[10px] uppercase tracking-widest text-wgh-ink2 mt-8 mb-3"><?php esc_html_e( 'Shop by brand', 'wghshop' ); ?></p>
 		<div class="flex flex-wrap gap-2">
 			<?php foreach ( $brand_terms as $bt ) : ?>
-				<a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="chip"><?php echo esc_html( str_replace( ' Laptops', '', $bt->name ) ); ?></a>
+				<a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="chip"><?php echo esc_html( str_replace( '', '', $bt->name ) ); ?></a>
 			<?php endforeach; ?>
 		</div>
 		<?php endif; ?>
-		<a href="<?php echo esc_url( $shop_url ); ?>" class="btn-primary w-full mt-8"><?php esc_html_e( 'Shop all laptops', 'wghshop' ); ?></a>
+		<a href="<?php echo esc_url( $shop_url ); ?>" class="btn-primary w-full mt-8"><?php esc_html_e( 'Shop all products', 'wghshop' ); ?></a>
 	</div>
 </div>
 
