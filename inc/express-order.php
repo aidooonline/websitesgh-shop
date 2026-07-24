@@ -9,10 +9,9 @@
  *           WhatsApp. The message carries every line item, quantities and the
  *           total. No checkout form in the way.
  *
- * Checkout is deliberately NOT deleted. It survives as a quiet fallback link
- * for two reasons: the MoMo pre-payment gateway lives there, and on-site
- * orders carry automatic gclid attribution. Buyers who prefer a form still
- * have one; everyone else never sees it.
+ * WhatsApp only, per the owner's instruction. There is no checkout link
+ * anywhere in the journey. MoMo happens inside the WhatsApp conversation:
+ * the number is in the message flow and on the site pages.
  *
  * The ref-stamping script in inc/attribution.php fires on ANY wa.me link, so
  * both paths are tracked with no extra wiring.
@@ -51,8 +50,7 @@ function wghs_wa_cart_message() {
 }
 
 /**
- * Cart: replace the proceed-to-checkout button with Send order on WhatsApp,
- * and keep checkout as a small text link underneath.
+ * Cart: replace the proceed-to-checkout button with Send order on WhatsApp.
  */
 add_action( 'init', function () {
 	remove_all_actions( 'woocommerce_proceed_to_checkout' );
@@ -74,11 +72,6 @@ function wghs_cart_whatsapp_button() {
 	</a>
 	<p class="wghs-cartwa__note">
 		<?php esc_html_e( 'Your full order goes in one message. We confirm, deliver, and you pay the rider.', 'wghshop' ); ?>
-	</p>
-	<p class="wghs-cartwa__alt">
-		<a href="<?php echo esc_url( wc_get_checkout_url() ); ?>">
-			<?php esc_html_e( 'Prefer a form, or paying by MoMo ahead? Use checkout instead.', 'wghshop' ); ?>
-		</a>
 	</p>
 	<?php
 }
