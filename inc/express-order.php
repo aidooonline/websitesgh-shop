@@ -109,3 +109,63 @@ add_filter( 'wghs_orderbar_url', function ( $url, $product ) {
 	}
 	return $url;
 }, 10, 2 );
+
+/* --------------------------------------------------------------------------
+ * Force the classic (shortcode) Cart and Checkout.
+ *
+ * WooCommerce's setup wizard creates block based Cart and Checkout pages.
+ * Two things break on those:
+ *   1. woocommerce_proceed_to_checkout is a shortcode-cart hook, so the
+ *      WhatsApp button above never renders and the stock Proceed to Checkout
+ *      button survives. That is the long journey the owner asked us to remove.
+ *   2. The MoMo gateway is a classic WC_Payment_Gateway with no Blocks
+ *      integration, so it does not appear on a block checkout at all.
+ *
+ * Converting both pages to the shortcodes fixes both, and the classic cart is
+ * lighter, which matters on Ghanaian mobile connections. This runs once,
+ * automatically, and records a flag so it never fights a deliberate change.
+ * ------------------------------------------------------------------------ */
+
+function wghs_force_classic_cart_checkout( $force = false ) {
+	if ( ! function_exists( 'wc_get_page_id' ) ) { return array(); }
+	$done = array();
+	$map  = array(
+		'cart'     => '[woocommerce_cart]',
+		'checkout' => '[woocommerce_checkout]',
+	);
+	foreach ( $map as $key => $shortcode ) {
+		$id = wc_get_page_id( $key );
+		if ( $id <= 0 ) { continue; }
+		$page = get_post( $id );
+		if ( ! $page ) { continue; }
+		// Already classic? Leave it alone.
+		if ( false !== strpos( $page->post_content, $shortcode ) ) { continue; }
+		// Only rewrite when it is the Woo block, so custom pages are safe.
+		if ( ! $force && false === strpos( $page->post_content, 'wp:woocommerce/' . $key ) ) { continue; }
+		wp_update_post( array( 'ID' => $id, 'post_content' => $shortcode ) );
+		$done[] = $key;
+	}
+	return $done;
+}
+
+add_action( 'admin_init', function () {
+	if ( get_option( 'wghs_classic_cart_done' ) ) { return; }
+	if ( ! function_exists( 'wc_get_page_id' ) ) { return; }
+	$done = wghs_force_classic_cart_checkout();
+	update_option( 'wghs_classic_cart_done', 1 );
+	if ( $done ) { set_transient( 'wghs_classic_cart_notice', $done, 60 ); }
+} );
+
+add_action( 'admin_notices', function () {
+	$done = get_transient( 'wghs_classic_cart_notice' );
+	if ( ! $done ) { return; }
+	delete_transient( 'wghs_classic_cart_notice' );
+	printf(
+		'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+		esc_html( sprintf(
+			/* translators: %s: comma separated page names. */
+			__( 'WebsitesGH Shop switched these pages to the classic shortcode so WhatsApp ordering and the MoMo gateway work: %s.', 'wghshop' ),
+			implode( ', ', $done )
+		) )
+	);
+} );

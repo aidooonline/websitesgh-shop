@@ -162,6 +162,10 @@ function wghs_run_setup() {
 		$log[] = 'Guides page set as the posts page.';
 	}
 	$log[] = wghs_seed_articles();
+	if ( function_exists( 'wghs_force_classic_cart_checkout' ) ) {
+		$sw = wghs_force_classic_cart_checkout( true );
+		$log[] = $sw ? sprintf( 'Cart/Checkout switched to classic shortcodes: %s.', implode( ', ', $sw ) ) : 'Cart/Checkout already classic.';
+	}
 
 	/* 4. Primary menu */
 	if ( ! wp_get_nav_menu_object( 'Primary' ) ) {
