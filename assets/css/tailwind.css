@@ -435,3 +435,10 @@ ul.products li.product {
 .wghs-author__avatar img { @apply h-14 w-14 rounded-full; }
 .wghs-author__name { @apply font-bold text-wgh-ink; }
 .wghs-author__bio { @apply mt-1 text-sm leading-relaxed text-wgh-ink2; }
+
+/* Two-button order block: Order now (WhatsApp) + Contact to order */
+.wghs-order { @apply mt-5 flex flex-col gap-3 sm:flex-row; }
+.wghs-order__primary { @apply flex flex-1 items-center justify-center rounded-lg bg-wgh-green px-6 py-3.5 text-base font-bold text-white no-underline transition hover:bg-wgh-greenV; }
+.wghs-order__secondary { @apply flex flex-1 items-center justify-center rounded-lg border border-wgh-line px-6 py-3.5 text-base font-semibold text-wgh-ink no-underline transition hover:border-wgh-green hover:text-wgh-green; }
+.wghs-order__out { @apply flex flex-1 items-center justify-center rounded-lg bg-wgh-line2 px-6 py-3.5 text-sm font-medium text-wgh-ink3; }
+.wghs-order__note { @apply mt-3 text-xs leading-relaxed text-wgh-ink3; }

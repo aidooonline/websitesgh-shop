@@ -87,16 +87,49 @@ function wghs_cart_whatsapp_button() {
  * move it to 29 so it renders first, and soften the add to cart button into
  * the secondary action for multi-item buyers.
  */
-add_action( 'init', function () {
-	if ( function_exists( 'wghs_wa_product_button' ) ) {
-		remove_action( 'woocommerce_single_product_summary', 'wghs_wa_product_button', 32 );
-		add_action( 'woocommerce_single_product_summary', 'wghs_wa_product_button', 29 );
-	}
-}, 25 );
+// Single WhatsApp button re-hook removed; wghs_two_order_buttons renders the order buttons.
 
-add_filter( 'woocommerce_product_single_add_to_cart_text', function () {
-	return __( 'Add to cart for a bigger order', 'wghshop' );
-} );
+/**
+ * Two buttons only, both on the product page, no cart in the flow.
+ *
+ *   Order now      -> WhatsApp, prefilled with this product (label is NOT
+ *                     "WhatsApp", per the owner; it just says Order now)
+ *   Contact to order -> the contact form, for buyers without WhatsApp
+ *
+ * The default WooCommerce add-to-cart form is removed completely so there is
+ * no route through the cart from a product page.
+ */
+add_action( 'wp_loaded', function () {
+	// Kill the default add to cart form (button + quantity) on single products.
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
+}, 20 );
+
+function wghs_two_order_buttons() {
+	global $product;
+	if ( ! $product instanceof WC_Product ) { return; }
+	$wa = function_exists( 'wghs_wa_product_link' ) ? wghs_wa_product_link( $product ) : '';
+	$contact = home_url( '/contact/' );
+	$in_stock = $product->is_in_stock();
+	?>
+	<div class="wghs-order">
+		<?php if ( $wa && $in_stock ) : ?>
+			<a class="wghs-order__primary" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"
+				data-wghs-event="order_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
+				<?php esc_html_e( 'Order now', 'wghshop' ); ?>
+			</a>
+		<?php elseif ( ! $in_stock ) : ?>
+			<span class="wghs-order__out"><?php esc_html_e( 'Out of stock, ask us when it returns', 'wghshop' ); ?></span>
+		<?php endif; ?>
+		<a class="wghs-order__secondary" href="<?php echo esc_url( $contact ); ?>" data-wghs-event="contact_order">
+			<?php esc_html_e( 'Contact to order', 'wghshop' ); ?>
+		</a>
+	</div>
+	<p class="wghs-order__note"><?php esc_html_e( 'Pay on delivery. You check the item before any money changes hands.', 'wghshop' ); ?></p>
+	<?php
+}
+add_action( 'woocommerce_single_product_summary', 'wghs_two_order_buttons', 30 );
+
+// Old single WhatsApp button hooks removed at source in whatsapp-product.php.
 
 /**
  * The sticky mobile order bar should follow the same rule: straight to

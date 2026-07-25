@@ -174,7 +174,7 @@ function wghs_wa_product_button() {
 	</div>
 	<?php
 }
-add_action( 'woocommerce_single_product_summary', 'wghs_wa_product_button', 32 );
+// Button now rendered by wghs_two_order_buttons in express-order.php.
 
 /**
  * Customizer control for the message template.
