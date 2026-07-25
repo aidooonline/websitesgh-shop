@@ -263,11 +263,6 @@ ul.products li.product { @apply m-0; }
 .wghs-claim__label { @apply text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-goldInk; }
 .wghs-claim__title { @apply mt-1 text-[15px] font-bold text-wgh-ink; }
 .wghs-claim__body { @apply mt-1.5 text-sm leading-relaxed text-wgh-ink2; }
-.wghs-runcost { @apply my-5 flex items-baseline gap-4 rounded-lg border border-wgh-line p-4; }
-.wghs-runcost__label { @apply shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-ink3; }
-.wghs-runcost__figure { @apply text-2xl font-extrabold text-wgh-green; }
-.wghs-runcost__figure span { @apply text-sm font-medium text-wgh-ink3; }
-.wghs-runcost__note { @apply text-xs leading-relaxed text-wgh-ink3; }
 .wghs-truststrip { @apply mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-wgh-line pt-4 text-[13px] font-medium text-wgh-ink2; }
 .wghs-truststrip li { @apply flex items-center gap-1.5; }
 .wghs-truststrip svg { @apply text-wgh-green; }
@@ -385,3 +380,23 @@ ul.products li.product {
 .bg-grid-faint { background-color: #fff; }
 .animate-floaty { animation: wghsFloaty 6s ease-in-out infinite; }
 @keyframes wghsFloaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Single product page rhythm. WooCommerce stacks the summary tight; give it air. */
+.single-product div.product { @apply py-8 sm:py-12; }
+.single-product .product_title { @apply text-3xl sm:text-4xl font-extrabold leading-tight mb-1; }
+.single-product .woocommerce-product-details__short-description { @apply text-base leading-relaxed text-wgh-ink2 my-4; }
+.single-product .single_variation_wrap, 
+.single-product form.cart { @apply my-5; }
+.single-product .product_meta { @apply mt-6 pt-4 border-t border-wgh-line text-xs text-wgh-ink3 leading-relaxed; }
+.single-product .product_meta > span { @apply block mb-1; }
+.single-product .woocommerce-tabs { @apply mt-12 pt-8 border-t border-wgh-line; }
+.single-product .woocommerce-tabs ul.tabs { @apply flex flex-wrap gap-1 border-b border-wgh-line mb-6 p-0; }
+.single-product .woocommerce-tabs ul.tabs li { @apply list-none m-0; }
+.single-product .woocommerce-tabs ul.tabs li a { @apply block px-4 py-2 text-sm font-semibold text-wgh-ink2 no-underline; }
+.single-product .woocommerce-tabs ul.tabs li.active a { @apply text-wgh-green; }
+.single-product .related.products { @apply mt-16 pt-10 border-t border-wgh-line; }
+.single-product .related.products > h2 { @apply text-2xl font-bold mb-6; }
+/* Give the summary column and the gallery a clean gap on desktop */
+.single-product div.product .images,
+.single-product div.product .summary { @apply mb-0; }
+.single-product div.product .summary { @apply lg:pl-2; }
