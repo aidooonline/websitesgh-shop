@@ -792,9 +792,21 @@ function wghs_seed_articles() {
 			'post_excerpt' => $a['excerpt'] ?? '',
 			'post_content' => $a['content'] ?? '',
 		) );
-		if ( $id && ! is_wp_error( $id ) && ! empty( $a['category'] ) ) {
-			wp_set_post_terms( $id, array( $a['category'] ), 'category' );
-			$made++;
+		if ( ! $id || is_wp_error( $id ) ) { continue; }
+		$made++;
+		if ( ! empty( $a['category'] ) ) {
+			/* wp_set_post_terms() silently does nothing when given a term NAME
+			 * for a hierarchical taxonomy like 'category'; it requires IDs.
+			 * That is why seeded articles were landing in Uncategorized. So
+			 * resolve (or create) the term first, then assign by ID. */
+			$name = (string) $a['category'];
+			$term = term_exists( $name, 'category' );
+			if ( ! $term ) {
+				$term = wp_insert_term( $name, 'category' );
+			}
+			if ( ! is_wp_error( $term ) && ! empty( $term['term_id'] ) ) {
+				wp_set_post_terms( $id, array( (int) $term['term_id'] ), 'category' );
+			}
 		}
 	}
 	return sprintf( 'Articles: %d published.', $made );

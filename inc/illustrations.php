@@ -157,7 +157,7 @@ function wghs_art_paths( $key ) {
 function wghs_art( $name = '', $class = '' ) {
 	$key = wghs_art_key( $name );
 	return sprintf(
-		'<span class="wghs-art %s" aria-hidden="true">
+		'<span class="wghs-ill %s" aria-hidden="true">
 			<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
 				<circle cx="60" cy="60" r="52" fill="#E9F7F0"/>
 				%s

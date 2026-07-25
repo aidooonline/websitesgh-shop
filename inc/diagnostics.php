@@ -135,10 +135,39 @@ add_action( 'admin_post_wghs_repair', function () {
 		'Terms'     => home_url( '/terms/' ),
 	) );
 
-	/* 4. Articles, then permalinks. */
+	/* 4. Articles, then tidy up, then permalinks. */
 	if ( function_exists( 'wghs_seed_articles' ) ) {
 		$log[] = (string) wghs_seed_articles();
 	}
+
+	/* Retro-fix categories on articles seeded before the term-id fix, which
+	 * left them in Uncategorized. */
+	$file = WGHS_DIR . '/inc/setup-data/articles.json';
+	if ( file_exists( $file ) ) {
+		$articles = json_decode( (string) file_get_contents( $file ), true );
+		if ( is_array( $articles ) ) {
+			foreach ( $articles as $a ) {
+				if ( empty( $a['slug'] ) || empty( $a['category'] ) ) { continue; }
+				$post = get_page_by_path( $a['slug'], OBJECT, 'post' );
+				if ( ! $post ) { continue; }
+				$term = term_exists( (string) $a['category'], 'category' );
+				if ( ! $term ) { $term = wp_insert_term( (string) $a['category'], 'category' ); }
+				if ( ! is_wp_error( $term ) && ! empty( $term['term_id'] ) ) {
+					wp_set_post_terms( $post->ID, array( (int) $term['term_id'] ), 'category' );
+					$log[] = sprintf( 'Categorised "%s" as %s.', $a['slug'], $a['category'] );
+				}
+			}
+		}
+	}
+
+	/* Trash WordPress's default "Hello world!" post so it stops showing in the
+	 * Guides listing. */
+	$hello = get_page_by_path( 'hello-world', OBJECT, 'post' );
+	if ( $hello && 'trash' !== $hello->post_status ) {
+		wp_trash_post( $hello->ID );
+		$log[] = 'Trashed the default "Hello world!" post.';
+	}
+
 	flush_rewrite_rules();
 	$log[] = 'Permalinks flushed.';
 
