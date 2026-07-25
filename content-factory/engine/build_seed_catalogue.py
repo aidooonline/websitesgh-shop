@@ -164,57 +164,56 @@ def sku_for(name, cat):
 
 CATEGORY_INTROS = {
     "Kitchen & Home": (
-        "<h3>The honest version</h3>"
-        "<p>Kitchen appliances in Ghana are sold on inflated wattage numbers. A Ghanaian "
-        "Type G socket delivers at most 2,990W (230V x 13A), so any box claiming 4500W or "
-        "8000W is quoting a peak marketing figure, not real draw. We publish realistic "
-        "continuous figures instead, and the running cost that follows from them at the "
-        "PURC rate of GHS 2.04 per kWh effective 1 July 2026.</p>"
+        "<h3>What you are actually buying</h3>"
+        "<p>Kitchen appliances at this price are sold on inflated spec numbers, so "
+        "we describe what matters instead: build quality, capacity for a Ghanaian "
+        "household, what is in the box, and how to get years out of it rather than "
+        "months. Where a wattage claim is misleading we correct it, plainly.</p>"
     ),
     "Laundry & Garment Care": (
-        "<h3>What ironing actually costs</h3>"
-        "<p>Anything that makes heat is expensive to run. A 1200W dry iron used 20 minutes "
-        "a day costs about GHS 24 a month at the current PURC rate, and a 1450W steam iron "
-        "about GHS 30. Worth knowing before you choose, and nobody else tells you.</p>"
+        "<h3>Built to last the ironing pile</h3>"
+        "<p>The sole plate and the thermostat decide how long an iron survives daily "
+        "use. We describe the plate material, the heat control, and what the tool is "
+        "genuinely good at, from uniforms to kaba and slit.</p>"
     ),
     "Phones & Audio": (
-        "<h3>About capacity numbers</h3>"
-        "<p>Power banks never deliver their advertised mAh. Cells run at 3.7V, USB output "
-        "is 5V, and conversion loses energy as heat, so real delivered charge is roughly "
-        "52 to 63 per cent of the box number. Every brand works this way. We are the shop "
-        "that says so, and our stated charge counts are based on the real figure.</p>"
+        "<h3>Honest specs, not box numbers</h3>"
+        "<p>Battery and capacity claims in this category are quoted at their kindest. "
+        "We give the real figures: usable capacity, honest battery life at real "
+        "volume, build quality and what is in the box, so you know what you are "
+        "getting before it arrives.</p>"
     ),
     "Computing": (
-        "<h3>Small tools, checked properly</h3>"
-        "<p>Storage sizes, connector types and battery claims on accessories are checked "
-        "before listing. Where a spec cannot be verified we say so on the product rather "
-        "than repeating the box.</p>"
+        "<h3>Verified before it is listed</h3>"
+        "<p>Storage size, connector type and build are checked before a product goes "
+        "up, because fake capacity and mislabelled connectors are common at this "
+        "price. What we list is what you receive.</p>"
     ),
     "Personal Care": (
-        "<h3>Grooming tools, honestly rated</h3>"
-        "<p>Hair dryers are heat appliances, which makes them the most power hungry item "
-        "in this category: a 2000W dryer at 10 minutes a day costs about GHS 20 a month. "
-        "Clippers and straighteners cost pennies by comparison.</p>"
+        "<h3>Blades, battery and build</h3>"
+        "<p>For grooming tools the things that matter are blade material, how long "
+        "the charge lasts, and whether the body survives being dropped. We describe "
+        "those, and who each tool genuinely suits.</p>"
     ),
     "School & Bags": (
-        "<h3>Timed for the term</h3>"
-        "<p>GES has confirmed basic schools resume on 8 September 2026 and SHS on 18 "
-        "September 2026. Sets ordered before those dates deliver in time for the first "
-        "day, same day within Accra. Sizes are sold by school level so there is no "
-        "guessing.</p>"
+        "<h3>Made for the school run</h3>"
+        "<p>What matters in a school bag is the fabric, the stitching at the base, "
+        "the straps on young shoulders, and the right size for the child's level. "
+        "GES has confirmed basic schools resume 8 September 2026, so sets ordered "
+        "before then arrive in time, same day within Accra.</p>"
     ),
     "Lighting & Power": (
-        "<h3>Built for light-off moments</h3>"
-        "<p>Rechargeable lamps and fans are rated here by how long they actually run on a "
-        "charge, and they cost almost nothing on the grid: a rechargeable LED lamp used "
-        "four hours a night is about GHS 2.44 a month at the current PURC rate.</p>"
+        "<h3>How long it lasts on a charge</h3>"
+        "<p>For rechargeable lamps and fans the real question is runtime and build, "
+        "not wattage. We describe how many hours you get on a charge and how the "
+        "unit holds up to daily use through the light off season.</p>"
     ),
 }
 
 def description(name, price, short, cat):
-    """Category aware description: Quick Answer, category-specific honesty
-    block, delivery, and questions. Body varies by category so no two
-    categories read the same."""
+    """Category aware description built around quality, origin, lifespan and
+    suitability, not electricity. Running cost is not mentioned here at all;
+    it lives in a single optional note on heat appliances only."""
     intro = CATEGORY_INTROS.get(cat, "")
     return (
         "<p><strong>Quick answer.</strong> The {name} sells for GHS {price} at "
@@ -223,22 +222,30 @@ def description(name, price, short, cat):
         "reaches you.</p>"
         + intro +
         "<h3>What you get</h3>"
-        "<p>{short}. Supplied new in box, held with Accra dealers, dispatched the "
-        "same day on orders confirmed before 4pm.</p>"
+        "<p>{short}. Supplied brand new in its sealed box, held with our Accra "
+        "dealers and dispatched the same day on orders confirmed before 4pm. Every "
+        "unit is checked against its listing before it goes out, so what arrives is "
+        "what you ordered.</p>"
+        "<h3>How long it lasts</h3>"
+        "<p>Look after it and it earns its price back many times over. We tell you "
+        "on delivery how to get the most life out of it, and where a manufacturer "
+        "warranty applies we pass you the paperwork. Where there is none, we say "
+        "so rather than implying one.</p>"
         "<h3>Delivery and payment</h3>"
         "<p>Same day in Accra and Tema on confirmed orders, two to four working "
         "days nationwide. Pay on delivery is the default: you inspect the item "
         "before any money changes hands. Mobile money to 054 214 8020 if you "
         "prefer to pay ahead.</p>"
         "<h3>Questions people ask</h3>"
-        "<h4>How much is the {name} in Ghana?</h4>"
-        "<p>GHS {price} at WebsitesGH Shop, including delivery within Accra, "
-        "verified for the current month and updated whenever our dealer cost "
-        "changes. See the full price index for every product.</p>"
-        "<h4>Do I pay before delivery?</h4>"
-        "<p>No. The rider brings it, you inspect it, then you pay. If it is "
-        "wrong, hand it back and pay nothing.</p>"
+        "<h4>Is the {name} genuine and new?</h4>"
+        "<p>Yes, brand new and sealed, sourced from our Accra dealers. You inspect "
+        "it at the door before you pay, so you buy with your own eyes, not our "
+        "word.</p>"
+        "<h4>How much is it, and do I pay before delivery?</h4>"
+        "<p>GHS {price}, and no. The rider brings it, you check it, then you pay. "
+        "If it is wrong, hand it back and pay nothing.</p>"
     ).format(name=name, price=price, short=short)
+
 
 
 def main():

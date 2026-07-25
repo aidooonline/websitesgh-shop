@@ -365,3 +365,23 @@ ul.products li.product {
   text-underline-offset: 2px; border-radius: 0 !important; display: inline !important;
 }
 .woocommerce ul.products li.product .pcard__minor a.button:hover { color: #0E8C5A !important; }
+
+/* At a glance panel: the multi dimension spec block */
+.wghs-glance { @apply my-5 grid grid-cols-1 gap-0 overflow-hidden rounded-lg border border-wgh-line; }
+.wghs-glance__row { @apply grid grid-cols-[110px_minmax(0,1fr)] gap-3 border-b border-wgh-line px-4 py-2.5 last:border-0 odd:bg-wgh-line2/50; }
+.wghs-glance__row dt { @apply text-[11px] font-bold uppercase tracking-wider text-wgh-ink3; }
+.wghs-glance__row dd { @apply m-0 text-sm leading-snug text-wgh-ink; }
+.wghs-costnote { @apply mt-6 rounded-lg border-l-[3px] border-wgh-line bg-wgh-line2 px-4 py-3 text-sm leading-relaxed text-wgh-ink2; }
+.wghs-costnote strong { @apply text-wgh-ink; }
+
+/* Compatibility aliases for classes inherited from the dark theme fork.
+   Defining them here fixes every template that still references them, rather
+   than editing each file. All resolve to the light card system. */
+.card-glow { @apply rounded-xl border border-wgh-line bg-white shadow-soft; }
+.card-glow:hover { @apply border-wgh-green/50 shadow-card; }
+.shadow-glow { box-shadow: 0 18px 40px -22px rgba(14,140,90,.35); }
+.chip-grad { @apply inline-flex items-center rounded-full bg-wgh-greenPale px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-wgh-green; }
+.bg-grid { background-image: radial-gradient(#EDEAE0 1px, transparent 1px); background-size: 20px 20px; }
+.bg-grid-faint { background-color: #fff; }
+.animate-floaty { animation: wghsFloaty 6s ease-in-out infinite; }
+@keyframes wghsFloaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }

@@ -108,35 +108,131 @@ function wghs_claim_check() {
 add_action( 'woocommerce_single_product_summary', 'wghs_claim_check', 25 );
 
 /* --------------------------------------------------------------------------
- * 3. Running cost box. Original data, per category class.
+ * 3. At a glance panel. Multi dimension, not electricity. The things people
+ *    actually buy on: build, what is in the box, who it suits, how long it
+ *    lasts, and only where it is material, a small running cost line. Running
+ *    cost is one row of several here, never the headline.
  * ------------------------------------------------------------------------ */
-function wghs_running_cost_box() {
+
+/**
+ * Per category "at a glance" facts. Each row is [label, value]. These are the
+ * dimensions buyers ask about: material, capacity, what is included, lifespan,
+ * suitability. Add a running-cost row only for high-draw heat appliances where
+ * it genuinely affects the decision.
+ *
+ * @param string $key Category key.
+ * @return array
+ */
+function wghs_glance_rows( $key ) {
+	$rows = array(
+		'blender' => array(
+			array( __( 'Build', 'wghshop' ), __( 'Stainless steel blades, shatter resistant jar', 'wghshop' ) ),
+			array( __( 'Capacity', 'wghshop' ), __( '2 litres, enough for a family of five', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Pepper, tomatoes, smoothies, soups', 'wghshop' ) ),
+			array( __( 'In the box', 'wghshop' ), __( 'Motor base, jar, lid, blade assembly', 'wghshop' ) ),
+		),
+		'kettle' => array(
+			array( __( 'Build', 'wghshop' ), __( 'Stainless steel body, cool touch handle', 'wghshop' ) ),
+			array( __( 'Capacity', 'wghshop' ), __( '1.8 to 2 litres, boils 6 to 8 cups', 'wghshop' ) ),
+			array( __( 'Safety', 'wghshop' ), __( 'Auto shut off and boil dry protection', 'wghshop' ) ),
+			array( __( 'Boil time', 'wghshop' ), __( 'A full kettle in 4 to 6 minutes', 'wghshop' ) ),
+		),
+		'cooker' => array(
+			array( __( 'Build', 'wghshop' ), __( 'Cast heating element, steel housing', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Hostels, small kitchens, back up cooking', 'wghshop' ) ),
+			array( __( 'Control', 'wghshop' ), __( 'Adjustable heat, indicator light', 'wghshop' ) ),
+			array( __( 'Running cost', 'wghshop' ), __( 'Heat appliance, see the cost note below', 'wghshop' ) ),
+		),
+		'power' => array(
+			array( __( 'Real capacity', 'wghshop' ), __( 'About 60 per cent of the printed mAh reaches your phone', 'wghshop' ) ),
+			array( __( 'Charges', 'wghshop' ), __( 'See the honest charge count for this size', 'wghshop' ) ),
+			array( __( 'Ports', 'wghshop' ), __( 'Dual output, charges two devices at once', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Light off days, travel, long commutes', 'wghshop' ) ),
+		),
+		'audio' => array(
+			array( __( 'Sound', 'wghshop' ), __( 'Bluetooth 5.3, stable pairing, deep bass', 'wghshop' ) ),
+			array( __( 'Battery', 'wghshop' ), __( 'Rated honestly at high volume, not the box figure', 'wghshop' ) ),
+			array( __( 'In the box', 'wghshop' ), __( 'Earbuds, charging case, cable', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Calls, commuting, workouts', 'wghshop' ) ),
+		),
+		'iron' => array(
+			array( __( 'Sole plate', 'wghshop' ), __( 'Non stick, glides without catching', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Uniforms, cotton, kaba and slit', 'wghshop' ) ),
+			array( __( 'Control', 'wghshop' ), __( 'Adjustable thermostat, quick heat up', 'wghshop' ) ),
+		),
+		'grooming' => array(
+			array( __( 'Build', 'wghshop' ), __( 'Metal body, sharp durable blades', 'wghshop' ) ),
+			array( __( 'Power', 'wghshop' ), __( 'Rechargeable, cordless, travel lock', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Home use and light barber work', 'wghshop' ) ),
+		),
+		'bag' => array(
+			array( __( 'Material', 'wghshop' ), __( 'Water resistant fabric, reinforced base', 'wghshop' ) ),
+			array( __( 'Fits', 'wghshop' ), __( 'Sized by school level, see the size guide', 'wghshop' ) ),
+			array( __( 'In the set', 'wghshop' ), __( 'Bag, lunch bag, bottle, pencil case', 'wghshop' ) ),
+			array( __( 'Straps', 'wghshop' ), __( 'Padded, adjustable, kind on shoulders', 'wghshop' ) ),
+		),
+		'light' => array(
+			array( __( 'Runtime', 'wghshop' ), __( 'Hours of light on a single charge', 'wghshop' ) ),
+			array( __( 'Build', 'wghshop' ), __( 'Rechargeable, carry handle or hook', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Light off moments, outdoors, shops', 'wghshop' ) ),
+		),
+		'computing' => array(
+			array( __( 'Verified', 'wghshop' ), __( 'Real capacity and connector checked before listing', 'wghshop' ) ),
+			array( __( 'Compatibility', 'wghshop' ), __( 'Plug and play, no driver needed', 'wghshop' ) ),
+			array( __( 'Best for', 'wghshop' ), __( 'Everyday work, study, storage', 'wghshop' ) ),
+		),
+	);
+	return isset( $rows[ $key ] ) ? $rows[ $key ] : array();
+}
+
+function wghs_glance_panel() {
+	global $product;
+	if ( ! $product instanceof WC_Product ) { return; }
+	$key  = function_exists( 'wghs_art_key' ) ? wghs_art_key( $product->get_name() ) : '';
+	$rows = wghs_glance_rows( $key );
+	if ( ! $rows ) { return; }
+
+	echo '<dl class="wghs-glance">';
+	foreach ( $rows as $r ) {
+		printf(
+			'<div class="wghs-glance__row"><dt>%s</dt><dd>%s</dd></div>',
+			esc_html( $r[0] ),
+			esc_html( $r[1] )
+		);
+	}
+	echo '</dl>';
+}
+add_action( 'woocommerce_single_product_summary', 'wghs_glance_panel', 26 );
+
+/**
+ * Small running-cost line, ONLY for heat appliances where it is material.
+ * Rendered after the description tab, not in the buy box, so it informs
+ * without dominating. Everything else in the shop has no electricity talk.
+ *
+ * @return void
+ */
+function wghs_running_cost_note() {
 	global $product;
 	if ( ! $product instanceof WC_Product ) { return; }
 	$key     = function_exists( 'wghs_art_key' ) ? wghs_art_key( $product->get_name() ) : '';
 	$classes = wghs_running_classes();
-	if ( empty( $classes[ $key ] ) ) { return; }
+	// Only heat-heavy appliances carry the note. Skip low-draw items entirely.
+	$heat = array( 'cooker', 'iron', 'kettle', 'grooming' );
+	if ( ! in_array( $key, $heat, true ) || empty( $classes[ $key ] ) ) { return; }
 
 	list( $watts, $mins, $label ) = $classes[ $key ];
 	$cost = wghs_monthly_cost( $watts, $mins );
-
 	printf(
-		'<aside class="wghs-runcost">
-			<p class="wghs-runcost__label">%1$s</p>
-			<p class="wghs-runcost__figure">GHS %2$s<span>/%3$s</span></p>
-			<p class="wghs-runcost__note">%4$s</p>
-		</aside>',
-		esc_html__( 'What it costs to run', 'wghshop' ),
-		esc_html( number_format( $cost, 2 ) ),
-		esc_html__( 'month', 'wghshop' ),
+		'<p class="wghs-costnote"><strong>%s</strong> %s</p>',
+		esc_html__( 'Running cost:', 'wghshop' ),
 		esc_html( sprintf(
-			/* translators: 1: appliance label, 2: watts, 3: minutes, 4: tariff note. */
-			__( 'Typical for %1$s: about %2$dW real draw, %3$d minutes a day, at the %4$s. Class estimate, not a lab measurement of this exact unit.', 'wghshop' ),
-			$label, $watts, $mins, WGHS_RATE_NOTE
+			/* translators: 1: GHS amount, 2: appliance label. */
+			__( 'about GHS %1$s a month for %2$s at typical use, at the current PURC rate. A small cost worth knowing on a heat appliance.', 'wghshop' ),
+			number_format( $cost, 2 ), $label
 		) )
 	);
 }
-add_action( 'woocommerce_single_product_summary', 'wghs_running_cost_box', 26 );
+add_action( 'woocommerce_after_single_product_summary', 'wghs_running_cost_note', 8 );
 
 /* --------------------------------------------------------------------------
  * 4. Trust strip. Product pages under the summary, and the cart.
