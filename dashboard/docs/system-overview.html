@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebsitesGH Shop - System Overview</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#0d1117;color:#e6edf3;line-height:1.5;padding:32px 20px}
+.head{max-width:1180px;margin:0 auto 28px}
+.head .kick{font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.3em;color:#e8630a;font-size:12px}
+.head h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,7vw,72px);line-height:.95;margin:8px 0}
+.head h1 span{color:#0E8C5A}
+.head p{color:#8b98a5;max-width:720px}
+.legend{max-width:1180px;margin:0 auto 20px;display:flex;flex-wrap:wrap;gap:14px;font-size:12px;font-family:'DM Mono',monospace}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.d-live{background:#0E8C5A}.d-ready{background:#e8630a}.d-spec{background:#6e7681}
+.board{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.layer{border:1px solid #21262d;border-radius:14px;padding:20px;margin-bottom:18px;background:#11161d;position:relative}
+.layer h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.03em;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.layer .sub{color:#8b98a5;font-size:13px;margin-bottom:16px}
+.row{display:grid;gap:12px}
+.r4{grid-template-columns:repeat(4,1fr)}
+.r3{grid-template-columns:repeat(3,1fr)}
+.r2{grid-template-columns:repeat(2,1fr)}
+.r6{grid-template-columns:repeat(6,1fr)}
+@media(max-width:900px){.r4,.r3,.r6{grid-template-columns:repeat(2,1fr)}.r2{grid-template-columns:1fr}}
+.box{border:1px solid #30363d;border-radius:10px;padding:13px 14px;background:#0d1117}
+.box .t{font-weight:700;font-size:14px;margin-bottom:3px}
+.box .m{font-size:11.5px;color:#8b98a5;line-height:1.45}
+.box.live{border-color:#0E8C5A}.box.live .t{color:#3fb984}
+.box.ready{border-color:#e8630a}.box.ready .t{color:#f0813a}
+.box.spec{border-color:#6e7681}.box.spec .t{color:#adb5bd}
+.tag{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;padding:2px 6px;border-radius:20px;margin-left:auto}
+.tag.live{background:rgba(14,140,90,.18);color:#3fb984}
+.tag.ready{background:rgba(232,99,10,.18);color:#f0813a}
+.tag.spec{background:rgba(110,118,129,.2);color:#adb5bd}
+.flow{text-align:center;color:#484f58;font-size:22px;margin:2px 0}
+.lbl{position:absolute;top:-9px;left:18px;background:#e8630a;color:#0d1117;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.12em}
+.lbl.g{background:#0E8C5A}
+.lbl.s{background:#6e7681}
+.arrows{max-width:1180px;margin:0 auto;font-family:'DM Mono',monospace;font-size:11px;color:#6e7681;text-align:center;padding:2px}
+.foot{max-width:1180px;margin:26px auto 0;border-top:1px solid #21262d;padding-top:18px;color:#8b98a5;font-size:13px}
+.foot b{color:#e6edf3}
+.pill{display:inline-block;font-family:'DM Mono',monospace;font-size:11px;background:#161b22;border:1px solid #30363d;border-radius:20px;padding:3px 10px;margin:3px 4px 3px 0;color:#adb5bd}
+</style></head><body>
+
+<div class="head">
+  <div class="kick">WebsitesGH Shop &middot; System Overview</div>
+  <h1>One Machine.<br>Built To <span>Sell.</span></h1>
+  <p>Everything constructed so far, and how it connects: a WhatsApp-first shop, an attribution engine that follows every order to its source, a disciplined ad system, and an intelligence layer that reads it all and says what to do next.</p>
+</div>
+
+<div class="legend">
+  <span><span class="dot d-live"></span> Live / built &amp; pushed</span>
+  <span><span class="dot d-ready"></span> Ready to deploy (needs your action)</span>
+  <span><span class="dot d-spec"></span> Specified, builds after keyword volumes</span>
+</div>
+
+<div class="board">
+
+  <!-- LAYER 1: STOREFRONT -->
+  <div class="layer"><span class="lbl g">1 &middot; The Storefront</span>
+    <h2>The Shop &nbsp;<span class="tag live">Live</span></h2>
+    <div class="sub">A fast WhatsApp-first WooCommerce store on shop.websitesgh.com. Forked, rebranded, rebuilt light. Two-tap ordering, no cart journey.</div>
+    <div class="row r4">
+      <div class="box live"><div class="t">Custom theme</div><div class="m">Light palette, Figtree, 36 PHP modules. Home, shop, product, blog, 14 commercial pages.</div></div>
+      <div class="box live"><div class="t">50 products, 7 categories</div><div class="m">GHS-priced, quality-led descriptions, at-a-glance spec panels.</div></div>
+      <div class="box live"><div class="t">Blog (r26 layout)</div><div class="m">Two-column, TOC, progress bar, share, author, related. Mirrors websitesgh.com.</div></div>
+      <div class="box live"><div class="t">GEO + schema</div><div class="m">Product, Offer, FAQ, Breadcrumb JSON-LD. llms.txt. Built to be cited by AI answers.</div></div>
+    </div>
+  </div>
+
+  <div class="flow">&darr;</div>
+
+  <!-- LAYER 2: ORDERING -->
+  <div class="layer"><span class="lbl g">2 &middot; The Order Path</span>
+    <h2>Two Taps To WhatsApp &nbsp;<span class="tag live">Live</span></h2>
+    <div class="sub">No checkout journey. Every route ends in a prefilled WhatsApp message. Pay on delivery.</div>
+    <div class="row r4">
+      <div class="box live"><div class="t">Grid: Order on WhatsApp</div><div class="m">Primary button on every product card. One tap from the shop page.</div></div>
+      <div class="box live"><div class="t">Product: Order now + Contact</div><div class="m">Two buttons only. Order now goes to WhatsApp, no cart. Contact to order for non-WhatsApp buyers.</div></div>
+      <div class="box live"><div class="t">Mobile app-bar</div><div class="m">Fixed two half-width buttons at the screen bottom, always visible.</div></div>
+      <div class="box live"><div class="t">Cart &rarr; WhatsApp</div><div class="m">Multi-item orders send the whole basket in one message. MoMo option inside the chat.</div></div>
+    </div>
+  </div>
+
+  <div class="flow">&darr; &nbsp; every tap stamps a ref code + click id &nbsp; &darr;</div>
+
+  <!-- LAYER 3: ATTRIBUTION -->
+  <div class="layer"><span class="lbl">3 &middot; The Attribution Engine</span>
+    <h2>Every Order, Traced To Source &nbsp;<span class="tag live">Live</span></h2>
+    <div class="sub">The moat. It closes the WhatsApp gap that blinds normal ecommerce tracking.</div>
+    <div class="row r3">
+      <div class="box live"><div class="t">Capture</div><div class="m">gclid / gbraid / wbraid + UTMs in 90-day first-party cookies. Every WhatsApp tap logged via beacon: product, price, placement, campaign.</div></div>
+      <div class="box live"><div class="t">Ref-code loop</div><div class="m">Each tap stamps a WG-XXXX code into the message. The code the customer sends IS the row in your admin. Chats tie to clicks with zero guesswork.</div></div>
+      <div class="box live"><div class="t">Convert &amp; export</div><div class="m">On-site orders auto-convert. One-click Sold on WhatsApp sales. Exports the exact Google Ads offline-conversion CSV, incremental, never double-sent.</div></div>
+    </div>
+    <div class="row r3" style="margin-top:12px">
+      <div class="box live"><div class="t">Close-rate intelligence</div><div class="m">Taps / sold / rate per product, 30 days.</div></div>
+      <div class="box live"><div class="t">Follow-up radar</div><div class="m">Warm chats going cold, flagged 1-7 days.</div></div>
+      <div class="box live"><div class="t">Meta Pixel seeded</div><div class="m">Audiences fill before any Meta spend.</div></div>
+    </div>
+  </div>
+
+  <div class="flow">&darr; &nbsp; feeds &amp; is fed by &nbsp; &darr;</div>
+
+  <!-- LAYER 4: MARKETING -->
+  <div class="layer"><span class="lbl">4 &middot; The Marketing System</span>
+    <h2>Disciplined Paid Growth &nbsp;<span class="tag ready">Ready</span></h2>
+    <div class="sub">Search-led, not PMax (your sale is a WhatsApp lead Google can't see). Built to the 80% rule: every cedi lands on a buyer. Ads billed in USD.</div>
+    <div class="row r4">
+      <div class="box ready"><div class="t">91 qualified keywords</div><div class="m">Cut from 621. Every one a buyer phrase. Editor-import CSV, USD bids. Exact + phrase, no broad.</div></div>
+      <div class="box ready"><div class="t">107 negatives</div><div class="m">Blocks the rentals-style leak: used, repair, jobs, competitors, wrong-geo.</div></div>
+      <div class="box ready"><div class="t">266 ad-copy lines</div><div class="m">15 headlines + 4 descriptions per group. Pay-on-delivery, same-day Accra hooks.</div></div>
+      <div class="box ready"><div class="t">Video plan</div><div class="m">10-video faceless kinetic-typography shot list. CapCut workflow. Shoot on your camera, boost the winners.</div></div>
+    </div>
+    <div class="row r3" style="margin-top:12px">
+      <div class="box ready"><div class="t">Bidding phases</div><div class="m">Max Clicks &rarr; Max Conversions &rarr; Target CPA on the offline sale import.</div></div>
+      <div class="box ready"><div class="t">Anti-leak ritual</div><div class="m">Weekly search-terms prune to 80%+ qualified traffic.</div></div>
+      <div class="box ready"><div class="t">Keyword volumes</div><div class="m">Planner list ready. You pull Ghana numbers &rarr; we finalize bids &amp; priority.</div></div>
+    </div>
+  </div>
+
+  <div class="flow">&darr; &nbsp; all data (orders + spend + taps) flows up into &nbsp; &darr;</div>
+
+  <!-- LAYER 5: INTELLIGENCE -->
+  <div class="layer"><span class="lbl s">5 &middot; WGH Intelligence</span>
+    <h2>The Brain That Says What To Do &nbsp;<span class="tag spec">Specified</span></h2>
+    <div class="sub">Standalone Laravel + React + Postgres dashboard. Consolidates WooCommerce (auto) + ad CSVs (manual) + your inputs. Joins spend &rarr; tap &rarr; order &rarr; profit. Six sprints, builds after volumes are in.</div>
+    <div class="row r6">
+      <div class="box spec"><div class="t">S1 Foundation</div><div class="m">DB + WooCommerce connector. Orders flow in, idempotent.</div></div>
+      <div class="box spec"><div class="t">S2 Ingest + Join</div><div class="m">CSV parsers. Spend matched to orders per keyword.</div></div>
+      <div class="box spec"><div class="t">S3 Decision engine</div><div class="m">Keep / Watch / Fix / Kill on keywords, products, channels, creatives.</div></div>
+      <div class="box spec"><div class="t">S4 Dashboard</div><div class="m">Macro &rarr; meso &rarr; micro. Every screen answers one selling question.</div></div>
+      <div class="box spec"><div class="t">S5 Profit + Export</div><div class="m">Real dealer costs. One-click decisions &rarr; Google Ads Editor change file.</div></div>
+      <div class="box spec"><div class="t">S6 Claude agent</div><div class="m">Reads it all, advises the one move to sell more. Claude + fal.ai. Advises, never acts.</div></div>
+    </div>
+  </div>
+
+  <div class="flow" style="color:#0E8C5A;font-weight:700;font-size:14px;font-family:'DM Mono',monospace">&uarr; &nbsp; ONE GOAL: SELL MORE, AT PROFIT &nbsp; &uarr;</div>
+
+</div>
+
+<div class="foot">
+  <p><b>How it all connects:</b> The shop takes the order on WhatsApp. The attribution engine stamps that order with where it came from and ties it back to the ad click. The marketing system spends only where a real buyer searches. And the intelligence layer reads the whole loop, judges every keyword, product and channel, and tells you the single highest-value move to make more sales. Each layer feeds the next; nothing is decoration.</p>
+  <p style="margin-top:14px"><b>What's live now:</b>
+    <span class="pill">Shop + 14 pages</span><span class="pill">Two-tap WhatsApp ordering</span><span class="pill">Mobile app-bar</span><span class="pill">Attribution engine</span><span class="pill">Ref-code loop</span><span class="pill">Offline-conversion export</span><span class="pill">Blog</span><span class="pill">GEO schema</span>
+  </p>
+  <p style="margin-top:8px"><b>Ready to deploy:</b>
+    <span class="pill">91 keywords</span><span class="pill">107 negatives</span><span class="pill">Ad copy</span><span class="pill">Video plan</span><span class="pill">Full strategy kit</span>
+  </p>
+  <p style="margin-top:8px"><b>Next step:</b> <span style="color:#e8630a">You pull Ghana keyword volumes from Planner &rarr; we finalize bids &amp; launch priority &rarr; Sprint 1 of the dashboard begins.</span></p>
+</div>
+
+</body></html>
