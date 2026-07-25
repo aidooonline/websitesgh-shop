@@ -259,6 +259,17 @@ function wghs_render_diagnostics() {
 	$has_shortcode = $cart_post && ( has_shortcode( $cart_post->post_content, 'woocommerce_cart' ) || false !== strpos( $cart_post->post_content, 'woocommerce_cart' ) );
 	$row( 'Cart page uses classic shortcode', (bool) $has_shortcode, 'Run Tools > WebsitesGH Shop Setup to convert the block cart to classic.' );
 
+	// Asset cache busting: a static version string means browsers and LiteSpeed
+	// keep serving the first CSS they ever saw, so style fixes never appear.
+	if ( function_exists( 'wghs_asset_ver' ) ) {
+		$ver = wghs_asset_ver( '/assets/css/main.css' );
+		$row(
+			'CSS cache busting is live  [main.css?ver=' . esc_html( $ver ) . ']',
+			ctype_digit( (string) $ver ),
+			'Version should be a filemtime number, not a fixed string, or CSS updates never reach the browser.'
+		);
+	}
+
 	// 7. SEO plugin + OG image note
 	$seo = function_exists( 'wghs_seo_plugin_active' ) && wghs_seo_plugin_active();
 	if ( $seo ) {

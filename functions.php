@@ -7,7 +7,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'WGHS_VERSION', '2.0.0' );
+define( 'WGHS_VERSION', '2.1.0' );
 define( 'WGHS_DIR', get_template_directory() );
 define( 'WGHS_URI', get_template_directory_uri() );
 
@@ -51,14 +51,33 @@ function wghs_setup() {
 add_action( 'after_setup_theme', 'wghs_setup' );
 
 /**
+ * Cache-busting version for a theme asset.
+ *
+ * Every asset was previously enqueued with the hardcoded WGHS_VERSION, which
+ * has not changed in dozens of releases. Browsers, LiteSpeed and any CDN
+ * therefore kept serving the first main.css they ever saw, so CSS and JS fixes
+ * were invisible to anyone who had already visited the site. Using the file's
+ * modification time means the version changes automatically whenever the file
+ * actually changes, and never otherwise.
+ *
+ * @param string $rel Path relative to the theme root, e.g. /assets/css/main.css
+ * @return string Version string.
+ */
+function wghs_asset_ver( $rel ) {
+	$path = WGHS_DIR . $rel;
+	$mtime = file_exists( $path ) ? filemtime( $path ) : 0;
+	return $mtime ? (string) $mtime : WGHS_VERSION;
+}
+
+/**
  * Assets.
  */
 function wghs_assets() {
-	wp_enqueue_style( 'wghshop-main', WGHS_URI . '/assets/css/main.css', array(), WGHS_VERSION );
+	wp_enqueue_style( 'wghshop-main', WGHS_URI . '/assets/css/main.css', array(), wghs_asset_ver( '/assets/css/main.css' ) );
 	// Keep theme header style.css present for WP validation.
-	wp_enqueue_style( 'wghshop-style', get_stylesheet_uri(), array( 'wghshop-main' ), WGHS_VERSION );
+	wp_enqueue_style( 'wghshop-style', get_stylesheet_uri(), array( 'wghshop-main' ), wghs_asset_ver( '/style.css' ) );
 
-	wp_enqueue_script( 'wghshop-main', WGHS_URI . '/assets/js/main.js', array(), WGHS_VERSION, true );
+	wp_enqueue_script( 'wghshop-main', WGHS_URI . '/assets/js/main.js', array(), wghs_asset_ver( '/assets/js/main.js' ), true );
 	$wghs_l10n = array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ) );
 	if ( function_exists( 'wghs_wa_cart_url' ) && function_exists( 'wghs_wa_number' ) && wghs_wa_number() ) {
 		$wghs_l10n['waCartUrl']   = wghs_wa_cart_url();
@@ -68,10 +87,10 @@ function wghs_assets() {
 
 	// Ad slot loader. Only on the blog, where the rail lives.
 	if ( is_single() ) {
-		wp_enqueue_script( 'wghshop-article', WGHS_URI . '/assets/js/article.js', array(), WGHS_VERSION, true );
+		wp_enqueue_script( 'wghshop-article', WGHS_URI . '/assets/js/article.js', array(), wghs_asset_ver( '/assets/js/article.js' ), true );
 	}
 	if ( is_home() || is_single() || is_archive() || is_search() ) {
-		wp_enqueue_script( 'wghshop-adslots', WGHS_URI . '/assets/js/adslots.js', array(), WGHS_VERSION, true );
+		wp_enqueue_script( 'wghshop-adslots', WGHS_URI . '/assets/js/adslots.js', array(), wghs_asset_ver( '/assets/js/adslots.js' ), true );
 		wp_localize_script( 'wghshop-adslots', 'WGHS_ADS', array( 'root' => esc_url_raw( rest_url() ) ) );
 	}
 
