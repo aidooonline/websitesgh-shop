@@ -140,21 +140,45 @@ add_action( 'admin_post_wghs_repair', function () {
 		$log[] = (string) wghs_seed_articles();
 	}
 
-	/* Retro-fix categories on articles seeded before the term-id fix, which
-	 * left them in Uncategorized. */
+	/* Retro-fix categories AND publish dates on articles seeded before the
+	 * scheduling logic existed. The seeder skips slugs that already exist, so
+	 * without this the first two articles keep whatever date they were first
+	 * published on, and the archive still looks like everything landed on one
+	 * day. */
 	$file = WGHS_DIR . '/inc/setup-data/articles.json';
 	if ( file_exists( $file ) ) {
 		$articles = json_decode( (string) file_get_contents( $file ), true );
 		if ( is_array( $articles ) ) {
 			foreach ( $articles as $a ) {
-				if ( empty( $a['slug'] ) || empty( $a['category'] ) ) { continue; }
+				if ( empty( $a['slug'] ) ) { continue; }
 				$post = get_page_by_path( $a['slug'], OBJECT, 'post' );
 				if ( ! $post ) { continue; }
-				$term = term_exists( (string) $a['category'], 'category' );
-				if ( ! $term ) { $term = wp_insert_term( (string) $a['category'], 'category' ); }
-				if ( ! is_wp_error( $term ) && ! empty( $term['term_id'] ) ) {
-					wp_set_post_terms( $post->ID, array( (int) $term['term_id'] ), 'category' );
-					$log[] = sprintf( 'Categorised "%s" as %s.', $a['slug'], $a['category'] );
+
+				// Category by term id, since a term name silently fails here.
+				if ( ! empty( $a['category'] ) ) {
+					$term = term_exists( (string) $a['category'], 'category' );
+					if ( ! $term ) { $term = wp_insert_term( (string) $a['category'], 'category' ); }
+					if ( ! is_wp_error( $term ) && ! empty( $term['term_id'] ) ) {
+						wp_set_post_terms( $post->ID, array( (int) $term['term_id'] ), 'category' );
+					}
+				}
+
+				// Publish date and status from the calendar in the seed file.
+				$offset = isset( $a['days_offset'] ) ? (int) $a['days_offset'] : 0;
+				$hour   = isset( $a['hour'] ) ? (int) $a['hour'] : 9;
+				$stamp  = strtotime( sprintf( '%+d days', $offset ), current_time( 'timestamp' ) );
+				$stamp  = strtotime( gmdate( 'Y-m-d', $stamp ) . sprintf( ' %02d:15:00', $hour ) );
+				$local  = gmdate( 'Y-m-d H:i:s', $stamp );
+				$status = ( $stamp > current_time( 'timestamp' ) ) ? 'future' : 'publish';
+				if ( $post->post_date !== $local || $post->post_status !== $status ) {
+					wp_update_post( array(
+						'ID'            => $post->ID,
+						'post_date'     => $local,
+						'post_date_gmt' => get_gmt_from_date( $local ),
+						'post_status'   => $status,
+						'edit_date'     => true,
+					) );
+					$log[] = sprintf( '%s: dated %s (%s).', $a['slug'], gmdate( 'j M Y', $stamp ), $status );
 				}
 			}
 		}

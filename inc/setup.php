@@ -781,19 +781,36 @@ function wghs_seed_articles() {
 	if ( ! file_exists( $file ) ) { return 'Articles: seed file missing, skipped.'; }
 	$articles = json_decode( (string) file_get_contents( $file ), true );
 	if ( ! is_array( $articles ) ) { return 'Articles: seed file unreadable, skipped.'; }
-	$made = 0;
+	$made      = 0;
+	$scheduled = 0;
 	foreach ( $articles as $a ) {
 		if ( empty( $a['slug'] ) || get_page_by_path( $a['slug'], OBJECT, 'post' ) ) { continue; }
+
+		/* Publishing rhythm. A blog where ten posts all carry today's date
+		 * reads as artificial, to a reader and to a crawler. Each article
+		 * carries a days_offset: negative backdates it so the archive looks
+		 * established, positive schedules it so the site keeps publishing on
+		 * its own at a steady interval. WordPress handles the future ones
+		 * natively via post_status 'future'. */
+		$offset = isset( $a['days_offset'] ) ? (int) $a['days_offset'] : 0;
+		$hour   = isset( $a['hour'] ) ? (int) $a['hour'] : 9; // mid-morning Accra
+		$stamp  = strtotime( sprintf( '%+d days', $offset ), current_time( 'timestamp' ) );
+		$stamp  = strtotime( gmdate( 'Y-m-d', $stamp ) . sprintf( ' %02d:15:00', $hour ) );
+		$local  = gmdate( 'Y-m-d H:i:s', $stamp );
+		$status = ( $stamp > current_time( 'timestamp' ) ) ? 'future' : 'publish';
+
 		$id = wp_insert_post( array(
-			'post_type'    => 'post',
-			'post_status'  => 'publish',
-			'post_title'   => $a['title'],
-			'post_name'    => $a['slug'],
-			'post_excerpt' => $a['excerpt'] ?? '',
-			'post_content' => $a['content'] ?? '',
+			'post_type'     => 'post',
+			'post_status'   => $status,
+			'post_title'    => $a['title'],
+			'post_name'     => $a['slug'],
+			'post_excerpt'  => $a['excerpt'] ?? '',
+			'post_content'  => $a['content'] ?? '',
+			'post_date'     => $local,
+			'post_date_gmt' => get_gmt_from_date( $local ),
 		) );
 		if ( ! $id || is_wp_error( $id ) ) { continue; }
-		$made++;
+		if ( 'future' === $status ) { $scheduled++; } else { $made++; }
 		if ( ! empty( $a['category'] ) ) {
 			/* wp_set_post_terms() silently does nothing when given a term NAME
 			 * for a hierarchical taxonomy like 'category'; it requires IDs.
@@ -809,5 +826,5 @@ function wghs_seed_articles() {
 			}
 		}
 	}
-	return sprintf( 'Articles: %d published.', $made );
+	return sprintf( 'Articles: %d published, %d scheduled for future dates.', $made, $scheduled );
 }
