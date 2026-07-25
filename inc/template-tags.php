@@ -40,11 +40,14 @@ function wghs_wa_link( $message = '' ) {
 	if ( ! $num ) {
 		return '#';
 	}
-	$url = 'https://wa.me/' . $num;
-	if ( $message ) {
+	// Build and escape the base URL WITHOUT the text, then append the encoded
+	// message. esc_url() strips %0A (encoded newlines), so we must not run it
+	// over the encoded message or the WhatsApp text collapses onto one line.
+	$url = esc_url( 'https://wa.me/' . $num );
+	if ( '' !== $message ) {
 		$url .= '?text=' . rawurlencode( $message );
 	}
-	return esc_url( $url );
+	return $url;
 }
 
 /**
