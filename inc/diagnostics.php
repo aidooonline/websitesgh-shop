@@ -45,19 +45,19 @@ function wghs_render_diagnostics() {
 		if ( 'shop' === $slug && function_exists( 'wc_get_page_id' ) ) {
 			$p = get_post( wc_get_page_id( 'shop' ) );
 		}
-		$row( "Page exists: /{$slug}/", $p && 'publish' === get_post_status( $p ), 'Run Appearance > Run Full Setup to create all pages.' );
+		$row( "Page exists: /{$slug}/", $p && 'publish' === get_post_status( $p ), 'Run Tools > WebsitesGH Shop Setup to create all pages.' );
 	}
 
 	// 3. Blog posts page set + has posts
 	$pfp = (int) get_option( 'page_for_posts' );
-	$row( 'Blog (Guides) page is set', $pfp > 0, 'Run Full Setup, or Settings > Reading > Posts page = Guides.' );
+	$row( 'Blog (Guides) page is set', $pfp > 0, 'Run Tools > WebsitesGH Shop Setup, or Settings > Reading > Posts page = Guides.' );
 	$posts = wp_count_posts()->publish;
-	$row( "Published articles: {$posts}", $posts > 0, 'Run Full Setup to publish the seed articles.' );
+	$row( "Published articles: {$posts}", $posts > 0, 'Run Tools > WebsitesGH Shop Setup to publish the seed articles.' );
 
 	// 4. Menus assigned
 	$locs = get_theme_mod( 'nav_menu_locations', array() );
 	foreach ( array( 'primary', 'footer_shop', 'footer_help', 'footer_company' ) as $loc ) {
-		$row( "Menu assigned: {$loc}", ! empty( $locs[ $loc ] ), 'Run Full Setup, or Appearance > Menus and assign locations.' );
+		$row( "Menu assigned: {$loc}", ! empty( $locs[ $loc ] ), 'Run Tools > WebsitesGH Shop Setup, or Appearance > Menus and assign locations.' );
 	}
 
 	// 5. WhatsApp number
@@ -68,7 +68,7 @@ function wghs_render_diagnostics() {
 	$cart_id = function_exists( 'wc_get_page_id' ) ? wc_get_page_id( 'cart' ) : 0;
 	$cart_post = $cart_id ? get_post( $cart_id ) : null;
 	$has_shortcode = $cart_post && ( has_shortcode( $cart_post->post_content, 'woocommerce_cart' ) || false !== strpos( $cart_post->post_content, 'woocommerce_cart' ) );
-	$row( 'Cart page uses classic shortcode', (bool) $has_shortcode, 'Run Full Setup to convert the block cart to classic (needed for the WhatsApp button).' );
+	$row( 'Cart page uses classic shortcode', (bool) $has_shortcode, 'Run Tools > WebsitesGH Shop Setup to convert the block cart to classic.' );
 
 	// 7. SEO plugin + OG image note
 	$seo = function_exists( 'wghs_seo_plugin_active' ) && wghs_seo_plugin_active();
@@ -88,7 +88,7 @@ function wghs_render_diagnostics() {
 	}
 
 	echo '</tbody></table>';
-	echo '<p style="margin-top:20px"><a href="' . esc_url( admin_url( 'themes.php?page=wghs-setup' ) ) . '" class="button button-primary">Go to Run Full Setup</a> ';
+	echo '<p style="margin-top:20px"><a href="' . esc_url( admin_url( 'tools.php?page=wghs-setup' ) ) . '" class="button button-primary">Go to Full Setup (Tools)</a> ';
 	echo '<a href="' . esc_url( admin_url( 'options-permalink.php' ) ) . '" class="button">Flush permalinks</a></p>';
 	echo '</div>';
 }
