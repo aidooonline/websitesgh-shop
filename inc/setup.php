@@ -167,35 +167,66 @@ function wghs_run_setup() {
 		$log[] = $sw ? sprintf( 'Cart/Checkout switched to classic shortcodes: %s.', implode( ', ', $sw ) ) : 'Cart/Checkout already classic.';
 	}
 
-	/* 4. Primary menu */
-	if ( ! wp_get_nav_menu_object( 'Primary' ) ) {
-		$menu_id = wp_create_nav_menu( 'Primary' );
-		if ( ! is_wp_error( $menu_id ) ) {
-			$items = array(
-				'Home'         => home_url( '/' ),
-				'Shop'         => function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' ),
-				'Guides'       => home_url( '/guides/' ),
-				'Price Index'  => home_url( '/price-index/' ),
-				'How to Order' => home_url( '/how-to-order/' ),
-				'About'        => home_url( '/about/' ),
-				'Contact'      => home_url( '/contact/' ),
-			);
-			foreach ( $items as $label => $url ) {
-				wp_update_nav_menu_item( $menu_id, 0, array(
-					'menu-item-title'  => $label,
-					'menu-item-url'    => $url,
-					'menu-item-type'   => 'custom',
-					'menu-item-status' => 'publish',
-				) );
-			}
-			$locations            = (array) get_theme_mod( 'nav_menu_locations' );
-			$locations['primary'] = $menu_id;
-			set_theme_mod( 'nav_menu_locations', $locations );
-			$log[] = 'Primary menu created and assigned (edit under Appearance > Menus).';
+	/* 4. Menus: primary and footer. */
+	$build_menu = function ( $name, $location, $items ) {
+		$menu = wp_get_nav_menu_object( $name );
+		if ( ! $menu ) {
+			$menu_id = wp_create_nav_menu( $name );
+		} else {
+			$menu_id = $menu->term_id;
+			// Clear existing items so a re-run reflects the new structure.
+			foreach ( wp_get_nav_menu_items( $menu_id ) as $it ) { wp_delete_post( $it->ID, true ); }
 		}
-	} else {
-		$log[] = 'Primary menu already exists, skipped.';
-	}
+		foreach ( $items as $label => $url ) {
+			wp_update_nav_menu_item( $menu_id, 0, array(
+				'menu-item-title'  => $label,
+				'menu-item-url'    => $url,
+				'menu-item-status' => 'publish',
+			) );
+		}
+		$locations = get_theme_mod( 'nav_menu_locations', array() );
+		$locations[ $location ] = $menu_id;
+		set_theme_mod( 'nav_menu_locations', $locations );
+		return $menu_id;
+	};
+
+	$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
+
+	$build_menu( 'Primary', 'primary', array(
+		'Home'        => home_url( '/' ),
+		'Shop'        => $shop_url,
+		'Guides'      => home_url( '/guides/' ),
+		'Price Index' => home_url( '/price-index/' ),
+		'About'       => home_url( '/about/' ),
+		'Contact'     => home_url( '/contact/' ),
+	) );
+
+	$build_menu( 'Footer Shop', 'footer_shop', array(
+		'All products' => $shop_url,
+		'Price index'  => home_url( '/price-index/' ),
+		'Running costs'=> home_url( '/running-costs/' ),
+		'Guides'       => home_url( '/guides/' ),
+	) );
+
+	$build_menu( 'Footer Help', 'footer_help', array(
+		'How to order'        => home_url( '/how-to-order/' ),
+		'Delivery and payment'=> home_url( '/delivery-and-payment/' ),
+		'Delivery areas'      => home_url( '/coverage/' ),
+		'Track my order'      => home_url( '/track-order/' ),
+		'Returns'             => home_url( '/returns/' ),
+		'Warranty'            => home_url( '/warranty/' ),
+		'FAQ'                 => home_url( '/faq/' ),
+	) );
+
+	$build_menu( 'Footer Company', 'footer_company', array(
+		'About'     => home_url( '/about/' ),
+		'Contact'   => home_url( '/contact/' ),
+		'Wholesale' => home_url( '/wholesale/' ),
+		'Privacy'   => home_url( '/privacy-policy/' ),
+		'Terms'     => home_url( '/terms/' ),
+	) );
+
+	$log[] = 'Menus: primary and three footer menus built.';
 
 	/* 5. Products with images */
 	$products = wghs_setup_data( 'products' );

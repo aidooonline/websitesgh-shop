@@ -42,19 +42,24 @@ $shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 
 					}
 				}
 				?>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/deals' ) ); ?>"><?php esc_html_e( 'Deals & Offers', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/price-index/' ) ); ?>"><?php esc_html_e( 'Price index', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/running-costs/' ) ); ?>"><?php esc_html_e( 'Running costs', 'wghshop' ); ?></a></li>
 			</ul>
 		</div>
 
 		<div>
 			<h4 class="text-sm font-display font-semibold text-wgh-ink mb-4"><?php esc_html_e( 'Help', 'wghshop' ); ?></h4>
 			<ul class="space-y-2.5 text-sm text-wgh-ink2">
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/how-to-order' ) ); ?>"><?php esc_html_e( 'How to Order', 'wghshop' ); ?></a></li>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/warranty-policy' ) ); ?>"><?php esc_html_e( 'Warranty Policy', 'wghshop' ); ?></a></li>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/return-policy' ) ); ?>"><?php esc_html_e( 'Return Policy', 'wghshop' ); ?></a></li>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/delivery-policy' ) ); ?>"><?php esc_html_e( 'Delivery Policy', 'wghshop' ); ?></a></li>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/privacy-policy' ) ); ?>"><?php esc_html_e( 'Privacy Policy', 'wghshop' ); ?></a></li>
-				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/terms' ) ); ?>"><?php esc_html_e( 'Terms & Conditions', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/how-to-order/' ) ); ?>"><?php esc_html_e( 'How to order', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/delivery-and-payment/' ) ); ?>"><?php esc_html_e( 'Delivery and payment', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/coverage/' ) ); ?>"><?php esc_html_e( 'Delivery areas', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/track-order/' ) ); ?>"><?php esc_html_e( 'Track my order', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/returns/' ) ); ?>"><?php esc_html_e( 'Returns', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/warranty/' ) ); ?>"><?php esc_html_e( 'Warranty', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/faq/' ) ); ?>"><?php esc_html_e( 'FAQ', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/wholesale/' ) ); ?>"><?php esc_html_e( 'Wholesale', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/privacy-policy/' ) ); ?>"><?php esc_html_e( 'Privacy', 'wghshop' ); ?></a></li>
+				<li><a class="hover:text-wgh-green" href="<?php echo esc_url( home_url( '/terms/' ) ); ?>"><?php esc_html_e( 'Terms', 'wghshop' ); ?></a></li>
 			</ul>
 		</div>
 

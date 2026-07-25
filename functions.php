@@ -41,8 +41,11 @@ function wghs_setup() {
 	add_theme_support( 'wc-product-gallery-slider' );
 
 	register_nav_menus( array(
-		'primary' => __( 'Primary Menu', 'wghshop' ),
-		'footer'  => __( 'Footer Menu', 'wghshop' ),
+		'primary'        => __( 'Primary Menu', 'wghshop' ),
+		'footer'         => __( 'Footer Menu', 'wghshop' ),
+		'footer_shop'    => __( 'Footer: Shop', 'wghshop' ),
+		'footer_help'    => __( 'Footer: Help', 'wghshop' ),
+		'footer_company' => __( 'Footer: Company', 'wghshop' ),
 	) );
 }
 add_action( 'after_setup_theme', 'wghs_setup' );
@@ -64,6 +67,9 @@ function wghs_assets() {
 	wp_localize_script( 'wghshop-main', 'TPG', $wghs_l10n );
 
 	// Ad slot loader. Only on the blog, where the rail lives.
+	if ( is_single() ) {
+		wp_enqueue_script( 'wghshop-article', WGHS_URI . '/assets/js/article.js', array(), WGHS_VERSION, true );
+	}
 	if ( is_home() || is_single() || is_archive() || is_search() ) {
 		wp_enqueue_script( 'wghshop-adslots', WGHS_URI . '/assets/js/adslots.js', array(), WGHS_VERSION, true );
 		wp_localize_script( 'wghshop-adslots', 'WGHS_ADS', array( 'root' => esc_url_raw( rest_url() ) ) );

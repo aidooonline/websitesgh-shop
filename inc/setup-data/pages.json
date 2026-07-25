@@ -46,5 +46,30 @@
     "title": "What Appliances Cost to Run in Ghana",
     "content": "<p>Electricity in Ghana is billed per kilowatt hour, and the PURC reviews the rate quarterly. This table applies the current residential rate to realistic daily use.</p>",
     "template": "page-templates/page-running-costs.php"
+  },
+  {
+    "slug": "faq",
+    "title": "Frequently Asked Questions",
+    "content": "<p>Everything people ask before ordering. Still stuck? Message us on WhatsApp at <a href=\"https://wa.me/233542148020\" target=\"_blank\" rel=\"noopener\">054 214 8020</a>.</p>\n<h2>Ordering and payment</h2>\n<h3>Do I pay before delivery?</h3>\n<p>No. Pay on delivery is our default. The rider brings the item, you inspect it, then you pay. If it is wrong, hand it back and pay nothing.</p>\n<h3>Can I pay by mobile money?</h3>\n<p>Yes, to 054 214 8020, either at the door or ahead of delivery. You are never required to pay before you have seen the item.</p>\n<h3>Do I need an account to order?</h3>\n<p>No. Order on the site or on WhatsApp with just your name, phone and location.</p>\n<h2>Delivery</h2>\n<h3>How fast is delivery in Accra?</h3>\n<p>Same day for orders confirmed before 4pm, next morning after that. Two to four working days nationwide.</p>\n<h3>How much is delivery?</h3>\n<p>It depends on your location and is confirmed on the call before dispatch. We tell you the figure before the rider leaves, never after.</p>\n<h2>Products</h2>\n<h3>Are the products genuine and new?</h3>\n<p>Yes, brand new and sealed, sourced from our Accra dealers. You inspect before you pay, so you buy with your own eyes.</p>\n<h3>Is there a warranty?</h3>\n<p>Where a manufacturer warranty applies we say so on the product and pass you the paperwork. Where there is none, we say so plainly. See our <a href=\"/warranty/\">warranty page</a>.</p>\n<h2>Returns</h2>\n<h3>What if the item is faulty?</h3>\n<p>Refuse it at the door and pay nothing, or if a fault shows within 7 days we replace it or refund you. See <a href=\"/returns/\">returns</a>.</p>"
+  },
+  {
+    "slug": "track-order",
+    "title": "Track My Order",
+    "content": "<p>We keep order tracking simple and human. Every order is confirmed by a real person, so the fastest way to check on yours is to ask.</p>\n<h2>Check your order status</h2>\n<p>Message us on WhatsApp at <a href=\"https://wa.me/233542148020\" target=\"_blank\" rel=\"noopener\">054 214 8020</a> with your order number, or the name and phone you ordered with. We will tell you exactly where it is and when it arrives.</p>\n<h2>What the stages mean</h2>\n<ul>\n<li><strong>Confirmed:</strong> we have called you and the order is set.</li>\n<li><strong>Dispatched:</strong> the rider has your item and is on the way.</li>\n<li><strong>Delivered:</strong> in your hands and paid for.</li>\n</ul>\n<p>If you paid ahead by mobile money and have not heard from us within a working hour, message the same number and we will sort it immediately.</p>"
+  },
+  {
+    "slug": "warranty",
+    "title": "Warranty",
+    "content": "<p>We are straight with you about warranty, because most shops are not.</p>\n<h2>How warranty works here</h2>\n<p>Some products carry a manufacturer warranty and some do not. We tell you which on the product page rather than implying a warranty that does not exist. Where one applies, we pass you the paperwork on delivery so you can claim it directly.</p>\n<h2>Our own cover</h2>\n<p>Separate from any manufacturer warranty, if an item is faulty on arrival or fails within 7 days of delivery, we replace it or refund you. You do not need a receipt beyond your order record with us.</p>\n<h2>What is not covered</h2>\n<p>Damage from misuse, drops, liquid, or wrong voltage. Normal wear. Consumable parts. If you are unsure whether something is covered, ask us before you assume it is not.</p>\n<h2>Starting a claim</h2>\n<p>Message WhatsApp with your order number and a short video of the problem. Video settles most claims in one message.</p>"
+  },
+  {
+    "slug": "coverage",
+    "title": "Delivery Areas",
+    "content": "<p>Where we deliver and how long it takes.</p>\n<h2>Same day</h2>\n<p>Accra and Tema, for orders confirmed before 4pm. Includes Spintex, East Legon, Madina, Adenta, Tema, Kaneshie, Dansoman, Achimota, Lapaz, Kasoa border and everywhere between.</p>\n<h2>One to two working days</h2>\n<p>Kumasi, Takoradi, Cape Coast, Koforidua, Ho, Tema industrial area.</p>\n<h2>Two to four working days</h2>\n<p>The rest of Ghana, including the north. We confirm the exact window and cost on the call before dispatch.</p>\n<h2>Delivery cost</h2>\n<p>Set by distance and confirmed before the rider leaves. Pay it with the item on delivery. No hidden charges appear later.</p>"
+  },
+  {
+    "slug": "wholesale",
+    "title": "Wholesale and Bulk",
+    "content": "<p>Buying for an office, a school, a shop, or to resell? We do bulk pricing.</p>\n<h2>Who this is for</h2>\n<ul>\n<li>Offices kitting out a new space</li>\n<li>Schools and hostels buying in quantity</li>\n<li>Shops and resellers who want dealer pricing</li>\n<li>Event and gift orders</li>\n</ul>\n<h2>How it works</h2>\n<p>Tell us what you need and the quantity. We quote a bulk price, confirm stock and delivery, and you pay on delivery like any other order, or by arrangement for large orders.</p>\n<h2>Get a quote</h2>\n<p>Message <a href=\"https://wa.me/233542148020\" target=\"_blank\" rel=\"noopener\">054 214 8020</a> with the items and quantities, or use our <a href=\"/contact/\">contact form</a>. We reply the same working day.</p>"
   }
 ]

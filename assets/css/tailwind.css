@@ -400,3 +400,38 @@ ul.products li.product {
 .single-product div.product .images,
 .single-product div.product .summary { @apply mb-0; }
 .single-product div.product .summary { @apply lg:pl-2; }
+
+/* Reading progress bar */
+.wghs-progress { @apply fixed left-0 top-0 z-50 h-[3px] bg-wgh-green transition-[width] duration-150; width: 0; }
+
+/* Article hero + two-column layout, mirroring websitesgh r26 */
+.wghs-art__hero { @apply pt-8 pb-2 sm:pt-12; }
+.wghs-art__cat { @apply inline-block text-xs font-bold uppercase tracking-[0.14em] text-wgh-green hover:text-wgh-greenV; }
+.wghs-art__title { @apply mt-3 max-w-4xl text-3xl font-extrabold leading-[1.1] sm:text-[2.7rem]; }
+.wghs-art__lead { @apply mt-4 max-w-measure text-lg leading-relaxed text-wgh-ink2 sm:text-xl; }
+.wghs-art__meta { @apply mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-wgh-ink2; }
+.wghs-art__author { @apply font-semibold text-wgh-ink; }
+.wghs-art__verified { @apply ml-1 rounded-full bg-wgh-greenPale px-2.5 py-0.5 text-xs font-semibold text-wgh-greenInk; }
+.wghs-art__cover { @apply mt-6 overflow-hidden rounded-xl; }
+.wghs-art__cover img { @apply w-full; }
+.wghs-art__layout { @apply grid grid-cols-1 gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14; }
+.wghs-art__body { @apply min-w-0 max-w-measure; }
+
+/* Share bar */
+.wghs-share { @apply mb-6 flex flex-wrap items-center gap-2 border-y border-wgh-line py-3; }
+.wghs-share__label { @apply text-[11px] font-bold uppercase tracking-widest text-wgh-ink3; }
+.wghs-share__btn { @apply cursor-pointer rounded-full border border-wgh-line px-3 py-1 text-xs font-semibold text-wgh-ink2 no-underline hover:border-wgh-green hover:text-wgh-green; }
+
+/* Table of contents */
+.wghs-toc { @apply mb-8 rounded-lg border border-wgh-line bg-wgh-line2/60 p-5; }
+.wghs-toc__h { @apply mb-2 text-[11px] font-bold uppercase tracking-widest text-wgh-ink3; }
+.wghs-toc ul { @apply m-0 flex list-none flex-col gap-1.5 p-0; }
+.wghs-toc a { @apply text-sm text-wgh-ink2 no-underline hover:text-wgh-green; }
+.wghs-toc__sub { @apply pl-4; }
+.wghs-toc__sub a { @apply text-[13px] text-wgh-ink3; }
+
+/* Author box */
+.wghs-author { @apply mt-10 flex items-start gap-4 rounded-lg border border-wgh-line bg-wgh-line2/50 p-5; }
+.wghs-author__avatar img { @apply h-14 w-14 rounded-full; }
+.wghs-author__name { @apply font-bold text-wgh-ink; }
+.wghs-author__bio { @apply mt-1 text-sm leading-relaxed text-wgh-ink2; }
