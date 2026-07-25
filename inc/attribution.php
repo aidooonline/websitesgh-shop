@@ -60,17 +60,21 @@ function wghs_attr_install() {
 		order_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 		exported TINYINT(1) NOT NULL DEFAULT 0,
 		ref VARCHAR(12) NOT NULL DEFAULT '',
+		cust_name VARCHAR(120) NOT NULL DEFAULT '',
+		cust_phone VARCHAR(24) NOT NULL DEFAULT '',
+		cust_area VARCHAR(120) NOT NULL DEFAULT '',
 		PRIMARY KEY  (id),
 		KEY status (status),
 		KEY click_id (click_id(32)),
 		KEY created_at (created_at),
-		KEY ref (ref)
+		KEY ref (ref),
+		KEY cust_phone (cust_phone)
 	) {$charset};" );
-	update_option( 'wghs_attr_db_version', '1.1' );
+	update_option( 'wghs_attr_db_version', '1.2' );
 }
 add_action( 'after_switch_theme', 'wghs_attr_install' );
 add_action( 'admin_init', function () {
-	if ( '1.1' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
+	if ( '1.2' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
 } );
 
 /* --------------------------------------------------------------------------
@@ -115,13 +119,16 @@ add_action( 'wp_footer', function () {
 					a.href = u.toString();
 				}
 			} catch (err) { /* leave the link untouched */ }
+			var lead = {};
+			try { var lm = document.cookie.match(/(?:^|; )wghs_lead=([^;]*)/); if (lm) { lead = JSON.parse(decodeURIComponent(lm[1])); } } catch (e2) { lead = {}; }
 			var payload = {
 				ref: ref,
 				click_id: ck('gclid') || ck('gbraid') || ck('wbraid'),
 				click_type: ck('gclid') ? 'gclid' : (ck('gbraid') ? 'gbraid' : (ck('wbraid') ? 'wbraid' : '')),
 				product_id: parseInt(a.getAttribute('data-product-id') || (document.body.className.match(/postid-(\d+)/) || [0,0])[1], 10) || 0,
 				placement: a.getAttribute('data-wghs-event') || 'generic',
-				utm_source: ck('utm_source'), utm_medium: ck('utm_medium'), utm_campaign: ck('utm_campaign')
+				utm_source: ck('utm_source'), utm_medium: ck('utm_medium'), utm_campaign: ck('utm_campaign'),
+				cust_name: lead.name || '', cust_phone: lead.phone || '', cust_area: lead.area || ''
 			};
 			try {
 				navigator.sendBeacon('<?php echo $rest; // phpcs:ignore ?>', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
@@ -172,6 +179,9 @@ add_action( 'rest_api_init', function () {
 				'utm_medium'   => substr( sanitize_text_field( $p['utm_medium'] ?? '' ), 0, 60 ),
 				'utm_campaign' => substr( sanitize_text_field( $p['utm_campaign'] ?? '' ), 0, 120 ),
 				'ref'          => substr( preg_replace( '/[^A-Z0-9-]/', '', strtoupper( (string) ( $p['ref'] ?? '' ) ) ), 0, 12 ),
+				'cust_name'    => substr( sanitize_text_field( $p['cust_name'] ?? '' ), 0, 120 ),
+				'cust_phone'   => substr( preg_replace( '/[^0-9+]/', '', (string) ( $p['cust_phone'] ?? '' ) ), 0, 24 ),
+				'cust_area'    => substr( sanitize_text_field( $p['cust_area'] ?? '' ), 0, 120 ),
 			) );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		},
@@ -387,6 +397,7 @@ function wghs_attr_admin_page() {
 		<table class="widefat striped" style="clear:both;margin-top:8px">
 			<thead><tr>
 				<th><?php esc_html_e( 'When (GMT)', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'Customer', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Product', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Placement', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Source', 'wghshop' ); ?></th>
@@ -398,11 +409,20 @@ function wghs_attr_admin_page() {
 			</tr></thead>
 			<tbody>
 			<?php if ( ! $rows ) : ?>
-				<tr><td colspan="9"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
+				<tr><td colspan="10"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
 			<?php endif; ?>
 			<?php foreach ( $rows as $r ) : ?>
 				<tr data-id="<?php echo (int) $r->id; ?>">
 					<td><?php echo esc_html( $r->created_at ); ?></td>
+					<td><?php
+						if ( ! empty( $r->cust_name ) || ! empty( $r->cust_phone ) ) {
+							echo '<strong>' . esc_html( $r->cust_name ?: '-' ) . '</strong>';
+							if ( ! empty( $r->cust_phone ) ) { echo '<br><a href="tel:' . esc_attr( $r->cust_phone ) . '">' . esc_html( $r->cust_phone ) . '</a>'; }
+							if ( ! empty( $r->cust_area ) ) { echo '<br><small>' . esc_html( $r->cust_area ) . '</small>'; }
+						} else {
+							echo '<small style="color:#a00">' . esc_html__( 'skipped', 'wghshop' ) . '</small>';
+						}
+					?></td>
 					<td><?php echo esc_html( $r->product_name ?: '#' . $r->product_id ); ?><?php echo $r->order_id ? ' <a href="' . esc_url( admin_url( 'post.php?post=' . (int) $r->order_id . '&action=edit' ) ) . '">#' . (int) $r->order_id . '</a>' : ''; ?></td>
 					<td><?php echo esc_html( $r->placement ); ?></td>
 					<td><?php echo esc_html( trim( $r->utm_source . ' / ' . $r->utm_campaign, ' /' ) ?: ( $r->click_id ? 'google' : 'direct' ) ); ?></td>

@@ -28,22 +28,29 @@ function wghs_handle_enquiry() {
 	// Honeypot: bots fill it, humans never see it.
 	if ( ! empty( $_POST['wghs_hp'] ) ) { wp_safe_redirect( home_url( '/contact/?sent=1' ) ); exit; }
 
-	$name  = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
-	$phone = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
-	$msg   = sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) );
-	if ( ! $name || ! $phone || ! $msg ) { wp_safe_redirect( home_url( '/contact/' ) ); exit; }
+	$name    = sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) );
+	$phone   = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+	$area    = sanitize_text_field( wp_unslash( $_POST['area'] ?? '' ) );
+	$product = sanitize_text_field( wp_unslash( $_POST['product'] ?? '' ) );
+	$msg     = sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) );
+	// Name, phone and area are the required lead fields; message and product are optional.
+	if ( ! $name || ! $phone || ! $area ) { wp_safe_redirect( home_url( '/contact/' ) ); exit; }
+
+	$body = "Name: {$name}\nPhone: {$phone}\nArea: {$area}";
+	if ( $product ) { $body .= "\nProduct: {$product}"; }
+	if ( $msg ) { $body .= "\n\n{$msg}"; }
 
 	wp_insert_post( array(
 		'post_type'    => 'wghs_enquiry',
 		'post_status'  => 'private',
-		'post_title'   => $name . ' (' . $phone . ')',
-		'post_content' => $msg,
+		'post_title'   => $name . ' (' . $phone . ')' . ( $product ? ' - ' . $product : '' ),
+		'post_content' => $body,
 	) );
 
 	wp_mail(
 		get_option( 'admin_email' ),
-		sprintf( '[%s] Enquiry from %s', get_bloginfo( 'name' ), $name ),
-		"Name: {$name}\nPhone: {$phone}\n\n{$msg}"
+		sprintf( '[%s] Lead from %s', get_bloginfo( 'name' ), $name ),
+		$body
 	);
 
 	wp_safe_redirect( home_url( '/contact/?sent=1' ) );

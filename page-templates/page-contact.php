@@ -39,9 +39,13 @@ $sent = isset( $_GET['sent'] ) && '1' === $_GET['sent'];
 				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_name"><?php esc_html_e( 'Your name', 'wghshop' ); ?></label>
 					<input class="input" type="text" id="wghs_c_name" name="name" required></p>
 				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_phone"><?php esc_html_e( 'Phone number', 'wghshop' ); ?></label>
-					<input class="input" type="tel" id="wghs_c_phone" name="phone" required></p>
-				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_msg"><?php esc_html_e( 'Message', 'wghshop' ); ?></label>
-					<textarea class="input" id="wghs_c_msg" name="message" rows="5" required></textarea></p>
+					<input class="input" type="tel" id="wghs_c_phone" name="phone" inputmode="tel" required></p>
+				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_area"><?php esc_html_e( 'Your area', 'wghshop' ); ?></label>
+					<input class="input" type="text" id="wghs_c_area" name="area" autocomplete="address-level2" placeholder="<?php esc_attr_e( 'e.g. Madina, Accra', 'wghshop' ); ?>" required></p>
+				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_product"><?php esc_html_e( 'Which product? (optional)', 'wghshop' ); ?></label>
+					<input class="input" type="text" id="wghs_c_product" name="product" value="<?php echo isset( $_GET['product'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['product'] ) ) ) : ''; // phpcs:ignore ?>" placeholder="<?php esc_attr_e( 'e.g. 2L Commercial Blender', 'wghshop' ); ?>"></p>
+				<p class="mt-4"><label class="mb-1 block text-sm font-semibold" for="wghs_c_msg"><?php esc_html_e( 'Anything else? (optional)', 'wghshop' ); ?></label>
+					<textarea class="input" id="wghs_c_msg" name="message" rows="3"></textarea></p>
 				<button class="btn-primary mt-6 w-full sm:w-auto" type="submit"><?php esc_html_e( 'Send message', 'wghshop' ); ?></button>
 				<p class="mt-3 text-xs text-wgh-ink3"><?php esc_html_e( 'Faster answer needed? WhatsApp 054 214 8020.', 'wghshop' ); ?></p>
 			</form>

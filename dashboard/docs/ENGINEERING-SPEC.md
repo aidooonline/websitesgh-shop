@@ -58,9 +58,15 @@ order_items
 attribution_events (mirror of wghs_attribution, pulled nightly)
   id, woo_attr_id (unique), created_at, click_id, click_type, product_id,
   product_name, price_ghs, placement, utm_source, utm_medium, utm_campaign,
-  status, ref, conv_value_ghs, order_id
+  status, ref, conv_value_ghs, order_id,
+  cust_name, cust_phone, cust_area
   -- status includes 'cart' (add-to-cart stage) so the funnel middle is
   -- measurable: view -> cart -> whatsapp tap -> sale
+  -- cust_* captured by the soft-smart popup before WhatsApp (asked once,
+  -- remembered). cust_phone is the real phone for Enhanced Conversions
+  -- hashing, so most conversions now carry a hashable phone even before
+  -- the WooCommerce order exists. 'skipped' rows (no cust_*) still track
+  -- via ref + gclid, just without a name.
 
 ad_spend (from CSV imports, normalized across platforms)
   id, platform (google|meta|tiktok), period_start, period_end,
