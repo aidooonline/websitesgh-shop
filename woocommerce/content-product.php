@@ -14,7 +14,7 @@ if ( empty( $product ) || ! $product->is_visible() ) { return; }
 
 $terms = get_the_terms( $product->get_id(), 'product_cat' );
 $cat   = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
-$wa    = function_exists( 'wghs_wa_product_link' ) ? wghs_wa_product_link( $product ) : '';
+$cart  = $product->add_to_cart_url();
 ?>
 <li <?php wc_product_class( '', $product ); ?>>
 	<div class="pcard">
@@ -47,11 +47,10 @@ $wa    = function_exists( 'wghs_wa_product_link' ) ? wghs_wa_product_link( $prod
 				</div>
 
 				<div class="pcard__actions">
-					<?php if ( $wa && $product->is_in_stock() ) : ?>
-						<a class="pcard__wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"
-							data-wghs-event="card_whatsapp" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
-							<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
-							<span><?php esc_html_e( 'Order on WhatsApp', 'wghshop' ); ?></span>
+					<?php if ( $product->is_in_stock() ) : ?>
+						<a class="pcard__wa" href="<?php echo esc_url( $cart ); ?>" rel="nofollow"
+							data-wghs-event="card_get_it_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
+							<span><?php esc_html_e( 'Get it now', 'wghshop' ); ?></span>
 						</a>
 					<?php endif; ?>
 					<div class="pcard__minor">

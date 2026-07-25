@@ -100,31 +100,47 @@ function wghs_cart_whatsapp_button() {
  * no route through the cart from a product page.
  */
 add_action( 'wp_loaded', function () {
-	// Kill the default add to cart form (button + quantity) on single products.
+	// Remove WooCommerce's default add-to-cart form UI; we render our own button.
 	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
 }, 20 );
 
+/**
+ * Product page order block, cart-first.
+ *
+ *   Get it now   -> adds THIS product to the cart and goes to the cart page,
+ *                   where the whole basket is sent to WhatsApp as one message.
+ *   Contact to order -> secondary, for buyers who would rather call or use the
+ *                   form. Kept but visually quieter so the cart is the main path.
+ *
+ * Why cart-first: the cart is a measurable middle step. People who add to cart
+ * but do not message become a retargeting audience (the add_to_cart pixel event
+ * already fires for them). The cart also lets a buyer gather several items into
+ * one clean WhatsApp message with the total. Fewer chats than one-tap, but
+ * richer data and more serious buyers, which suits the paid-ads strategy.
+ */
 function wghs_two_order_buttons() {
 	global $product;
 	if ( ! $product instanceof WC_Product ) { return; }
-	$wa = function_exists( 'wghs_wa_product_link' ) ? wghs_wa_product_link( $product ) : '';
-	$contact = home_url( '/contact/' );
 	$in_stock = $product->is_in_stock();
+	$contact  = home_url( '/contact/' );
+	// Add-to-cart URL that redirects to the cart page after adding.
+	$cart_url = $product->add_to_cart_url();
 	?>
 	<div class="wghs-order">
-		<?php if ( $wa && $in_stock ) : ?>
-			<a class="wghs-order__primary" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"
-				data-wghs-event="order_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
-				<?php esc_html_e( 'Order now', 'wghshop' ); ?>
+		<?php if ( $in_stock ) : ?>
+			<a class="wghs-order__primary" href="<?php echo esc_url( $cart_url ); ?>"
+				data-wghs-event="get_it_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>"
+				rel="nofollow">
+				<?php esc_html_e( 'Get it now', 'wghshop' ); ?>
 			</a>
-		<?php elseif ( ! $in_stock ) : ?>
+		<?php else : ?>
 			<span class="wghs-order__out"><?php esc_html_e( 'Out of stock, ask us when it returns', 'wghshop' ); ?></span>
 		<?php endif; ?>
 		<a class="wghs-order__secondary" href="<?php echo esc_url( $contact ); ?>" data-wghs-event="contact_order">
 			<?php esc_html_e( 'Contact to order', 'wghshop' ); ?>
 		</a>
 	</div>
-	<p class="wghs-order__note"><?php esc_html_e( 'Pay on delivery. You check the item before any money changes hands.', 'wghshop' ); ?></p>
+	<p class="wghs-order__note"><?php esc_html_e( 'Add what you want, then send the whole order on WhatsApp from your cart. Pay on delivery.', 'wghshop' ); ?></p>
 	<?php
 }
 add_action( 'woocommerce_single_product_summary', 'wghs_two_order_buttons', 30 );
@@ -202,3 +218,11 @@ add_action( 'admin_notices', function () {
 		) )
 	);
 } );
+
+
+/* Send buyers to the cart immediately after adding, so "Get it now" lands on
+ * the cart page where the whole basket goes to WhatsApp. */
+add_filter( 'woocommerce_add_to_cart_redirect', function () {
+	return function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url( '/cart/' );
+} );
+add_filter( 'option_woocommerce_cart_redirect_after_add', function () { return 'yes'; } );

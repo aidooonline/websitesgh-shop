@@ -269,15 +269,13 @@ function wghs_sticky_order_bar() {
 	?>
 	<div class="wghs-orderbar lg:hidden" role="region" aria-label="<?php esc_attr_e( 'Order', 'wghshop' ); ?>">
 		<?php
-		$bar_wa      = function_exists( 'wghs_wa_product_link' ) ? wghs_wa_product_link( $product ) : '';
-		$bar_url     = apply_filters( 'wghs_orderbar_url', $bar_wa ? $bar_wa : home_url( '/contact/' ), $product );
-		$is_wa       = false !== strpos( $bar_url, 'wa.me' );
+		$cart_url    = $product->add_to_cart_url();
 		$contact_url = home_url( '/contact/' );
 		$in_stock    = $product->is_in_stock();
 		?>
-		<?php if ( $in_stock && $is_wa ) : ?>
-			<a class="wghs-orderbar__half wghs-orderbar__half--primary" href="<?php echo esc_url( $bar_url ); ?>" target="_blank" rel="noopener" data-wghs-event="orderbar_order_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
-				<span class="wghs-orderbar__label"><?php esc_html_e( 'Order now', 'wghshop' ); ?></span>
+		<?php if ( $in_stock ) : ?>
+			<a class="wghs-orderbar__half wghs-orderbar__half--primary" href="<?php echo esc_url( $cart_url ); ?>" rel="nofollow" data-wghs-event="orderbar_get_it_now" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>">
+				<span class="wghs-orderbar__label"><?php esc_html_e( 'Get it now', 'wghshop' ); ?></span>
 				<span class="wghs-orderbar__sub"><?php echo wp_kses_post( $product->get_price_html() ); ?></span>
 			</a>
 		<?php else : ?>
