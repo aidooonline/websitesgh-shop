@@ -59,6 +59,11 @@ function wghs_share_image_url() {
 			if ( $src ) { $image = $src[0]; }
 		}
 	}
+	// Final fallback: the branded order card, so a share preview is never blank
+	// and always looks intentional (cart page, or a product with no image).
+	if ( ! $image ) {
+		$image = get_template_directory_uri() . '/assets/img/order-card.png';
+	}
 	return $image;
 }
 
