@@ -74,7 +74,7 @@ function wghs_cart_whatsapp_button() {
 		<?php esc_html_e( 'Your full order goes in one message. We confirm, deliver, and you pay the rider.', 'wghshop' ); ?>
 	</p>
 	<p class="wghs-cartwa__alt">
-		<a href="<?php echo esc_url( wc_get_checkout_url() ); ?>">
+		<a href="<?php echo esc_url( add_query_arg( 'form', '1', wc_get_checkout_url() ) ); ?>">
 			<?php esc_html_e( 'No WhatsApp? Order with the form instead. Same pay on delivery.', 'wghshop' ); ?>
 		</a>
 	</p>
@@ -198,10 +198,12 @@ function wghs_force_classic_cart_checkout( $force = false ) {
 }
 
 add_action( 'admin_init', function () {
-	if ( get_option( 'wghs_classic_cart_done' ) ) { return; }
+	// Version-gated so a fix can force a re-run. Bump when the conversion logic
+	// changes or when a live site is found still on block cart/checkout.
+	if ( '2' === (string) get_option( 'wghs_classic_cart_done' ) ) { return; }
 	if ( ! function_exists( 'wc_get_page_id' ) ) { return; }
-	$done = wghs_force_classic_cart_checkout();
-	update_option( 'wghs_classic_cart_done', 1 );
+	$done = wghs_force_classic_cart_checkout( true ); // force: convert block pages now
+	update_option( 'wghs_classic_cart_done', '2' );
 	if ( $done ) { set_transient( 'wghs_classic_cart_notice', $done, 60 ); }
 } );
 
@@ -226,3 +228,29 @@ add_filter( 'woocommerce_add_to_cart_redirect', function () {
 	return function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url( '/cart/' );
 } );
 add_filter( 'option_woocommerce_cart_redirect_after_add', function () { return 'yes'; } );
+
+/* --------------------------------------------------------------------------
+ * The flow is product -> cart -> WhatsApp. There is NO checkout page in this
+ * journey. The billing form the owner saw is WooCommerce's checkout; we send
+ * anyone who lands on it back to the cart, where the WhatsApp button lives.
+ *
+ * The only reason to allow checkout at all is the rare non-WhatsApp buyer who
+ * uses the classic form on purpose. We allow that ONLY when they arrive with
+ * ?form=1 (the quiet "No WhatsApp? order with the form" link on the cart).
+ * Every other route to checkout bounces to the cart.
+ * ------------------------------------------------------------------------ */
+add_action( 'template_redirect', function () {
+	if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) { return; }
+	if ( is_wc_endpoint_url( 'order-received' ) ) { return; } // never block the thank-you page
+	// Deliberate form users pass ?form=1; everyone else goes back to the cart.
+	if ( isset( $_GET['form'] ) && '1' === $_GET['form'] ) { return; } // phpcs:ignore WordPress.Security.NonceVerification
+	wp_safe_redirect( wc_get_cart_url() );
+	exit;
+} );
+
+
+/* Cleaner cart: drop the "added to cart / Continue shopping" notice, the cart
+ * IS the next step now, so the notice is just clutter before the WhatsApp
+ * button. */
+add_filter( 'wc_add_to_cart_message_html', '__return_empty_string' );
+add_filter( 'woocommerce_cart_redirect_after_error', function ( $url ) { return $url; } );
