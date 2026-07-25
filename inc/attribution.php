@@ -182,6 +182,46 @@ add_action( 'rest_api_init', function () {
  * On-site orders: ride the gclid through checkout, auto-convert.
  * ------------------------------------------------------------------------ */
 
+/**
+ * Log every add-to-cart as a funnel stage, so the dashboard can measure
+ * view -> cart -> WhatsApp -> sale. Reuses the same click-id/UTM cookie
+ * context as the WhatsApp tap. Placement 'add_to_cart' distinguishes it.
+ */
+add_action( 'woocommerce_add_to_cart', function ( $cart_item_key, $product_id, $qty ) {
+	global $wpdb;
+	if ( ! function_exists( 'wc_get_product' ) ) { return; }
+	$product = wc_get_product( $product_id );
+	if ( ! $product ) { return; }
+
+	$click_id = '';
+	$type     = '';
+	foreach ( array( 'gclid', 'gbraid', 'wbraid' ) as $k ) {
+		if ( ! empty( $_COOKIE[ 'wghs_' . $k ] ) ) {
+			$click_id = substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 191 );
+			$type     = $k;
+			break;
+		}
+	}
+	$utm = array();
+	foreach ( array( 'utm_source', 'utm_medium', 'utm_campaign' ) as $k ) {
+		$utm[ $k ] = ! empty( $_COOKIE[ 'wghs_' . $k ] ) ? substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 120 ) : '';
+	}
+
+	$wpdb->insert( wghs_attr_table(), array(
+		'created_at'   => current_time( 'mysql', true ),
+		'click_id'     => $click_id,
+		'click_type'   => $type,
+		'product_id'   => (int) $product_id,
+		'product_name' => $product->get_name(),
+		'price'    => (float) $product->get_price(),
+		'placement'    => 'add_to_cart',
+		'utm_source'   => $utm['utm_source'],
+		'utm_medium'   => $utm['utm_medium'],
+		'utm_campaign' => $utm['utm_campaign'],
+		'status'       => 'cart',
+	) );
+}, 20, 3 );
+
 add_action( 'woocommerce_checkout_order_processed', function ( $order_id ) {
 	global $wpdb;
 	$order = wc_get_order( $order_id );

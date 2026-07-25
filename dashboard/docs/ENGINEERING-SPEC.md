@@ -59,6 +59,8 @@ attribution_events (mirror of wghs_attribution, pulled nightly)
   id, woo_attr_id (unique), created_at, click_id, click_type, product_id,
   product_name, price_ghs, placement, utm_source, utm_medium, utm_campaign,
   status, ref, conv_value_ghs, order_id
+  -- status includes 'cart' (add-to-cart stage) so the funnel middle is
+  -- measurable: view -> cart -> whatsapp tap -> sale
 
 ad_spend (from CSV imports, normalized across platforms)
   id, platform (google|meta|tiktok), period_start, period_end,
@@ -362,6 +364,77 @@ Acceptance test:
   dataset and an expected effect on sales; ask a real question and get an answer
   grounded in the data; assert the briefing is stored with its cost; assert the
   agent has no code path to the action/export layer.
+
+--------------------------------------------------------------------------
+## The milestone engine (threshold ladder with guided decisions)
+
+Built into Sprint 3 (rules) and surfaced by Sprint 4 (dashboard) and Sprint 6
+(agent). The point: the owner should never have to remember "when do I switch
+bidding" or "when is there enough data". The system watches a ladder of numeric
+thresholds and, when one is reached, raises a guided decision, what changed,
+what to do now, and why. A journey of numbers, each with a gate.
+
+The funnel it measures (now fully captured, because add-to-cart is logged as a
+stage in the attribution table alongside WhatsApp taps and sales):
+  ad click -> view -> ADD TO CART -> WhatsApp tap -> confirmed sale
+Each arrow is a conversion rate the system tracks and the agent reasons over.
+
+The threshold ladder (each gate fires once, records the decision, then arms the
+next gate):
+
+  GATE 0  First conversion tracked
+          -> "Attribution is working. Keep exporting every sale."
+  GATE 1  15 offline conversions logged in a rolling 30 days
+          -> "Halfway to the Smart Bidding threshold. Stay on Max
+              Conversions, keep exporting daily-to-weekly."
+  GATE 2  30 offline conversions in a rolling 30 days  [THE BIG ONE]
+          -> "Smart Bidding can now stabilise. Switch bidding to Target CPA.
+              Suggested starting target: your current cost per delivered order.
+              Reason: Google now has enough confirmed sales to optimise for
+              buyers, not tappers."
+  GATE 3  50 offline conversions in a rolling 30 days
+          -> "Enough volume for Target ROAS if you want to optimise by value.
+              Consider raising budget on the KEEP keywords; the loop is proven."
+  GATE 4  Match rate >= 60% sustained
+          -> "Your gclid+phone match rate is strong; the signal Google gets is
+              high quality. Safe to lean harder on automated bidding."
+
+Guardrail gates (fire whenever the condition is TRUE, to protect the loop):
+  G-A  Export overdue > 7 days
+       -> "Upload is overdue. Smart Bidding is going stale. Export now."
+  G-B  Rolling 30-day conversions falls back under 30 after passing GATE 2
+       -> "Volume dropped below the Smart Bidding floor. Consider reverting to
+           Max Conversions until it recovers, or widen budget/keywords."
+  G-C  Match rate < 40%
+       -> "Match rate is too thin to trust. Check gclid capture and phone
+           normalization before relying on automated bidding."
+  G-D  Cart-to-WhatsApp rate drops sharply
+       -> "People add to cart but stop before messaging. The cart or the
+           WhatsApp step is leaking; check it. Also: these are a retargeting
+           audience, run a win-back campaign."
+
+Data model addition:
+  milestones
+    id, gate_code, gate_label, threshold_json, reached_at (null until reached),
+    decision_text, decision_taken (bool), decision_taken_at, evidence_json
+  The ladder is seeded once; the engine evaluates every gate on each data
+  import and stamps reached_at + evidence when a gate's condition is met.
+
+How each layer uses it:
+  - Sprint 3 engine: evaluates gates on import, records reached milestones.
+  - Sprint 4 dashboard: a "Journey" strip at the top, the ladder with progress
+    (e.g. "22 / 30 conversions to Smart Bidding"), the next gate always
+    visible, reached gates showing their decision and whether it was taken.
+  - Sprint 6 agent: when a gate fires, the agent leads its briefing with it,
+    states the decision, the number that triggered it, and the expected effect
+    on sales. Guardrail gates are treated as first-order, they protect the
+    growth loop.
+
+Acceptance test (folded into Sprint 3 and 4):
+  Seed the ladder; feed data crossing 30 conversions; assert GATE 2 stamps
+  reached_at with evidence and surfaces the Target CPA decision; assert the
+  Journey strip shows correct progress toward the next gate; assert an overdue
+  export fires G-A.
 
 --------------------------------------------------------------------------
 ## Cross-cutting engineering standards (all sprints)
