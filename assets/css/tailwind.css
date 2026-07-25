@@ -268,11 +268,6 @@ ul.products li.product { @apply m-0; }
 .wghs-truststrip svg { @apply text-wgh-green; }
 
 /* Sticky mobile order bar */
-.wghs-orderbar { @apply fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-wgh-line bg-white/95 px-4 py-3 backdrop-blur-md; padding-bottom: calc(.75rem + env(safe-area-inset-bottom)); }
-.wghs-orderbar__price { @apply flex flex-col leading-tight; }
-.wghs-orderbar__price span { @apply text-lg font-bold text-wgh-goldInk; }
-.wghs-orderbar__price small { @apply text-[11px] text-wgh-ink3; }
-.wghs-orderbar__btn { @apply rounded-lg bg-wgh-green px-6 py-3 text-sm font-bold text-white; }
 
 /* Product FAQ */
 .wghs-pfaq { @apply mt-10 max-w-measure; }
@@ -437,8 +432,21 @@ ul.products li.product {
 .wghs-author__bio { @apply mt-1 text-sm leading-relaxed text-wgh-ink2; }
 
 /* Two-button order block: Order now (WhatsApp) + Contact to order */
-.wghs-order { @apply mt-5 flex flex-col gap-3 sm:flex-row; }
+.wghs-order { @apply mt-5 hidden gap-3 lg:flex lg:flex-row; }
 .wghs-order__primary { @apply flex flex-1 items-center justify-center rounded-lg bg-wgh-green px-6 py-3.5 text-base font-bold text-white no-underline transition hover:bg-wgh-greenV; }
 .wghs-order__secondary { @apply flex flex-1 items-center justify-center rounded-lg border border-wgh-line px-6 py-3.5 text-base font-semibold text-wgh-ink no-underline transition hover:border-wgh-green hover:text-wgh-green; }
 .wghs-order__out { @apply flex flex-1 items-center justify-center rounded-lg bg-wgh-line2 px-6 py-3.5 text-sm font-medium text-wgh-ink3; }
 .wghs-order__note { @apply mt-3 text-xs leading-relaxed text-wgh-ink3; }
+
+/* Mobile app-style order bar: two fixed half-width buttons at the screen bottom */
+.wghs-orderbar { @apply fixed inset-x-0 bottom-0 z-50 flex items-stretch gap-0 border-t border-wgh-line bg-white shadow-[0_-8px_24px_-12px_rgba(20,32,26,0.25)]; padding-bottom: env(safe-area-inset-bottom); }
+.wghs-orderbar__half { @apply flex w-1/2 flex-col items-center justify-center gap-0.5 px-3 py-3 text-center no-underline transition; }
+.wghs-orderbar__half--primary { @apply bg-wgh-green text-white hover:bg-wgh-greenV; }
+.wghs-orderbar__half--secondary { @apply bg-white text-wgh-ink hover:bg-wgh-line2; }
+.wghs-orderbar__half--out { @apply w-1/2 bg-wgh-line2 text-wgh-ink3; }
+.wghs-orderbar__label { @apply text-sm font-bold leading-tight; }
+.wghs-orderbar__sub { @apply text-[11px] font-medium leading-tight opacity-90; }
+.wghs-orderbar__half--primary .wghs-orderbar__sub .price,
+.wghs-orderbar__half--primary .wghs-orderbar__sub { @apply text-white; }
+/* Keep page content clear of the fixed bar on mobile */
+@media (max-width: 1023px) { .single-product { padding-bottom: 4.5rem; } }
