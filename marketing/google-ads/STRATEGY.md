@@ -19,6 +19,12 @@ So: Search campaign, manual-ish control, WhatsApp tap as the conversion.
 Revisit PMax ONLY after checkout is a real path with tracked purchases, or
 after Search is profitable and you want cross-channel scale.
 
+## Billing currency
+
+Google Ads and Meta bill in USD, not cedis. Every bid, budget and CPA target
+in this kit is in US dollars. Product prices on the site stay in GHS; only the
+ad spend is USD. Rough rate used: GHS 12 = $1.
+
 ## Account structure
 
 Campaign: "WGH Shop - Search - Appliances"
@@ -27,11 +33,11 @@ Campaign: "WGH Shop - Search - Appliances"
 - Language: English
 - Network: Search only. Turn OFF Search Partners and the Display Network at
   launch (they leak budget on low-intent placements).
-- Bidding: START on Maximise Clicks with a max CPC cap of GHS 2.50 for the
+- Bidding: START on Maximise Clicks with a max CPC cap of $0.25 for the
   first 2 weeks to gather data cheaply. Once you have ~15-20 conversions
   logged (WhatsApp taps via the tracking we built), SWITCH to Maximise
   Conversions or Target CPA.
-- Budget: GHS 150-170/day (about GHS 5,000/month).
+- Budget: about $13/day (about $400/month). Ads are billed in USD.
 - Conversion: import the offline WhatsApp conversion we built, plus the
   on-site WhatsApp-tap event. Bid toward the tap now; upgrade to the offline
   SALE import once you have volume, so Google learns buyers not tappers.
@@ -83,19 +89,19 @@ structure is not tidiness, it is the single biggest lever on cost.
 
 ## Bidding phases (the money discipline)
 
-Phase 1, weeks 1-2: Max Clicks, CPC cap GHS 2.50, gather cheap data.
+Phase 1, weeks 1-2: Max Clicks, CPC cap $0.25, gather cheap data.
 Phase 2, weeks 3-4: switch to Max Conversions once ~15-20 taps logged.
 Phase 3, month 2+: Target CPA once the offline SALE import has volume, so
 Google optimises for paying customers, not tappers. Target CPA start point:
-your profit per order (~GHS 105) minus your desired margin, so maybe GHS 60-70
-target cost per sale.
+your profit per order (~$8.75, i.e. GHS 105) minus your desired margin, so
+maybe $5-6 target cost per sale.
 
 ## KPI benchmarks to hold yourself to (Ghana, this niche)
 
-- CPC: GHS 1.50-3.00 (Search, ecommerce is the cheapest vertical globally)
+- CPC: $0.12-0.25 (Search, ecommerce is the cheapest vertical globally)
 - CTR: aim 4-6%+ on tight ad groups
 - Tap rate (landing to WhatsApp): 8-15% on a good product page
 - Tap-to-sale: 30-50% (WhatsApp closes well in Ghana)
-- Cost per DELIVERED order: keep under GHS 80 (against ~GHS 105 profit)
+- Cost per DELIVERED order: keep under $6-7 (against ~$8.75 profit per order at GHS 105)
 - If any ad group's cost-per-order exceeds profit-per-order for 2 weeks, pause
   it and move budget to the winners. The Attribution dashboard shows this.

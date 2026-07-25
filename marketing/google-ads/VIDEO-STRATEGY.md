@@ -95,5 +95,5 @@ HOOK (3s) -> PROOF (15-25s) -> OFFER (5s).
 - Targeting: Ghana; layer your retargeting audiences + in-market "home
   appliances" + custom-intent audiences built from your Search keywords
 - Format: skippable in-stream + in-feed; bumpers (6s cuts) for reach
-- Budget: start tiny, GHS 30-50/day per winning video, scale only what holds
+- Budget: start tiny, $3-5/day per winning video, scale only what holds
   a low cost per view AND drives WhatsApp taps
