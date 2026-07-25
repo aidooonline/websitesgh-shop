@@ -48,6 +48,8 @@ orders
   placement, delivered (bool null=unknown), delivery_failed (bool),
   dealer_cost_ghs (null until entered), delivery_cost_ghs (null),
   momo_received (bool), profit_ghs (computed, null until costs entered),
+  customer_phone (nullable, raw), customer_phone_sha256 (nullable, hashed
+    for Enhanced Conversions upload; raw never leaves the server),
   synced_at
 
 order_items
@@ -258,6 +260,23 @@ Scope:
 - Profit truth: profit_ghs = revenue_ghs - dealer_cost_ghs - delivery_cost_ghs;
   the profit bands (green < $6 equiv, amber, red > profit-per-order) recompute
   from real margins, so the whole decision engine sharpens as real costs land.
+- Enhanced Conversions export: the offline conversion file includes, per
+  converted order, the gclid AND the customer's phone hashed with SHA-256
+  (normalized to E.164 first, e.g. +233..., then lowercased-trimmed then
+  hashed, per Google's spec). Research shows gclid + first-party data gives a
+  median 10% lift in recorded conversions over gclid-only, and Ghana is
+  phone-first so the match rate is high. The RAW phone never leaves the server;
+  only the hash is written to the export. Two conversion files are produced:
+  the standard offline-conversion CSV (gclid, name, time, value, currency) and
+  the Enhanced Conversions for Leads CSV (adds the hashed phone column), so the
+  owner can use whichever Google path is active. Data Manager (June 2026+) via
+  its SFTP connector accepts the file with no fixed template; the manual CSV
+  path still works.
+- Weekly export reminder: the dashboard tracks the last export date and shows a
+  prominent nudge when 7 days have passed (research: Smart Bidding wants daily-
+  to-weekly consistent uploads, and needs ~30 conversions/month to stabilise,
+  so consistency matters more than volume early). The reminder states how many
+  unexported converted orders are waiting.
 - Version B action export: the owner clicks keep/hold/kill on the verdict
   board; the dashboard writes a Google Ads Editor change-file CSV (pause these
   keywords, keep these, add these negatives) in the exact Editor import format
@@ -308,6 +327,13 @@ Scope:
 - Three outputs:
   1. Briefing (fires on import): biggest win, biggest leak, the one highest-
      value action, each with its number and expected sales impact.
+  1b. The agent explicitly watches the offline-conversion feedback loop, since
+      that is the single strongest growth lever: it flags when the export is
+      overdue, when the monthly conversion count is under ~30 (below which
+      Smart Bidding under-performs), and when match rate looks low, because
+      those directly throttle how fast Google learns to find buyers. Feeding
+      confirmed sales back to Google is how the SAME budget produces more sales
+      over time; the agent treats protecting that loop as a first-order goal.
   2. Second opinion (on any flagged keyword/product): the why behind the
      verdict and a sharper suggestion than the rule alone.
   3. Ask-anything: owner types a question, agent answers from the real data
@@ -349,5 +375,9 @@ Acceptance test:
 - Commits authored as Stephen Aidoo <aidooonline@gmail.com>.
 - No em dash anywhere. PAT scrubbed after every push. No feature called done
   until its acceptance test passes on real data, verified, not assumed.
+- The offline-conversion feedback loop is treated as the primary growth
+  engine: every confirmed sale must be exportable back to Google with its gclid
+  and hashed phone, promptly and consistently, because that is what teaches
+  Smart Bidding to buy more buyers and fewer tappers with the same budget.
 - The whole system answers one question at every level: what do I do next to
   sell more at profit. If a feature does not help answer that, it is cut.
