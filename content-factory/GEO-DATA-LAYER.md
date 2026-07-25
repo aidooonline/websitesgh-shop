@@ -5,7 +5,7 @@ that AI Overviews, ChatGPT, Gemini, Perplexity and Google cite. Answer engines d
 generic spec tables that fifty other sites also have. They cite three things: specific numbers,
 fresh dated facts, and original data that exists nowhere else. So the strategy is to stop
 writing pages that describe products, and start publishing pages that are the primary source
-of record for used business laptops in Ghana. Five moves, all live or ready to build.
+of record for home appliances and electronics in Ghana. Five moves, all live or ready to build.
 
 ## 1. Proprietary data assets (the core moat)
 Publish original, structured data no competitor has. Two assets:
@@ -17,7 +17,7 @@ Publish original, structured data no competitor has. Two assets:
 - **The Ghana Business Laptop Price Index.** One evergreen page listing every model, its live
   GHS price, and the new-vs-used saving percentage, dated and updated monthly. This is the
   single strongest citation magnet in the whole plan: when anyone asks an AI "how much is a used
-  HP laptop in Ghana," the only structured, current, local answer is ours. Build as a dedicated
+  blender in Ghana," the only structured, current, local answer is ours. Build as a dedicated
   page fed from products/mr-boadi-products.json so it never goes stale. (New backlog item.)
 
 ## 2. Citable answer atoms
@@ -44,7 +44,7 @@ from content-index.md after each publish. (New backlog item. Note: llms.txt sits
 root, so it deploys via the theme or a small must-use plugin, not the excluded factory folder.)
 
 ## 5. Entity seeding
-Make "WebsitesGH Shop" a recognised entity so answer engines associate it with "used HP laptops
+Make "WebsitesGH Shop" a recognised entity so answer engines associate it with "appliance prices
 Ghana." Consistent Organization schema on every page (name, Accra location, phone, sameAs to
 social profiles), consistent NAP wording, and internal links that always name the entity. Over
 time this is what makes an AI name us as the seller, not just quote a price.

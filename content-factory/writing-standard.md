@@ -14,17 +14,17 @@ makes the batch "severely researched" rather than generic filler.
 
 ## Length
 - Guides and comparisons: 1,200 to 2,000 words.
-- Model money pages: 900 to 1,400 words.
+- Price and category money pages: 900 to 1,400 words.
 
 ## Schema (via the site SEO plugin or inline JSON-LD)
 - Article + FAQPage on every post.
-- Product + Offer on model money pages (price in GHS, availability, condition = refurbished).
+- Product + Offer on money pages (price in GHS, availability, condition = new).
 - BreadcrumbList sitewide.
 
 ## EEAT and honesty
 - Author entity: WebsitesGH Shop (never Stephen's name unless he says so).
-- Real specs only. Never claim a spec the supply does not have. Grading language is honest:
-  UK-used / refurbished, tested, graded.
+- Real specs only. Never claim a spec the supply does not have. Products are new and
+  sealed; say so plainly, and never imply a certification or warranty we do not have.
 - At least two named external references where a claim needs backing. Never invent a source.
 
 ## Conversion (every article earns its keep)
