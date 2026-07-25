@@ -23,6 +23,11 @@ function wghs_wa_number() {
 		$gw  = get_option( 'woocommerce_wghs_whatsapp_settings', array() );
 		$raw = isset( $gw['whatsapp'] ) ? trim( (string) $gw['whatsapp'] ) : '';
 	}
+	// Final fallback to the shop's known number, so the WhatsApp order button
+	// never disappears just because the Customizer field was left blank.
+	if ( '' === $raw ) {
+		$raw = '233542148020';
+	}
 	if ( preg_match( '~(?:wa\.me/|api\.whatsapp\.com/send[^ ]*phone=)\+?(\d+)~i', $raw, $m ) ) {
 		return $m[1];
 	}

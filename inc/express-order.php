@@ -51,11 +51,14 @@ function wghs_wa_cart_message() {
 
 /**
  * Cart: replace the proceed-to-checkout button with Send order on WhatsApp.
+ * Hooked late on wp so it runs after WooCommerce has attached its own button,
+ * then we strip all and add ours. Priority 99 on the render hook guarantees
+ * ours is what shows.
  */
-add_action( 'init', function () {
+add_action( 'wp', function () {
 	remove_all_actions( 'woocommerce_proceed_to_checkout' );
-	add_action( 'woocommerce_proceed_to_checkout', 'wghs_cart_whatsapp_button', 20 );
-}, 20 );
+	add_action( 'woocommerce_proceed_to_checkout', 'wghs_cart_whatsapp_button', 99 );
+}, 99 );
 
 function wghs_cart_whatsapp_button() {
 	$msg = wghs_wa_cart_message();
