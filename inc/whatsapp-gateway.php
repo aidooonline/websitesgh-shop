@@ -305,16 +305,28 @@ function wghs_wa_cart_checkout() {
 		}
 	}
 
-	$msg   = array();
-	$msg[] = 'Hello WebsitesGH Shop, I want to order the following from my cart:';
-	$msg[] = '';
-	$msg   = array_merge( $msg, $lines );
-	$msg[] = '';
-	$msg[] = 'Total: ' . $money( WC()->cart->get_total( 'edit' ) );
-	if ( ! is_wp_error( $order ) ) { $msg[] = 'Order ref: #' . $order->get_order_number(); }
+	$msg = function_exists( 'wghs_wa_cart_message' ) ? wghs_wa_cart_message() : '';
+	if ( '' === $msg ) {
+		// Fallback if the shared builder is unavailable for any reason.
+		$msg   = array();
+		$msg[] = '*New order from WebsitesGH Shop*';
+		$msg[] = '';
+		foreach ( WC()->cart->get_cart() as $item ) {
+			$p = $item['data'];
+			if ( $p && $p->exists() ) {
+				$msg[] = '- ' . $p->get_name() . ' x' . $item['quantity'] . ' = ' . $money( (float) $p->get_price() * (int) $item['quantity'] );
+			}
+		}
+		$msg[] = '';
+		$msg[] = '*Total: ' . $money( WC()->cart->get_total( 'edit' ) ) . '*';
+		$msg   = implode( "\n", $msg );
+	}
+	if ( ! is_wp_error( $order ) ) {
+		$msg .= "\nOrder ref: #" . $order->get_order_number();
+	}
 
 	WC()->cart->empty_cart();
 
-	wp_redirect( 'https://wa.me/' . $number . '?text=' . rawurlencode( implode( "\n", $msg ) ) );
+	wp_redirect( 'https://wa.me/' . $number . '?text=' . rawurlencode( $msg ) );
 	exit;
 }

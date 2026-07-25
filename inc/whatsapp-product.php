@@ -37,6 +37,59 @@ function wghs_seo_plugin_active() {
 }
 
 /**
+ * Return the best share image URL for the current singular view: the product
+ * (or post) featured image, falling back to the site logo. Large size, so the
+ * WhatsApp and social preview cards render a proper photo.
+ *
+ * @return string Image URL or empty string.
+ */
+function wghs_share_image_url() {
+	$image = '';
+	if ( is_singular() ) {
+		$id = get_queried_object_id();
+		if ( has_post_thumbnail( $id ) ) {
+			$src = wp_get_attachment_image_src( get_post_thumbnail_id( $id ), 'large' );
+			if ( $src ) { $image = $src[0]; }
+		}
+	}
+	if ( ! $image ) {
+		$logo_id = get_theme_mod( 'custom_logo' );
+		if ( $logo_id ) {
+			$src = wp_get_attachment_image_src( $logo_id, 'full' );
+			if ( $src ) { $image = $src[0]; }
+		}
+	}
+	return $image;
+}
+
+/**
+ * Guarantee the product image is the OG image even when an SEO plugin owns the
+ * Open Graph output. Without this, a product with no image set in the SEO
+ * plugin can fall back to a generic site image, so the WhatsApp preview shows
+ * the wrong picture or none. These filters force the featured image.
+ *
+ * The SEO Framework and others expose filters for exactly this; we hook the
+ * common ones so whichever plugin is active gets the right image.
+ */
+add_filter( 'the_seo_framework_image_generation_params', function ( $params ) {
+	$img = wghs_share_image_url();
+	if ( $img && is_array( $params ) ) {
+		// Force our image as the first candidate the framework considers.
+		$params['cbs'] = array( 'wghs' => function () use ( $img ) { return $img; } );
+	}
+	return $params;
+}, 10 );
+// Rank Math and Yoast image filters, harmless if those plugins are absent.
+add_filter( 'rank_math/opengraph/facebook/og_image', function ( $img ) {
+	$our = wghs_share_image_url();
+	return $our ? $our : $img;
+} );
+add_filter( 'wpseo_opengraph_image', function ( $img ) {
+	$our = wghs_share_image_url();
+	return $our ? $our : $img;
+} );
+
+/**
  * Open Graph and Twitter tags. Skipped entirely when an SEO plugin is present.
  */
 function wghs_open_graph() {
@@ -125,7 +178,7 @@ function wghs_wa_product_message( $product = null ) {
 		return '';
 	}
 
-	$default = "Hello, I want to order this:\n\n{{product}}\nPrice: {{price}}\n{{url}}\n\nMy name is:\nMy location is:";
+	$default = "*NEW ORDER*\nWebsitesGH Shop\n\n- - - - - - - - - - -\n\n*{{product}}*\nPrice: {{price}}\n{{url}}\n\n- - - - - - - - - - -\n\n*MY DETAILS*\n\nName: \nPhone: \nLocation: \n\nPay on delivery";
 	$tpl     = (string) get_theme_mod( 'wghs_wa_product_template', $default );
 
 	$price = html_entity_decode( wp_strip_all_tags( (string) $product->get_price_html() ), ENT_QUOTES, 'UTF-8' );
@@ -181,7 +234,7 @@ function wghs_wa_product_button() {
  */
 add_action( 'customize_register', function ( $wp_customize ) {
 	$wp_customize->add_setting( 'wghs_wa_product_template', array(
-		'default'           => "Hello, I want to order this:\n\n{{product}}\nPrice: {{price}}\n{{url}}\n\nMy name is:\nMy location is:",
+		'default'           => "*NEW ORDER*\nWebsitesGH Shop\n\n- - - - - - - - - - -\n\n*{{product}}*\nPrice: {{price}}\n{{url}}\n\n- - - - - - - - - - -\n\n*MY DETAILS*\n\nName: \nPhone: \nLocation: \n\nPay on delivery",
 		'sanitize_callback' => 'sanitize_textarea_field',
 		'transport'         => 'refresh',
 	) );

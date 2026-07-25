@@ -31,9 +31,11 @@ function wghs_wa_cart_message() {
 		return '';
 	}
 	$lines   = array();
-	$lines[] = '*New order from WebsitesGH Shop*';
+	$lines[] = '*NEW ORDER*';
+	$lines[] = 'WebsitesGH Shop';
 	$lines[] = '';
-	$lines[] = '*Order:*';
+	$lines[] = '- - - - - - - - - - -';
+	$lines[] = '';
 
 	$n = 0;
 	foreach ( WC()->cart->get_cart() as $item ) {
@@ -42,21 +44,26 @@ function wghs_wa_cart_message() {
 		$n++;
 		$qty  = (int) $item['quantity'];
 		$line = number_format( (float) $product->get_price() * $qty, 2 );
-		$lines[] = sprintf( '%d. %s', $n, $product->get_name() );
-		$lines[] = sprintf( '   Qty: %d   GHS %s', $qty, $line );
-		// One product link per item, so the seller can open it and see the
-		// image and full details. WhatsApp only previews the FIRST link, so we
-		// keep each product's own link on its own line for reference.
-		$lines[] = '   ' . get_permalink( $product->get_id() );
+		$lines[] = sprintf( '*%d. %s*', $n, $product->get_name() );
+		$lines[] = sprintf( 'Quantity: %d', $qty );
+		$lines[] = sprintf( 'Price: GHS %s', $line );
+		$lines[] = get_permalink( $product->get_id() );
 		$lines[] = '';
 	}
 
-	$lines[] = sprintf( '*Total: GHS %s*', number_format( (float) WC()->cart->get_total( 'edit' ), 2 ) );
+	$lines[] = '- - - - - - - - - - -';
 	$lines[] = '';
-	$lines[] = '*My details:*';
+	$lines[] = sprintf( '*TOTAL: GHS %s*', number_format( (float) WC()->cart->get_total( 'edit' ), 2 ) );
+	$lines[] = '';
+	$lines[] = '- - - - - - - - - - -';
+	$lines[] = '';
+	$lines[] = '*MY DETAILS*';
+	$lines[] = '';
 	$lines[] = 'Name: ';
 	$lines[] = 'Phone: ';
 	$lines[] = 'Location: ';
+	$lines[] = '';
+	$lines[] = 'Pay on delivery';
 	return implode( "\n", $lines );
 }
 
