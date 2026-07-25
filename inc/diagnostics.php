@@ -21,8 +21,152 @@ add_action( 'admin_menu', function () {
 	);
 } );
 
+/**
+ * Direct repair: fixes ONLY the light, critical things that make the site look
+ * broken (missing pages, the Reading settings that hide the blog, unassigned
+ * menus, stale permalinks). No product seeding, no image generation, so it
+ * finishes in seconds and cannot time out on shared hosting. Reports every
+ * action so there is never any doubt about whether it ran.
+ */
+add_action( 'admin_post_wghs_repair', function () {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Not allowed' ); }
+	check_admin_referer( 'wghs_repair' );
+
+	$log = array();
+
+	/* 1. Pages from pages.json that are missing. */
+	$file = WGHS_DIR . '/inc/setup-data/pages.json';
+	$made = 0;
+	if ( file_exists( $file ) ) {
+		$pages = json_decode( (string) file_get_contents( $file ), true );
+		if ( is_array( $pages ) ) {
+			foreach ( $pages as $p ) {
+				$slug = isset( $p['slug'] ) ? sanitize_title( $p['slug'] ) : '';
+				if ( ! $slug || get_page_by_path( $slug ) ) { continue; }
+				$id = wp_insert_post( array(
+					'post_type'    => 'page',
+					'post_status'  => 'publish',
+					'post_title'   => isset( $p['title'] ) ? $p['title'] : ucfirst( $slug ),
+					'post_name'    => $slug,
+					'post_content' => isset( $p['content'] ) ? $p['content'] : '',
+				) );
+				if ( $id && ! is_wp_error( $id ) ) { $made++; $log[] = "Created page /{$slug}/"; }
+			}
+		}
+	}
+	if ( ! $made ) { $log[] = 'All pages from pages.json already existed.'; }
+
+	/* 2. Home + Guides, and the Reading settings that actually reveal the blog. */
+	$home = get_page_by_path( 'home' );
+	if ( ! $home ) {
+		$home_id = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Home', 'post_name' => 'home' ) );
+		$log[]   = 'Created page /home/';
+	} else {
+		$home_id = $home->ID;
+	}
+	$guides = get_page_by_path( 'guides' );
+	if ( ! $guides ) {
+		$gid   = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Guides', 'post_name' => 'guides' ) );
+		$log[] = 'Created page /guides/';
+	} else {
+		$gid = $guides->ID;
+	}
+	if ( $home_id && ! is_wp_error( $home_id ) && $gid && ! is_wp_error( $gid ) ) {
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', (int) $home_id );
+		update_option( 'page_for_posts', (int) $gid );
+		$log[] = sprintf( 'Reading settings set: front page = Home (#%d), posts page = Guides (#%d). The blog now renders at /guides/.', (int) $home_id, (int) $gid );
+	} else {
+		$log[] = 'WARNING: could not create Home or Guides, so the blog listing may still not render.';
+	}
+
+	/* 3. Menus: build and assign all four locations. */
+	$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
+	$build    = function ( $name, $location, $items ) use ( &$log ) {
+		$menu = wp_get_nav_menu_object( $name );
+		if ( ! $menu ) {
+			$menu_id = wp_create_nav_menu( $name );
+		} else {
+			$menu_id = $menu->term_id;
+			foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $it ) { wp_delete_post( $it->ID, true ); }
+		}
+		if ( is_wp_error( $menu_id ) ) { $log[] = "FAILED to build menu {$name}"; return; }
+		foreach ( $items as $label => $url ) {
+			wp_update_nav_menu_item( $menu_id, 0, array(
+				'menu-item-title'  => $label,
+				'menu-item-url'    => $url,
+				'menu-item-status' => 'publish',
+			) );
+		}
+		$locations              = get_theme_mod( 'nav_menu_locations', array() );
+		$locations[ $location ] = $menu_id;
+		set_theme_mod( 'nav_menu_locations', $locations );
+		$log[] = sprintf( 'Menu "%s" built with %d items and assigned to %s.', $name, count( $items ), $location );
+	};
+
+	$build( 'Primary', 'primary', array(
+		'Home'        => home_url( '/' ),
+		'Shop'        => $shop_url,
+		'Guides'      => home_url( '/guides/' ),
+		'Price Index' => home_url( '/price-index/' ),
+		'About'       => home_url( '/about/' ),
+		'Contact'     => home_url( '/contact/' ),
+	) );
+	$build( 'Footer Shop', 'footer_shop', array(
+		'All products'  => $shop_url,
+		'Price index'   => home_url( '/price-index/' ),
+		'Running costs' => home_url( '/running-costs/' ),
+		'Guides'        => home_url( '/guides/' ),
+	) );
+	$build( 'Footer Help', 'footer_help', array(
+		'How to order'         => home_url( '/how-to-order/' ),
+		'Delivery and payment' => home_url( '/delivery-and-payment/' ),
+		'Delivery areas'       => home_url( '/coverage/' ),
+		'Track my order'       => home_url( '/track-order/' ),
+		'Returns'              => home_url( '/returns/' ),
+		'Warranty'             => home_url( '/warranty/' ),
+		'FAQ'                  => home_url( '/faq/' ),
+	) );
+	$build( 'Footer Company', 'footer_company', array(
+		'About'     => home_url( '/about/' ),
+		'Contact'   => home_url( '/contact/' ),
+		'Wholesale' => home_url( '/wholesale/' ),
+		'Privacy'   => home_url( '/privacy-policy/' ),
+		'Terms'     => home_url( '/terms/' ),
+	) );
+
+	/* 4. Articles, then permalinks. */
+	if ( function_exists( 'wghs_seed_articles' ) ) {
+		$log[] = (string) wghs_seed_articles();
+	}
+	flush_rewrite_rules();
+	$log[] = 'Permalinks flushed.';
+
+	set_transient( 'wghs_repair_log', $log, 300 );
+	wp_safe_redirect( admin_url( 'themes.php?page=wghs-diagnostics&repaired=1' ) );
+	exit;
+} );
+
 function wghs_render_diagnostics() {
 	echo '<div class="wrap"><h1>WebsitesGH Shop Diagnostics</h1>';
+
+	// Show the result of a repair run, so there is never doubt it happened.
+	$rlog = get_transient( 'wghs_repair_log' );
+	if ( $rlog && is_array( $rlog ) ) {
+		delete_transient( 'wghs_repair_log' );
+		echo '<div class="notice notice-success"><p><strong>Repair finished. What it did:</strong></p><ol style="margin:0 0 12px 24px">';
+		foreach ( $rlog as $line ) { echo '<li>' . esc_html( $line ) . '</li>'; }
+		echo '</ol></div>';
+	}
+
+	// The repair button, front and centre.
+	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:16px 0">';
+	wp_nonce_field( 'wghs_repair' );
+	echo '<input type="hidden" name="action" value="wghs_repair">';
+	echo '<button class="button button-primary button-hero">Repair pages, blog and menus now</button>';
+	echo '<p class="description">Creates any missing pages, fixes the Reading settings that hide the blog, rebuilds and assigns all four menus, publishes the seed articles, and flushes permalinks. Takes a few seconds. Does not touch products or images.</p>';
+	echo '</form>';
+
 	echo '<p>Green is good. Red needs the fix shown next to it.</p><table class="widefat striped" style="max-width:900px"><tbody>';
 
 	$row = function ( $label, $ok, $fix = '' ) {
@@ -45,29 +189,35 @@ function wghs_render_diagnostics() {
 		if ( 'shop' === $slug && function_exists( 'wc_get_page_id' ) ) {
 			$p = get_post( wc_get_page_id( 'shop' ) );
 		}
-		$row( "Page exists: /{$slug}/", $p && 'publish' === get_post_status( $p ), 'Run Tools > WebsitesGH Shop Setup to create all pages.' );
+		$row( "Page exists: /{$slug}/", $p && 'publish' === get_post_status( $p ), 'Press the Repair button above.' );
 	}
 
 	// 3. Blog posts page set + has posts
 	$pfp = (int) get_option( 'page_for_posts' );
-	$row( 'Blog (Guides) page is set', $pfp > 0, 'Run Tools > WebsitesGH Shop Setup, or Settings > Reading > Posts page = Guides.' );
+	$row( 'Blog (Guides) page is set  [page_for_posts = ' . $pfp . ']', $pfp > 0, 'Press the Repair button above.' );
 	// WordPress ignores page_for_posts unless show_on_front is 'page' with a
 	// page_on_front. Without this the Guides page renders empty and no blog
 	// listing ever appears, which looks like "the blog page does not exist".
 	$sof = get_option( 'show_on_front' );
 	$pof = (int) get_option( 'page_on_front' );
 	$row(
-		'Front page mode is "page" (required for the blog listing to render)',
+		'Front page mode  [show_on_front = "' . esc_html( (string) $sof ) . '", page_on_front = ' . $pof . ']',
 		'page' === $sof && $pof > 0,
-		'Run Tools > WebsitesGH Shop Setup, or Settings > Reading > set "A static page", Homepage = Home, Posts page = Guides. Without this the Guides page shows nothing.'
+		'Must be "page" with a homepage set, or WordPress ignores the posts page and the blog shows nothing. Press Repair above.'
 	);
 	$posts = wp_count_posts()->publish;
-	$row( "Published articles: {$posts}", $posts > 0, 'Run Tools > WebsitesGH Shop Setup to publish the seed articles.' );
+	$row( "Published articles: {$posts}", $posts > 0, 'Press the Repair button above.' );
 
 	// 4. Menus assigned
 	$locs = get_theme_mod( 'nav_menu_locations', array() );
 	foreach ( array( 'primary', 'footer_shop', 'footer_help', 'footer_company' ) as $loc ) {
-		$row( "Menu assigned: {$loc}", ! empty( $locs[ $loc ] ), 'Run Tools > WebsitesGH Shop Setup, or Appearance > Menus and assign locations.' );
+		$mid   = ! empty( $locs[ $loc ] ) ? (int) $locs[ $loc ] : 0;
+		$items = $mid ? count( (array) wp_get_nav_menu_items( $mid ) ) : 0;
+		$row(
+			"Menu assigned: {$loc}  [menu id " . $mid . ', ' . $items . ' items]',
+			$mid > 0 && $items > 0,
+			'Press the Repair button above.'
+		);
 	}
 
 	// 5. WhatsApp number
