@@ -300,3 +300,104 @@ add_action( 'template_redirect', function () {
  * button. */
 add_filter( 'wc_add_to_cart_message_html', '__return_empty_string' );
 add_filter( 'woocommerce_cart_redirect_after_error', function ( $url ) { return $url; } );
+
+
+/* --------------------------------------------------------------------------
+ * Empty the cart AFTER the order has gone to WhatsApp.
+ *
+ * Why it matters: without this the basket persists, so the buyer's next visit
+ * starts with items they have already ordered, and their second WhatsApp
+ * message repeats the first order. That produces duplicate orders and confused
+ * customers.
+ *
+ * Why the ordering is delicate: WhatsApp must open FIRST. If the cart is
+ * cleared before the link opens, the message can be rebuilt from an empty cart
+ * and the customer sends a blank order. So every path opens WhatsApp, then
+ * fires a beacon to clear the cart, then settles the page.
+ *
+ * sendBeacon is used deliberately: on a phone, tapping the link backgrounds the
+ * browser to launch WhatsApp, and normal fetches get throttled or dropped when
+ * a tab is backgrounded. sendBeacon is designed to survive exactly that.
+ * ------------------------------------------------------------------------ */
+add_action( 'wp_ajax_wghs_clear_cart', 'wghs_ajax_clear_cart' );
+add_action( 'wp_ajax_nopriv_wghs_clear_cart', 'wghs_ajax_clear_cart' );
+function wghs_ajax_clear_cart() {
+	check_ajax_referer( 'wghs_clear_cart', 'nonce' );
+	if ( function_exists( 'WC' ) && WC()->cart ) {
+		WC()->cart->empty_cart();
+	}
+	wp_send_json_success( array( 'cleared' => true ) );
+}
+
+add_action( 'wp_footer', 'wghs_clear_cart_script', 60 );
+function wghs_clear_cart_script() {
+	if ( is_admin() || ! function_exists( 'WC' ) ) { return; }
+	$ajax  = esc_url_raw( admin_url( 'admin-ajax.php' ) );
+	$nonce = wp_create_nonce( 'wghs_clear_cart' );
+	$done  = esc_url_raw( add_query_arg( 'order_sent', '1', wc_get_cart_url() ) );
+	?>
+	<script>
+	(function () {
+		'use strict';
+		var AJAX  = '<?php echo $ajax; // phpcs:ignore ?>';
+		var NONCE = '<?php echo esc_js( $nonce ); ?>';
+		var DONE  = '<?php echo $done; // phpcs:ignore ?>';
+
+		/* Called only AFTER WhatsApp has been opened. Never before. */
+		window.wghsClearCart = function () {
+			var body = new FormData();
+			body.append('action', 'wghs_clear_cart');
+			body.append('nonce', NONCE);
+			var sent = false;
+			try {
+				sent = navigator.sendBeacon(AJAX, body);
+			} catch (e) { sent = false; }
+			if (!sent) {
+				try {
+					fetch(AJAX, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true });
+				} catch (e2) { /* nothing more we can do */ }
+			}
+			/* Settle the page on the emptied cart with a confirmation. The delay
+			   gives WhatsApp time to launch before we navigate away. */
+			setTimeout(function () { window.location.href = DONE; }, 1500);
+		};
+
+		/* Path 1: a returning buyer taps the cart button directly. The lead
+		   popup does not intercept because the cookie already exists, so the
+		   native navigation opens WhatsApp and we clear straight after. */
+		document.addEventListener('click', function (e) {
+			var t = e.target;
+			if (!t || typeof t.closest !== 'function') { return; }
+			var a = t.closest('a[data-wghs-event="cart_whatsapp"]');
+			if (!a) { return; }
+			if (window.wghsLeadWillIntercept && window.wghsLeadWillIntercept(a)) { return; } // popup handles it
+			setTimeout(window.wghsClearCart, 400);
+		}, false);
+	}());
+	</script>
+	<?php
+}
+
+/* An emptied cart with no explanation looks like a bug and loses trust right
+ * after the most important action on the site. Confirm what happened instead. */
+add_action( 'woocommerce_before_cart', 'wghs_order_sent_notice', 5 );
+add_action( 'woocommerce_cart_is_empty', 'wghs_order_sent_notice', 5 );
+function wghs_order_sent_notice() {
+	if ( empty( $_GET['order_sent'] ) ) { return; } // phpcs:ignore WordPress.Security.NonceVerification
+	$wa = function_exists( 'wghs_wa_link' ) ? wghs_wa_link( '' ) : '';
+	?>
+	<div class="wghs-sent">
+		<div class="wghs-sent__tick" aria-hidden="true">&#10003;</div>
+		<div>
+			<h3 class="wghs-sent__h"><?php esc_html_e( 'Your order is on WhatsApp', 'wghshop' ); ?></h3>
+			<p class="wghs-sent__p"><?php esc_html_e( 'We have your basket. Send the message if it did not send by itself, and we will confirm the price and delivery. You pay the rider, not us.', 'wghshop' ); ?></p>
+			<p class="wghs-sent__actions">
+				<?php if ( $wa ) : ?>
+					<a class="wghs-btn wghs-btn--primary" href="<?php echo esc_attr( $wa ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Open WhatsApp', 'wghshop' ); ?></a>
+				<?php endif; ?>
+				<a class="wghs-btn wghs-btn--ghost" href="<?php echo esc_url( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' ) ); ?>"><?php esc_html_e( 'Keep shopping', 'wghshop' ); ?></a>
+			</p>
+		</div>
+	</div>
+	<?php
+}

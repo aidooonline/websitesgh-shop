@@ -526,4 +526,12 @@ ul.products li.product {
   .wghs-about__close p { @apply mt-1 text-wgh-ink2; }
   .wghs-about__closebtns { @apply flex flex-wrap gap-3; }
 
+
+  /* --- Order sent confirmation ------------------------------------------- */
+  .wghs-sent { @apply my-6 flex gap-4 rounded-2xl border border-wgh-green/30 bg-wgh-greenPale p-6; }
+  .wghs-sent__tick { @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-wgh-green text-xl font-bold text-white; }
+  .wghs-sent__h { @apply text-xl font-extrabold text-wgh-greenInk; }
+  .wghs-sent__p { @apply mt-1 leading-relaxed text-wgh-ink2; }
+  .wghs-sent__actions { @apply mt-4 flex flex-wrap gap-3; }
+
 }

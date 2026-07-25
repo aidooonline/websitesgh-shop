@@ -141,12 +141,22 @@ function wghs_lead_capture_assets() {
 		   attribution row carries the name, phone and area (the beacon skipped
 		   this tap precisely so we could log it here with the details), then
 		   open WhatsApp. window.open fires no click event, so logging must be
-		   explicit here or the first order would never record the customer. */
+		   explicit here or the first order would never record the customer.
+		   Finally, if this was a cart order, empty the cart, but only AFTER
+		   WhatsApp has been opened, never before. */
 		function proceed(link) {
 			var lead = getLead();
 			stamp(link, lead);
 			if (window.wghsLogTap) { window.wghsLogTap(link); }
 			window.open(link.href, '_blank', 'noopener');
+			maybeClearCart(link);
+		}
+
+		/* Only a cart order empties the cart. A single product enquiry or a
+		   share link must leave the basket alone. */
+		function maybeClearCart(link) {
+			if (!link || link.getAttribute('data-wghs-event') !== 'cart_whatsapp') { return; }
+			if (window.wghsClearCart) { setTimeout(window.wghsClearCart, 400); }
 		}
 
 		/* Intercept taps on any WhatsApp link. If we already have the lead,
@@ -188,12 +198,13 @@ function wghs_lead_capture_assets() {
 
 		/* Skip: still log the tap (with no customer details) so a skipped order
 		   is never invisible in attribution. The ref code still ties the chat
-		   to the click. */
+		   to the click. Cart orders still empty the cart afterwards. */
 		function skip() {
 			hide();
 			if (pendingLink) {
 				if (window.wghsLogTap) { window.wghsLogTap(pendingLink); }
 				window.open(pendingLink.href, '_blank', 'noopener');
+				maybeClearCart(pendingLink);
 				pendingLink = null;
 			}
 		}
