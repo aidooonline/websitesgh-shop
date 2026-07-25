@@ -115,6 +115,7 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/lead-capture.php';
 	require WGHS_DIR . '/inc/express-order.php';
 	require WGHS_DIR . '/inc/enquiries.php';
+	require WGHS_DIR . '/inc/diagnostics.php';
 }
 
 /** Excerpt tweaks. */

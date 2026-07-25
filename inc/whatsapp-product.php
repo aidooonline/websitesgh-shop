@@ -167,6 +167,7 @@ function wghs_open_graph() {
 }
 add_action( 'wp_head', 'wghs_open_graph', 5 );
 
+
 /**
  * Build the WhatsApp order message for a product from the owner's template.
  *
