@@ -101,31 +101,72 @@ function wghs_lead_capture_assets() {
 		function hide() { pop.hidden = true; pop.setAttribute('aria-hidden', 'true'); }
 
 		/* Stamp the captured details into a WhatsApp link's prefilled text. */
+		/* Fill the buyer's details into the message.
+		   The cart message already ends with blank fields:
+		       Name:
+		       Phone:
+		       Location:
+		   so we FILL those blanks rather than prepending a duplicate block.
+		   (An earlier version checked for the absence of "Name:" and therefore
+		   never stamped anything, because the template already contained it.)
+		   If the template has no such fields, we append them instead. */
 		function stamp(link, lead) {
+			if (!lead || !lead.name) { return; }
 			try {
 				var u = new URL(link.href);
 				var t = u.searchParams.get('text') || '';
-				if (lead && lead.name && t.indexOf('Name:') === -1) {
-					var block = 'Name: ' + lead.name + '\nPhone: ' + lead.phone + (lead.area ? '\nArea: ' + lead.area : '');
-					u.searchParams.set('text', block + (t ? '\n' + t : ''));
-					link.href = u.toString();
+				if (!t) { return; }
+				var filled = false;
+				if (/(^|\n)Name:\s*(\n|$)/.test(t)) {
+					t = t.replace(/(^|\n)Name:[ \t]*(?=\n|$)/, '$1Name: ' + lead.name);
+					filled = true;
 				}
+				if (/(^|\n)Phone:\s*(\n|$)/.test(t)) {
+					t = t.replace(/(^|\n)Phone:[ \t]*(?=\n|$)/, '$1Phone: ' + lead.phone);
+					filled = true;
+				}
+				if (lead.area && /(^|\n)Location:\s*(\n|$)/.test(t)) {
+					t = t.replace(/(^|\n)Location:[ \t]*(?=\n|$)/, '$1Location: ' + lead.area);
+					filled = true;
+				}
+				if (!filled) {
+					t += '\n\nName: ' + lead.name + '\nPhone: ' + lead.phone + (lead.area ? '\nLocation: ' + lead.area : '');
+				}
+				u.searchParams.set('text', t);
+				link.href = u.toString();
 			} catch (e) { /* leave link untouched */ }
 		}
 
-		/* Proceed: stamp the link, let the beacon (in attribution.php) read the
-		   lead cookie, then follow the link in a new tab. */
+		/* Proceed: stamp the details into the message, THEN log the tap so the
+		   attribution row carries the name, phone and area (the beacon skipped
+		   this tap precisely so we could log it here with the details), then
+		   open WhatsApp. window.open fires no click event, so logging must be
+		   explicit here or the first order would never record the customer. */
 		function proceed(link) {
 			var lead = getLead();
 			stamp(link, lead);
+			if (window.wghsLogTap) { window.wghsLogTap(link); }
 			window.open(link.href, '_blank', 'noopener');
 		}
 
 		/* Intercept taps on any WhatsApp link. If we already have the lead,
 		   don't interrupt, just stamp and go. If not, open the popup once. */
+		/* Will the popup intercept this link? The attribution beacon asks this
+		   so it does not log the tap twice (once bare, once with details). */
+		window.wghsLeadWillIntercept = function (a) {
+			if (!a || !a.hasAttribute || !a.hasAttribute('data-wghs-event')) { return false; }
+			var lead = getLead();
+			return !(lead && lead.phone);
+		};
+
 		document.addEventListener('click', function (e) {
-			var a = e.target.closest('a[href*="wa.me"]');
+			var t = e.target;
+			if (!t || typeof t.closest !== 'function') { return; }
+			var a = t.closest('a[href*="wa.me"]');
 			if (!a) { return; }
+			/* Order buttons only. Blog share buttons are also wa.me links and
+			   must never trigger a "give us your phone number" popup. */
+			if (!a.hasAttribute('data-wghs-event')) { return; }
 			var lead = getLead();
 			if (lead && lead.phone) { stamp(a, lead); return; } // remembered: sail through
 			// No lead yet: intercept and ask once.
@@ -145,9 +186,16 @@ function wghs_lead_capture_assets() {
 			if (pendingLink) { proceed(pendingLink); pendingLink = null; }
 		});
 
+		/* Skip: still log the tap (with no customer details) so a skipped order
+		   is never invisible in attribution. The ref code still ties the chat
+		   to the click. */
 		function skip() {
 			hide();
-			if (pendingLink) { window.open(pendingLink.href, '_blank', 'noopener'); pendingLink = null; }
+			if (pendingLink) {
+				if (window.wghsLogTap) { window.wghsLogTap(pendingLink); }
+				window.open(pendingLink.href, '_blank', 'noopener');
+				pendingLink = null;
+			}
 		}
 		pop.querySelector('.wghs-lead__skip').addEventListener('click', skip);
 		pop.querySelector('.wghs-lead__x').addEventListener('click', function () { hide(); pendingLink = null; });

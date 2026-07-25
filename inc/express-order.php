@@ -262,7 +262,9 @@ add_filter( 'option_woocommerce_cart_redirect_after_add', function () { return '
  * ------------------------------------------------------------------------ */
 add_action( 'template_redirect', function () {
 	if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) { return; }
-	if ( is_wc_endpoint_url( 'order-received' ) ) { return; } // never block the thank-you page
+	// Never block the thank-you page, nor a pay-for-this-order link sent to a
+	// customer, nor the order-pay endpoint WooCommerce uses for retries.
+	if ( is_wc_endpoint_url( 'order-received' ) || is_wc_endpoint_url( 'order-pay' ) ) { return; }
 	// Deliberate form users pass ?form=1; everyone else goes back to the cart.
 	if ( isset( $_GET['form'] ) && '1' === $_GET['form'] ) { return; } // phpcs:ignore WordPress.Security.NonceVerification
 	wp_safe_redirect( wc_get_cart_url() );

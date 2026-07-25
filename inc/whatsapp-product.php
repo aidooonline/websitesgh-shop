@@ -68,31 +68,46 @@ function wghs_share_image_url() {
 }
 
 /**
- * Guarantee the product image is the OG image even when an SEO plugin owns the
- * Open Graph output. Without this, a product with no image set in the SEO
- * plugin can fall back to a generic site image, so the WhatsApp preview shows
- * the wrong picture or none. These filters force the featured image.
+ * Guarantee an og:image on every shareable page, whichever SEO plugin is active.
  *
- * The SEO Framework and others expose filters for exactly this; we hook the
- * common ones so whichever plugin is active gets the right image.
+ * Relying on a specific plugin's image filter is fragile: filter names change,
+ * and a plugin may simply not output an image when none is configured. Then the
+ * WhatsApp preview arrives with no picture. So instead of guessing, we buffer
+ * wp_head, look at what was actually emitted, and inject our image ONLY if no
+ * og:image is present. Deterministic, no duplicate tags, plugin agnostic.
+ *
+ * Image preference: the post or product featured image, then the site logo,
+ * then the branded order card, so a preview is never blank.
  */
-add_filter( 'the_seo_framework_image_generation_params', function ( $params ) {
-	$img = wghs_share_image_url();
-	if ( $img && is_array( $params ) ) {
-		// Force our image as the first candidate the framework considers.
-		$params['cbs'] = array( 'wghs' => function () use ( $img ) { return $img; } );
+add_action( 'wp_head', function () {
+	if ( is_admin() || is_feed() ) { return; }
+	ob_start();
+	// Remember OUR buffer level, so we never clean a buffer opened by another
+	// plugin between these two hooks.
+	$GLOBALS['wghs_head_ob_level'] = ob_get_level();
+}, 0 );
+
+add_action( 'wp_head', function () {
+	if ( is_admin() || is_feed() ) { return; }
+	$ours = isset( $GLOBALS['wghs_head_ob_level'] ) ? (int) $GLOBALS['wghs_head_ob_level'] : 0;
+	if ( ! $ours || ob_get_level() !== $ours ) { return; } // someone else owns the current buffer
+	unset( $GLOBALS['wghs_head_ob_level'] );
+	$head = ob_get_clean();
+	if ( false === stripos( $head, 'property="og:image"' ) && false === stripos( $head, "property='og:image'" ) ) {
+		$image = wghs_share_image_url();
+		if ( $image ) {
+			$head .= sprintf(
+				"\n<!-- WGH share image, injected because no og:image was present -->\n"
+				. '<meta property="og:image" content="%s">' . "\n"
+				. '<meta property="og:image:width" content="1200">' . "\n"
+				. '<meta property="og:image:height" content="630">' . "\n"
+				. '<meta name="twitter:card" content="summary_large_image">' . "\n",
+				esc_url( $image )
+			);
+		}
 	}
-	return $params;
-}, 10 );
-// Rank Math and Yoast image filters, harmless if those plugins are absent.
-add_filter( 'rank_math/opengraph/facebook/og_image', function ( $img ) {
-	$our = wghs_share_image_url();
-	return $our ? $our : $img;
-} );
-add_filter( 'wpseo_opengraph_image', function ( $img ) {
-	$our = wghs_share_image_url();
-	return $our ? $our : $img;
-} );
+	echo $head; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already-escaped head markup.
+}, 999 );
 
 /**
  * Open Graph and Twitter tags. Skipped entirely when an SEO plugin is present.

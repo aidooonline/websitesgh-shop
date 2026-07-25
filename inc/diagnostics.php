@@ -80,10 +80,15 @@ function wghs_render_diagnostics() {
 
 	// 8. Product featured images
 	if ( function_exists( 'wc_get_products' ) ) {
-		$missing = 0;
-		foreach ( wc_get_products( array( 'limit' => -1, 'status' => 'publish' ) ) as $pr ) {
-			if ( ! has_post_thumbnail( $pr->get_id() ) ) { $missing++; }
-		}
+		global $wpdb;
+		// Direct count, so this page stays fast as the catalogue grows instead
+		// of instantiating every product object.
+		$missing = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->posts} p
+			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_thumbnail_id'
+			 WHERE p.post_type = 'product' AND p.post_status = 'publish'
+			   AND ( m.meta_id IS NULL OR m.meta_value = '' )"
+		);
 		$row( "Products missing a featured image: {$missing}", 0 === $missing, 'Set a Featured image on each product; that image is what WhatsApp previews.' );
 	}
 

@@ -104,9 +104,12 @@ add_action( 'wp_footer', function () {
 			for (var i = 0; i < 4; i++) { out += abc[Math.floor(Math.random() * abc.length)]; }
 			return 'WG-' + out;
 		}
-		document.addEventListener('click', function (e) {
-			var a = e.target.closest('a[href*="wa.me"]');
-			if (!a) { return; }
+		/* Log one WhatsApp tap. Exposed globally so the lead-capture popup can
+		   call it AFTER it has captured the customer's name and phone, which is
+		   the only way those details reach the attribution row on a first
+		   order. Returns the generated ref. */
+		window.wghsLogTap = function (a) {
+			if (!a) { return ''; }
 			/* Stamp a human order reference into the prefilled text. Reads as
 			   customer service, works as attribution: the code the customer
 			   sends is the code on the row in WooCommerce > Attribution. */
@@ -133,6 +136,22 @@ add_action( 'wp_footer', function () {
 			try {
 				navigator.sendBeacon('<?php echo $rest; // phpcs:ignore ?>', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 			} catch (err) { /* never block the tap */ }
+			return ref;
+		};
+
+		document.addEventListener('click', function (e) {
+			var t = e.target;
+			if (!t || typeof t.closest !== 'function') { return; } // text nodes, SVG in old browsers
+			var a = t.closest('a[href*="wa.me"]');
+			if (!a) { return; }
+			/* Only real order buttons are taps. Blog share buttons also build
+			   wa.me links; logging those would pollute the funnel. */
+			if (!a.hasAttribute('data-wghs-event')) { return; }
+			/* If the lead popup is going to intercept this tap to collect the
+			   name and phone, let IT log the tap afterwards. Otherwise we would
+			   log twice, and the first row would have no customer details. */
+			if (window.wghsLeadWillIntercept && window.wghsLeadWillIntercept(a)) { return; }
+			window.wghsLogTap(a);
 		}, true);
 	}());
 	</script>
