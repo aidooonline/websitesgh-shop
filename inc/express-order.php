@@ -33,24 +33,30 @@ function wghs_wa_cart_message() {
 
 	$items = WC()->cart->get_cart();
 
-	/* WhatsApp previews the FIRST url in a message, so the first line is the
-	 * first product's image. A direct image url renders as a picture in the
-	 * chat without depending on og:image, which is the most reliable way to
-	 * make the order look like a real product order. */
-	$lead_image = '';
+	/* WhatsApp previews the FIRST url in a message. We lead with the first
+	 * product's PAGE url, not the raw image file.
+	 *
+	 * A direct .jpg link looks like the obvious choice, but LiteSpeed and
+	 * similar layers often serve WebP to crawlers, and a crawler that asks for
+	 * a jpg and receives something else renders no thumbnail, which is exactly
+	 * the empty preview card we saw. A page url is the mechanism WhatsApp is
+	 * designed around: it reads og:image, which the theme now guarantees.
+	 *
+	 * The first product's url is therefore omitted from its own list entry, so
+	 * the same link never appears twice. */
+	$lead_url = '';
+	$lead_id  = 0;
 	foreach ( $items as $item ) {
 		$product = isset( $item['data'] ) ? $item['data'] : null;
 		if ( ! $product ) { continue; }
-		$thumb_id = $product->get_image_id();
-		if ( $thumb_id ) {
-			$src = wp_get_attachment_image_src( $thumb_id, 'large' );
-			if ( $src ) { $lead_image = $src[0]; break; }
-		}
+		$lead_url = get_permalink( $product->get_id() );
+		$lead_id  = $product->get_id();
+		break;
 	}
 
 	$lines = array();
-	if ( $lead_image ) {
-		$lines[] = $lead_image;
+	if ( $lead_url ) {
+		$lines[] = $lead_url;
 		$lines[] = '';
 	}
 	$lines[] = 'NEW ORDER';
@@ -66,7 +72,10 @@ function wghs_wa_cart_message() {
 		$lines[] = sprintf( '%d. %s', $n, $product->get_name() );
 		$lines[] = sprintf( 'Quantity: %d', $qty );
 		$lines[] = sprintf( 'Price: GHS %s', number_format( (float) $product->get_price() * $qty, 2 ) );
-		$lines[] = get_permalink( $product->get_id() );
+		// The lead product's link is already at the top; do not repeat it.
+		if ( $product->get_id() !== $lead_id ) {
+			$lines[] = get_permalink( $product->get_id() );
+		}
 		$lines[] = '';
 	}
 
