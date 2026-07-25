@@ -1,220 +1,282 @@
 # WebsitesGH Shop: content strategy
 
-The goal of this site is to sell appliances at profit. Content earns its place only
-if it does one of three jobs: capture a buyer who is ready, make a hesitant buyer
-trust us enough to order, or become the source that answer engines quote when
-somebody asks about appliances in Ghana. Anything that does none of those is cut.
+The goal of this site is to sell appliances at profit. Content earns its place
+only if it makes somebody want the product, trust us to deliver it, and act.
+
+## The correction this document is built on
+
+An earlier version of this strategy led with running costs, wattage maths and
+electricity bills. That was wrong, and the reason matters.
+
+Nobody buys a blender to save GHS 6 a month on ECG. They buy because grinding
+pepper by hand at 6am is exhausting, because their old one burned out three
+weeks before Christmas, because they have just moved into their own place and
+the kitchen is bare, or because they want to sell shito and need to make ten
+jars at a time. The electricity figure is a rationalisation people reach for
+after the wanting has already happened.
+
+So the order is fixed here: **product and person first, desire second, proof
+third.** Numbers never lead. Numbers are how we make a desire feel safe to act
+on. A piece that opens with a tariff band has already lost the reader who came
+in wanting a blender.
 
 --------------------------------------------------------------------------
-## 1. The strategic question: what is actually defensible?
+## 1. Why people actually buy these products
 
-Anyone can publish "best blender in Ghana". An AI can generate a thousand such
-posts in an hour, and increasingly does. Generic appliance content has no moat
-and will be commoditised to zero.
+Six drivers, in rough order of force in the Ghanaian market. Every article
+should be able to name which one it is pulling.
 
-What cannot be copied from a keyboard somewhere else:
+**1. Labour and time.** Pepper, tomatoes, ginger, garlic, groundnut. A blender
+replaces forty minutes of grinding, every day, forever. This is the strongest
+motive in the kitchen category and it is physical, not financial.
 
-- Real prices, collected from real Accra dealers, dated.
-- Real running costs, calculated on the actual ECG tariff bands, updated when
-  the tariff changes.
-- Real measurements: what a "2L" kettle actually holds, what a "30,000mAh" power
-  bank actually delivers, how long a rechargeable fan actually runs.
-- Real local conditions: 230V/50Hz supply, light-off patterns, harmattan dust,
-  what a Ghanaian kitchen actually does to a blender (pepper, not smoothies).
+**2. Income.** Appliances here are frequently tools of trade, not comforts. A
+blender is how a shito seller makes stock. A kettle is a tea seller's business.
+A clipper is a barber's livelihood. Content that speaks to the earner outsells
+content that speaks to the consumer, because the purchase pays for itself and
+the buyer knows it.
 
-That is the moat. Not "content about appliances", but **being the reference
-dataset for Ghana's appliance market**, and selling to the people who consult it.
+**3. Relief from a specific misery.** Light off at 2am with children who cannot
+sleep. A cold bath before a 5am trotro. Formula at midnight with no hot water.
+These are moments, not categories, and the product is the end of the moment.
 
-Every cluster below exists to build or exploit that dataset.
+**4. A new life stage.** First apartment, marriage, a baby, a child leaving for
+university, moving from a shared compound to your own place. People do not buy
+one appliance at these moments, they buy five. This is the highest basket value
+in the whole business and it is calendar-predictable.
 
---------------------------------------------------------------------------
-## 2. The perpetual dominion question: how do we stay cited as AI takes over?
+**5. Pride and hosting.** A kitchen that works, and works in front of people.
+December, outdoorings, funerals, family visiting from abroad. Nobody says this
+out loud, which is exactly why it converts when content says it for them.
 
-Search is shifting from "ten links" to "one answer". Ranking first matters less
-each year; being the source inside the answer matters more. Five things decide
-whether a model cites you:
-
-1. **Unique data.** A model cannot cite a number that exists everywhere; it cites
-   the origin. Our monthly price table and our measured specs are origin data.
-2. **Extractability.** Question-shaped H2s, the answer in the first 40 to 60
-   words, tables for anything comparative. Models lift blocks, not vibes.
-3. **Entity density.** Name the brand, the model, the neighbourhood, the tariff
-   band, the cedi figure. Vague text is unquotable.
-4. **Datedness.** "As of July 2026, a 2L commercial blender in Accra sells for
-   GHS 280 to 340." A dated fact outranks an undated claim, and stays useful.
-5. **First-hand claims.** "We called six dealers", "we timed it", "we weighed
-   it". Experience is the one signal generative systems cannot manufacture.
-
-The honest implication: some of this traffic will never click. A person asks an
-AI what a blender costs, gets our number, and never visits. That is acceptable,
-because the buyer still has to buy from somebody, and the citation carries our
-name. The content that must still pull clicks is the buy-intent content, which
-is why price and buying-safety clusters get the CTA discipline.
+**6. Fear of being cheated.** Not a desire, but it gates every other one. Fake
+specs, tokunbo sold as new, paying before delivery and never seeing the item.
+This fear is why pay on delivery is a selling argument, not just logistics.
 
 --------------------------------------------------------------------------
-## 3. The cluster architecture
+## 2. Who buys: the buyer identities
 
-Ten clusters. Each has a pillar page (the living reference) and spokes (the
-articles feeding it). Clusters map to the 14 Google Ads ad groups so paid and
-organic reinforce rather than fight each other, the same anti-leak logic as the
-keyword work.
+Write to a person, not a category. Seven recur in this market:
 
-### C1. Price and cost intelligence  [the moat, and the money]
-The pillar is the Ghana Appliance Price Index, refreshed monthly with real dealer
-quotes. Spokes are one price guide per ad group: what a blender, kettle,
-microwave, rice cooker, hot plate, power bank, earbud set, speaker, iron, fan,
-lamp, school bag, clipper and dryer actually cost in Accra, dated, with a range
-and the reason for the range.
-Why it sells: these are the exact buy-intent queries the ads bid on. Organic and
-paid hit the same searcher twice.
+- **The home cook running a household.** Buys for durability and daily
+  punishment. Cares that it survives pepper, not that it has eleven speeds.
+- **The earner.** Shito and juice sellers, chop bar owners, tea sellers, barbers,
+  hairdressers. Buys capacity, duty cycle and repairability. Wants to know what
+  the professionals use.
+- **The student or single renter.** Hostel, single room, tight budget, one
+  socket. Buys small, cheap, multi-use. Hot plate over cooker, kettle over stove.
+- **The person setting up a first home.** Newly married, newly moved, newly
+  independent. Buys a bundle. Wants a list, not a product.
+- **The young parent.** Sterilising, warming, hot water at odd hours, quiet
+  running. Buys safety and speed.
+- **The gift buyer.** Wedding, outdooring, Christmas, someone travelling home.
+  Buys what looks generous and is not embarrassing. Needs price tiers.
+- **The landlord or short-let host.** Furnishing a unit. Buys several of the same
+  thing, wants value and a low failure rate.
 
-### C2. The numbers truth series  [the brand, and the citation magnet]
-Myth-busting with measurement. Wattage claims on blenders and irons. mAh claims
-on power banks. "2L" kettles that hold 1.7. Advertised earbud hours versus real
-hours at usable volume. "Solar" lamps that need mains. Warranty language that
-means nothing.
-Why it sells: it is the "we check the numbers" brand made concrete, and a
-correction of a widespread misconception is disproportionately likely to be
-quoted by an answer engine.
-
-### C3. Ghana living problems  [top of funnel, real anxiety]
-Light-off survival kit: what actually runs during an outage and for how long.
-ECG bill reduction: which appliances eat the most, with cedi figures per month.
-Voltage fluctuation and what it kills. Harmattan dust and appliance lifespan.
-Rainy season surges.
-Why it sells: it starts from the reader's problem, not our product, and lands on
-the product that solves it.
-
-### C4. Ghanaian kitchen and home practical  [deeply local, uncopyable]
-Which blender survives pepper and ginger daily. Grinding for banku, kenkey, tuo
-zaafi. Rice cooker sizes for a family versus a party. Single-room and hostel
-cooking on a hot plate. Kettles for koko and tea. Ironing lace and kente safely.
-Why it sells: nobody outside Ghana writes this, so it is both uncontested in
-search and highly citable, and it demonstrates that we understand the buyer.
-
-### C5. Buying safety and trust  [conversion, and our model's argument]
-How to check a blender, kettle, power bank before you pay. Tokunbo sold as new:
-how to tell. Fake versus original brands on the Ghanaian market. Why pay on
-delivery protects you. Common delivery scams and how ours differs.
-Why it sells: it argues for our exact model. Every article in this cluster ends
-by describing pay-on-delivery, which is our strongest conversion lever.
-
-### C6. Comparisons  [mid funnel, high intent]
-Brand versus brand on the shelves here. Type versus type: dry iron or steam,
-blender or food processor, solo or grill microwave. Size versus size: 1.8L or
-2.8L rice cooker. Price tier versus price tier: what GHS 280 buys against GHS 450.
-Why it sells: comparison queries sit one step from purchase.
-
-### C7. Seasonal and event  [predictable demand spikes]
-Back to school (school bags, students setting up). December: gifts, hosting,
-extra cooking. Outdooring and wedding gifts. Moving out or new apartment
-checklists. Harmattan and rainy season prep. Ramadan and Easter cooking loads.
-Why it sells: demand is calendar-driven and we publish ahead of it.
-
-### C8. Maintenance and post-purchase  [retention and long tail]
-How to clean and maintain each product. Why is my kettle not boiling. How long
-should a blender last. Repair or replace. Descaling in hard-water areas.
-Why it sells: it earns repeat customers and referrals, and these queries are
-high volume and permanently evergreen.
-
-### C9. Local geography and delivery  [local intent]
-Where to buy in Accra, Tema, Kumasi, Takoradi. Neighbourhood delivery guides.
-China Mall versus Melcom versus online, honestly compared.
-Why it sells: "near me" and city-qualified queries convert hard.
-
-### C10. Living data assets  [the pillars everything links to]
-The Price Index. The Running Cost Table (per appliance, per month, on current
-ECG tariffs). A Ghana power reference: 230V, 50Hz, socket ratings, what that
-means for imported appliances.
-These are not articles. They are documents that get updated forever and are the
-single most likely thing on the site to be cited.
+Every article names its buyer in the first paragraph, implicitly or explicitly.
 
 --------------------------------------------------------------------------
-## 4. The cadence: a year of publishing every three days
+## 3. What is curious about the product: the hooks
 
-Every three days is roughly 122 slots a year. The instinct is 122 new articles.
-That is the wrong split, and the reason is the AI shift: an accurate, dated,
-updated page outperforms a new thin one, and our highest-value pages are the
-ones that must never go stale.
+This is what the earlier draft missed entirely. Each product has something
+genuinely interesting inside it that most buyers have never been told, and
+curiosity is what makes someone read to the end and then buy. The real hooks,
+one per category:
 
-The split:
+- **Blenders.** Why a GHS 280 blender grinds Ghanaian pepper better than a
+  GHS 900 smoothie blender. The answer is torque and jar geometry, not power:
+  pepper needs grinding force at low speed, smoothies need speed. The expensive
+  machine is built for the wrong job. This one insight reframes the category.
+- **Power banks.** What is physically inside, and why the last tenth of a phone
+  charge takes longest. Also why two identical "20,000mAh" units perform
+  differently: cell quality and the conversion board, partly judgeable by weight.
+- **Rechargeable fans and lamps.** Why one runs four hours and another twelve on
+  the same claimed battery. Motor type and speed setting, not battery size.
+- **Kettles.** Why some rust within a year and others never do, and why the water
+  tastes different. Steel grade and whether the element is exposed.
+- **Hair clippers.** Why barbers replace blades, not clippers, and what makes a
+  clipper fade cleanly instead of pulling hair.
+- **Irons.** Why steam ruins lace and kente while dry does not, and what
+  temperature actually does to synthetic fabric.
+- **Rice cookers.** Why the bottom layer burns in some and crusts perfectly in
+  others, and what a Ghanaian cook can do about it.
+- **Earbuds.** Why one earbud always dies before the other.
+- **Microwaves.** What solo versus grill actually changes for the food cooked here.
+- **Speakers.** Why a small speaker can be loud and still sound thin, and what
+  actually matters outdoors.
 
-- **70 new articles**, spread across C1 to C9.
-- **40 scheduled refreshes**, mostly C1 and C10: the price index every month
-  (12), the running cost table each tariff change and quarterly (4), plus
-  rolling refreshes of the price guides as dealer prices move (24).
-- **12 seasonal drops**, timed to the calendar in C7.
-
-Allocation of the 70 new pieces:
-
-| Cluster | New pieces/year | Note |
-|---|---|---|
-| C1 Price and cost | 14 | one per ad group, then rotate |
-| C2 Numbers truth | 10 | the brand series |
-| C3 Ghana living | 9 | light-off, ECG, voltage, weather |
-| C4 Kitchen practical | 12 | the most local, most uncopyable |
-| C5 Buying safety | 7 | one per major category |
-| C6 Comparisons | 10 | brand, type, size, tier |
-| C8 Maintenance | 5 | evergreen long tail |
-| C9 Local geography | 3 | Accra, Tema, Kumasi |
-
-Sequencing matters more than volume. The first quarter is front-loaded with C1
-and C5, because those convert soonest and support the ad launch. C2 and C4 build
-through the middle of the year to establish the citation moat. C8 and C9 fill
-the back half once the commercial base is in place.
-
---------------------------------------------------------------------------
-## 5. The quality bar (non-negotiable, per article)
-
-An article publishes only if it passes all of these:
-
-1. **One number that exists nowhere else.** A dealer price we collected, a
-   runtime we timed, a monthly cedi cost we calculated. If the piece has no
-   original figure, it is filler and does not publish.
-2. **The answer in the first 40 to 60 words**, containing the query and a
-   concrete fact. That block is what gets lifted and cited.
-3. **A table or a calculation.** Prices, comparisons, runtimes, monthly costs.
-4. **Dated facts.** Every price and figure carries its month and year.
-5. **Named entities.** Real brands on the Ghanaian market, real neighbourhoods,
-   real tariff bands, real model names. No generic "a good blender".
-6. **Honest limits.** Where we do not know, we say so. Where a claim is a
-   manufacturer's and not ours, it is attributed as such. The brand is honesty;
-   one invented spec destroys the moat.
-7. **A path to order.** Ends with the product or category link and the
-   pay-on-delivery line, UTM-tagged so organic-to-order is measurable.
-8. **Internal links:** up to the cluster pillar, sideways to one comparison,
-   down to at least one product.
-9. **No filler openings.** No "in today's fast-paced world". First sentence
-   carries information.
-10. **Schema:** Article plus FAQPage on every post; Product and Offer on
-    anything naming a price we sell at.
+These are not specifications. They are the reasons a product is the way it is,
+and they make the reader feel they now understand something. A reader who feels
+informed buys from whoever informed them.
 
 --------------------------------------------------------------------------
-## 6. What makes an article "highly functional" here
+## 4. Proof of work: how data earns its place
 
-Functional means the reader can act on it before they leave the page. Concretely:
+Data does not open the piece. Data closes it. The sequence in every article:
 
-- A price guide gives a range, the reason for the range, and what to pay.
-- A running-cost piece gives the monthly cedi figure for the reader's own usage,
-  not an abstraction.
-- A buying-safety piece gives the checks in order, phrased as things to say and
-  do at the door while the rider waits.
-- A comparison ends with a recommendation for a named use case, not "it depends".
-- A maintenance piece gives the steps and the interval.
+**Want it. Understand it. Trust it. Order it.**
 
-The test: could a reader in Madina, on a phone, at 9pm, use this in the next ten
-minutes? If not, rewrite it.
+- **Want it:** the moment, the buyer, the relief.
+- **Understand it:** the curious mechanism, the thing nobody told them.
+- **Trust it:** now the proof. We tested it. We timed it. We opened it. We called
+  six dealers. Here is the number, dated.
+- **Order it:** price, pay on delivery, the WhatsApp path.
+
+Proof formats that carry most weight here, in order:
+
+1. **We did the thing.** Ground a kilo of pepper, timed the boil, ran the fan
+   overnight, charged a phone four times. First-hand and unfakeable.
+2. **We asked the professionals.** Twenty chop bars, ten barbers, six dealers.
+   What the trade uses is powerful social proof.
+3. **We opened it up.** What is inside, what the coupling is made of, whether the
+   element is exposed.
+4. **We tracked it over time.** The unit we have used for six months.
+5. **We collected the prices.** Dated, ranged, sourced.
+
+Every article carries at least one original number, but it appears in service of
+the pitch, never in place of it.
 
 --------------------------------------------------------------------------
-## 7. How this ties back to selling
+## 5. The clusters
 
-- C1 and C6 catch buyers at the decision point and are the organic mirror of the
-  paid keywords.
-- C5 removes the fear that stops a Ghanaian buyer ordering online, which is the
-  single biggest conversion blocker for pay-on-delivery.
-- C2 and C4 build the reason to trust us over a cheaper unknown seller.
-- C10 is the asset that keeps getting cited, keeps pulling new readers, and keeps
-  the brand present in AI answers long after any individual article ages.
+Reordered so desire and product lead, and utility supports.
 
-The dashboard measures which clusters produce WhatsApp taps and sales, so within
-two quarters the plan stops being a guess and starts being steered by the data.
+### C1. Who it is for, and the moment  [desire, top of funnel]
+The pain moment and the buyer identity. Grinding pepper at 6am. Two in the
+morning with no light and children who cannot sleep. The first week in your own
+place. Setting up to sell shito. Each piece is written to one identity from
+section 2, opens in the moment, and lands on the product that ends it.
+
+### C2. What is curious about it  [the hooks, the read-to-the-end engine]
+Why the cheaper blender wins on pepper. What is inside a power bank. Why barbers
+replace blades. The mechanism that explains the product. This cluster earns
+trust, gets shared, and is the most citable because the explanations are
+specific and local.
+
+### C3. Proof of work  [demonstration, the brand]
+We tested it. We timed it. We opened it. We asked twenty chop bars. Original
+first-hand evidence, published as its own content and reused as the trust block
+inside every other cluster.
+
+### C4. Bundles and life stages  [highest basket value]
+Moving into your first place: the seven things you actually need. Setting up a
+hostel room. Furnishing a rental. Wedding and outdooring gift tiers. December
+hosting kit. Starting a shito business: the kit and the cost. These sell several
+products at once and match how people really buy at these moments.
+
+### C5. Buying safety and trust  [conversion gate]
+How to check it at the door while the rider waits. Tokunbo sold as new: how to
+tell. Fake versus original on the Ghanaian market. Why pay on delivery protects
+you. This cluster exists because fear of being cheated blocks every other motive.
+
+### C6. Comparisons and choices  [decision point]
+Brand versus brand as actually sold here. Type versus type. Size versus size for
+a named household or business. Price tier versus price tier: what GHS 280 buys
+against GHS 450, honestly. Always ends in a recommendation for a named use case.
+
+### C7. Price and cost intelligence  [buy intent, and the data moat]
+The Ghana Appliance Price Index, refreshed monthly from real dealer quotes, plus
+one price guide per ad group. Kept, because these are the exact queries the ads
+bid on and the index is our most citable asset. But written as "what you should
+pay and why", not as an economics lecture.
+
+### C8. Living with it in Ghana  [the old utility cluster, demoted and reframed]
+Light-off runtimes, what a heavy appliance adds to a bill, voltage swings,
+harmattan dust, hard water. Retained because it is useful and citable, but framed
+as living with the product, not as a reason to buy it.
+
+### C9. Care, faults and lifespan  [retention and long tail]
+How to make it last. Why it stopped working. Repair or replace. Descaling.
+Evergreen, high volume, earns the repeat customer.
+
+### C10. Where to buy, and delivery  [local intent]
+Accra, Tema, Kumasi. Neighbourhood delivery. China Mall versus Melcom versus
+online, honestly compared.
+
+--------------------------------------------------------------------------
+## 6. The article formula
+
+Every piece, regardless of cluster:
+
+1. **Open in the moment or the curiosity**, never with a definition or a tariff.
+   The first sentence carries a scene or a surprise.
+2. **Name the buyer** within the first paragraph.
+3. **Explain the mechanism** that makes this product right, in plain language.
+   The reader should finish feeling they understand something they did not.
+4. **Prove it** with the original number, the test, the dealer count, dated.
+5. **Handle the fear**: what to check, and that they pay only on delivery.
+6. **Close with the order path**, price stated, UTM-tagged.
+
+The direct-answer block for AI extraction still sits high, but it answers the
+buyer's real question ("which blender handles pepper daily and what does it
+cost"), not an abstract one.
+
+--------------------------------------------------------------------------
+## 7. Writing for AI answer engines without losing the sale
+
+Generic appliance content is being commoditised by generative models. What
+cannot be generated from outside Ghana is first-hand local evidence: what we
+tested, what the trade told us, what dealers are charging this month. So the
+citation strategy and the desire strategy point the same way. The rules:
+
+- **Unique origin data.** A model cites the source of a number, not a repeater.
+- **Extractable answers.** The real question, answered in the first 40 to 60
+  words, then the depth.
+- **Entity density.** Real brands sold here, real neighbourhoods, real models,
+  real cedi figures.
+- **Dated facts.** Every price and measurement carries its month and year.
+- **First-hand claims.** "We timed it", "we asked twenty chop bars". The one
+  signal a model cannot manufacture.
+
+Some cited traffic will never click. That is acceptable: the buyer still has to
+buy from somebody, and the citation carries our name.
+
+--------------------------------------------------------------------------
+## 8. The cadence: a year at one piece every three days
+
+122 slots. The split is deliberate, because a dated and updated page now beats a
+new thin one, and our most valuable pages must never go stale.
+
+- **70 new pieces**
+- **40 scheduled refreshes** (price index monthly, price guides as dealer prices
+  move, test pieces re-run)
+- **12 seasonal drops**
+
+Allocation of the 70 new pieces, weighted to desire over utility:
+
+| Cluster | New/year |
+|---|---|
+| C1 Who it is for, and the moment | 12 |
+| C2 What is curious about it | 12 |
+| C3 Proof of work | 8 |
+| C4 Bundles and life stages | 8 |
+| C5 Buying safety and trust | 6 |
+| C6 Comparisons and choices | 10 |
+| C7 Price and cost intelligence | 6 plus the monthly index |
+| C8 Living with it in Ghana | 4 |
+| C9 Care, faults and lifespan | 3 |
+| C10 Where to buy, and delivery | 1 |
+
+First quarter is front-loaded with C1, C2 and C5: desire, curiosity, and the
+removal of fear. That is the fastest route to orders and it supports the ad
+launch. C3 and C4 build through the middle of the year. C7's index starts in
+month one and never stops.
+
+--------------------------------------------------------------------------
+## 9. The quality bar
+
+An article publishes only if:
+
+1. It opens on a moment or a curiosity, not a definition.
+2. Its buyer is identifiable in the first paragraph.
+3. It teaches one mechanism the reader did not know.
+4. It carries at least one original number, dated, that exists nowhere else.
+5. It handles the fear of being cheated.
+6. It ends with the price and the pay-on-delivery order path, UTM-tagged.
+7. It links up to its pillar, sideways to one comparison, down to one product.
+8. It contains no invented spec, no unearned claim, no borrowed number presented
+   as ours. One fabrication destroys the moat.
+
+The functional test stays: could a reader in Madina, on a phone, at 9pm, act on
+this within ten minutes?
