@@ -51,6 +51,16 @@ function wghs_render_diagnostics() {
 	// 3. Blog posts page set + has posts
 	$pfp = (int) get_option( 'page_for_posts' );
 	$row( 'Blog (Guides) page is set', $pfp > 0, 'Run Tools > WebsitesGH Shop Setup, or Settings > Reading > Posts page = Guides.' );
+	// WordPress ignores page_for_posts unless show_on_front is 'page' with a
+	// page_on_front. Without this the Guides page renders empty and no blog
+	// listing ever appears, which looks like "the blog page does not exist".
+	$sof = get_option( 'show_on_front' );
+	$pof = (int) get_option( 'page_on_front' );
+	$row(
+		'Front page mode is "page" (required for the blog listing to render)',
+		'page' === $sof && $pof > 0,
+		'Run Tools > WebsitesGH Shop Setup, or Settings > Reading > set "A static page", Homepage = Home, Posts page = Guides. Without this the Guides page shows nothing.'
+	);
 	$posts = wp_count_posts()->publish;
 	$row( "Published articles: {$posts}", $posts > 0, 'Run Tools > WebsitesGH Shop Setup to publish the seed articles.' );
 

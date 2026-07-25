@@ -145,7 +145,28 @@ function wghs_run_setup() {
 	}
 	$log[] = sprintf( 'Pages: %d created (policies, About, Contact, How to Order, data pages).', $made );
 
-	/* 3b. Guides page as the posts page, and publish the seed articles. */
+	/* 3b. Guides page as the posts page, and publish the seed articles.
+	 *
+	 * WordPress IGNORES page_for_posts unless show_on_front is 'page' AND
+	 * page_on_front is set. With the default show_on_front of 'posts', the
+	 * Guides page renders as an ordinary empty page and no blog listing ever
+	 * appears, which is exactly the "no blog page" symptom. So we create a Home
+	 * page, point the front page at it, and only then set the posts page.
+	 * front-page.php still renders the homepage, so the Home page's own content
+	 * is never shown and it exists purely to satisfy this WordPress rule.
+	 */
+	$home = get_page_by_path( 'home' );
+	if ( ! $home ) {
+		$home_id = wp_insert_post( array(
+			'post_type'   => 'page',
+			'post_status' => 'publish',
+			'post_title'  => 'Home',
+			'post_name'   => 'home',
+		) );
+	} else {
+		$home_id = $home->ID;
+	}
+
 	$guides = get_page_by_path( 'guides' );
 	if ( ! $guides ) {
 		$gid = wp_insert_post( array(
@@ -157,9 +178,15 @@ function wghs_run_setup() {
 	} else {
 		$gid = $guides->ID;
 	}
-	if ( $gid && ! is_wp_error( $gid ) ) {
+
+	if ( $home_id && ! is_wp_error( $home_id ) && $gid && ! is_wp_error( $gid ) ) {
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', (int) $home_id );
 		update_option( 'page_for_posts', (int) $gid );
-		$log[] = 'Guides page set as the posts page.';
+		$log[] = 'Front page set to Home and Guides set as the posts page (blog now renders at /guides/).';
+	} elseif ( $gid && ! is_wp_error( $gid ) ) {
+		update_option( 'page_for_posts', (int) $gid );
+		$log[] = 'Guides page created, but the Home page could not be created, so the blog listing may not render.';
 	}
 	$log[] = wghs_seed_articles();
 	if ( function_exists( 'wghs_force_classic_cart_checkout' ) ) {
