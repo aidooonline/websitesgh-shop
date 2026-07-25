@@ -163,7 +163,7 @@ class WGHS_Gateway_MoMo extends WC_Payment_Gateway {
 			);
 			$link = wghs_whatsapp_link( $msg );
 			if ( $link ) {
-				echo '<a class="wghs-btn wghs-btn--primary" href="' . esc_url( $link ) . '" target="_blank" rel="noopener">'
+				echo '<a class="wghs-btn wghs-btn--primary" href="' . esc_attr( $link ) . '" target="_blank" rel="noopener">'
 					. esc_html__( 'Send transaction ID on WhatsApp', 'wghshop' ) . '</a>';
 			}
 		}

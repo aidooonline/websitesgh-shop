@@ -81,7 +81,7 @@ while ( have_posts() ) : the_post();
 					<div class="wghs-cta__row">
 						<a class="wghs-btn wghs-btn--primary" href="<?php echo esc_url( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' ) ); ?>"><?php esc_html_e( 'Shop the range', 'wghshop' ); ?></a>
 						<?php $wa = function_exists( 'wghs_whatsapp_link' ) ? wghs_whatsapp_link() : ''; ?>
-						<?php if ( $wa ) : ?><a class="wghs-btn wghs-btn--ghost" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Order on WhatsApp', 'wghshop' ); ?></a><?php endif; ?>
+						<?php if ( $wa ) : ?><a class="wghs-btn wghs-btn--ghost" href="<?php echo esc_attr( $wa ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Order on WhatsApp', 'wghshop' ); ?></a><?php endif; ?>
 					</div>
 				</aside>
 

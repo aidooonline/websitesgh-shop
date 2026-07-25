@@ -30,35 +30,49 @@ function wghs_wa_cart_message() {
 	if ( ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
 		return '';
 	}
-	$lines   = array();
-	$lines[] = '*NEW ORDER*';
+
+	$items = WC()->cart->get_cart();
+
+	/* WhatsApp previews the FIRST url in a message, so the first line is the
+	 * first product's image. A direct image url renders as a picture in the
+	 * chat without depending on og:image, which is the most reliable way to
+	 * make the order look like a real product order. */
+	$lead_image = '';
+	foreach ( $items as $item ) {
+		$product = isset( $item['data'] ) ? $item['data'] : null;
+		if ( ! $product ) { continue; }
+		$thumb_id = $product->get_image_id();
+		if ( $thumb_id ) {
+			$src = wp_get_attachment_image_src( $thumb_id, 'large' );
+			if ( $src ) { $lead_image = $src[0]; break; }
+		}
+	}
+
+	$lines = array();
+	if ( $lead_image ) {
+		$lines[] = $lead_image;
+		$lines[] = '';
+	}
+	$lines[] = 'NEW ORDER';
 	$lines[] = 'WebsitesGH Shop';
-	$lines[] = '';
-	$lines[] = '- - - - - - - - - - -';
 	$lines[] = '';
 
 	$n = 0;
-	foreach ( WC()->cart->get_cart() as $item ) {
-		$product = $item['data'];
+	foreach ( $items as $item ) {
+		$product = isset( $item['data'] ) ? $item['data'] : null;
 		if ( ! $product ) { continue; }
 		$n++;
-		$qty  = (int) $item['quantity'];
-		$line = number_format( (float) $product->get_price() * $qty, 2 );
-		$lines[] = sprintf( '*%d. %s*', $n, $product->get_name() );
+		$qty = (int) $item['quantity'];
+		$lines[] = sprintf( '%d. %s', $n, $product->get_name() );
 		$lines[] = sprintf( 'Quantity: %d', $qty );
-		$lines[] = sprintf( 'Price: GHS %s', $line );
+		$lines[] = sprintf( 'Price: GHS %s', number_format( (float) $product->get_price() * $qty, 2 ) );
 		$lines[] = get_permalink( $product->get_id() );
 		$lines[] = '';
 	}
 
-	$lines[] = '- - - - - - - - - - -';
+	$lines[] = sprintf( 'TOTAL: GHS %s', number_format( (float) WC()->cart->get_total( 'edit' ), 2 ) );
 	$lines[] = '';
-	$lines[] = sprintf( '*TOTAL: GHS %s*', number_format( (float) WC()->cart->get_total( 'edit' ), 2 ) );
-	$lines[] = '';
-	$lines[] = '- - - - - - - - - - -';
-	$lines[] = '';
-	$lines[] = '*MY DETAILS*';
-	$lines[] = '';
+	$lines[] = 'MY DETAILS';
 	$lines[] = 'Name: ';
 	$lines[] = 'Phone: ';
 	$lines[] = 'Location: ';
@@ -86,7 +100,7 @@ function wghs_cart_whatsapp_button() {
 		return;
 	}
 	?>
-	<a class="wghs-wa-order__btn wghs-cartwa" href="<?php echo esc_url( wghs_wa_link( $msg ) ); ?>"
+	<a class="wghs-wa-order__btn wghs-cartwa" href="<?php echo wghs_wa_href( $msg ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped by wghs_wa_href ?>"
 		target="_blank" rel="noopener" data-wghs-event="cart_whatsapp">
 		<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
 		<span><?php esc_html_e( 'Send order on WhatsApp', 'wghshop' ); ?></span>

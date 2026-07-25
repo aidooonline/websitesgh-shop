@@ -72,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 			</ol>
 			<?php $wa = function_exists( 'wghs_whatsapp_link' ) ? wghs_whatsapp_link() : ''; ?>
 			<?php if ( $wa ) : ?>
-				<a class="wghs-railcta wghs-railcta--wa" href="<?php echo esc_url( $wa ); ?>" target="_blank" rel="noopener">
+				<a class="wghs-railcta wghs-railcta--wa" href="<?php echo esc_attr( $wa ); ?>" target="_blank" rel="noopener">
 					<?php esc_html_e( 'Order on WhatsApp', 'wghshop' ); ?>
 				</a>
 			<?php endif; ?>

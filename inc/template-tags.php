@@ -51,6 +51,23 @@ function wghs_wa_link( $message = '' ) {
 }
 
 /**
+ * Attribute-safe WhatsApp href.
+ *
+ * ALWAYS use this in templates instead of esc_url( wghs_wa_link( ... ) ).
+ * esc_url() strips %0A, so escaping the finished link a second time destroys
+ * every newline in the prefilled message and the order arrives as one run-on
+ * blob. The base URL is built internally from a digits-only phone number and a
+ * fixed https://wa.me/ prefix, so there is no untrusted input in it; esc_attr()
+ * is the correct escaper for attribute context and leaves the encoding intact.
+ *
+ * @param string $message Prefilled message.
+ * @return string Escaped href value.
+ */
+function wghs_wa_href( $message = '' ) {
+	return esc_attr( wghs_wa_link( $message ) );
+}
+
+/**
  * Print the site logo if set, otherwise a clean text wordmark fallback.
  * Keeps the brand visible even before a logo is uploaded (no hardcoded image).
  */
