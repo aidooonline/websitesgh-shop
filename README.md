@@ -1,5 +1,16 @@
 # WebsitesGH Shop
 
+**New agent or new session? Read [`AGENT-HANDOVER.md`](AGENT-HANDOVER.md) in full
+before touching anything.** It carries the current state, the standing rules, the
+decisions already settled, the root cause of every bug already fixed, and the
+questions not to ask the owner.
+
+Second: [`dashboard/docs/ENGINEERING-SPEC.md`](dashboard/docs/ENGINEERING-SPEC.md),
+the six-sprint contract for the intelligence dashboard, which is the next thing
+to build.
+
+---
+
 WooCommerce theme for **shop.websitesgh.com**. Forked from `aidooonline/techplugghv2`
 (Aurora v2) and restyled onto the websitesgh green and gold system.
 

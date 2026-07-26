@@ -1,3 +1,10 @@
+> **STALE. Superseded by `/AGENT-HANDOVER.md` in the repo root.**
+>
+> This file describes Sprint 0, when nothing was deployed and no WordPress
+> install existed. The shop has been live for weeks. Read AGENT-HANDOVER.md
+> instead. This is kept only for the historical record of what was verified
+> about websitesgh.com and techpluggh.com at fork time.
+
 # Session handover: WebsitesGH Shop
 
 Read this file in full before touching anything.
