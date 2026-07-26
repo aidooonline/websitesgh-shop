@@ -445,6 +445,20 @@ the class of problem, not just the instance.
     `wgh:costs --enter` asks two questions per product in the shell he is
     already logged into. Watch for this shape generally, and count a feature as
     unfinished until the step a human has to take is the easy one.
+38. **cPanel's terminal gives PHP no interactive STDIN, so NEVER build a
+    required step on a prompt.** Symfony's question helper answers its own
+    question with the default the instant it notices, silently. The interactive
+    cost entry walked ten products, printed "skipped, still unknown" ten times
+    in under a second and exited reporting success, having written nothing: it
+    looked exactly like a completed job. Any command that must work on his
+    server takes its input as arguments (`--quick="36=700:25, 33=75"`).
+    Interactive paths must call `$this->input->isInteractive()` and
+    `stream_isatty(STDIN)` and refuse loudly.
+39. **Never put a fake id in an example he will paste.** The suggested
+    `--set=1003` came from the sandbox fixture. His real product ids are 29, 33,
+    36 and so on, so the copied command failed. Examples in output must be
+    generated from his own data, which is why `--list` now prints a ready-made
+    `--quick` line built from real rows.
 
 ---
 

@@ -229,6 +229,60 @@ class ProfitAndCustomersTest extends TestCase
         $this->assertSame([700, 800, 900], $order);
     }
 
+    public function test_many_costs_land_in_one_line(): void
+    {
+        // cPanel's browser terminal gives PHP no interactive STDIN, so a prompt
+        // answers itself with the default and reports success having written
+        // nothing. Ten products were "skipped, still unknown" in under a second
+        // and it read as a completed job.
+        $this->order(1, [[100, 1, 400.0]]);
+        $this->order(2, [[101, 1, 500.0]]);
+
+        foreach ([[100, 400], [101, 500]] as [$id, $price]) {
+            ProductCost::create([
+                'woo_product_id' => $id, 'product_name' => 'P'.$id, 'sell_price_ghs' => $price,
+                'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+            ]);
+        }
+
+        $this->artisan('wgh:costs', ['--quick' => '100=250:30, 101=300'])->assertSuccessful();
+
+        $this->assertSame('250.00', (string) ProductCost::where('woo_product_id', 100)->first()->dealer_cost_ghs);
+        $this->assertSame('30.00', (string) ProductCost::where('woo_product_id', 100)->first()->delivery_cost_ghs);
+        $this->assertSame('300.00', (string) ProductCost::where('woo_product_id', 101)->first()->dealer_cost_ghs);
+    }
+
+    public function test_one_bad_pair_saves_nothing_at_all(): void
+    {
+        /*
+         * Writing the good pairs and reporting the bad ones leaves the person
+         * guessing which half landed. The natural response is to re-run the
+         * whole line, which then complains about costs already saved.
+         */
+        ProductCost::create([
+            'woo_product_id' => 100, 'product_name' => 'Blender', 'sell_price_ghs' => 400,
+            'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $this->artisan('wgh:costs', ['--quick' => '100=250, 9999=100'])->assertFailed();
+
+        $this->assertNull(ProductCost::where('woo_product_id', 100)->first()->dealer_cost_ghs);
+    }
+
+    public function test_a_dealer_cost_above_the_selling_price_is_refused_in_batch_too(): void
+    {
+        // Nearly always a typo, and it would turn a healthy product into a KILL
+        // verdict on one keystroke.
+        ProductCost::create([
+            'woo_product_id' => 100, 'product_name' => 'Blender', 'sell_price_ghs' => 400,
+            'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $this->artisan('wgh:costs', ['--quick' => '100=4000'])->assertFailed();
+
+        $this->assertNull(ProductCost::where('woo_product_id', 100)->first()->dealer_cost_ghs);
+    }
+
     /* ---------------- profit ---------------- */
 
     public function test_a_basket_with_one_uncosted_line_produces_no_profit_figure(): void

@@ -21,7 +21,9 @@ use Throwable;
 class Costs extends Command
 {
     protected $signature = 'wgh:costs
-        {--enter : Type costs in here, one product at a time. No spreadsheet.}
+        {--list : Show what still needs a cost, with the id to use}
+        {--quick= : Set many at once, e.g. "36=700:25, 33=75:20" as id=dealer:delivery}
+        {--enter : Ask one product at a time. Needs a terminal that accepts typing.}
         {--set= : Set one product by id, with --dealer and --delivery}
         {--dealer= : Dealer cost in GHS, with --set}
         {--delivery= : Delivery cost in GHS, with --set}
@@ -39,6 +41,14 @@ class Costs extends Command
 
     public function handle(): int
     {
+        if ($this->option('list')) {
+            return $this->list();
+        }
+
+        if ($this->option('quick')) {
+            return $this->quick((string) $this->option('quick'));
+        }
+
         if ($this->option('enter')) {
             return $this->enter();
         }
@@ -78,6 +88,29 @@ class Costs extends Command
 
     private function enter(): int
     {
+        /*
+         * REFUSE TO RUN WHERE NOBODY CAN ANSWER.
+         *
+         * cPanel's browser terminal does not give PHP an interactive STDIN, and
+         * Symfony's question helper answers its own questions with the default
+         * the moment it notices. The first run walked ten products, printed
+         * "skipped, still unknown" ten times in under a second, and exited
+         * reporting success. It looked like the job had been done and nothing
+         * had been written. A command that cannot do its work must say so.
+         */
+        if (! $this->input->isInteractive() || ! stream_isatty(STDIN)) {
+            $this->error('This terminal will not let me wait for typing, so every question would answer itself.');
+            $this->newLine();
+            $this->line('  Use the one-line form instead. It needs no prompts:');
+            $this->newLine();
+            $this->line('    php artisan wgh:costs --list');
+            $this->line('    php artisan wgh:costs --quick="36=700:25, 33=75:20"');
+            $this->newLine();
+            $this->line('  Each pair is <options=bold>id=dealer_cost:delivery_cost</>. The delivery part is optional.');
+
+            return self::FAILURE;
+        }
+
         $limit = max(1, (int) $this->option('limit'));
 
         $rows = $this->needingCost($limit);
@@ -158,6 +191,153 @@ class Costs extends Command
         $this->info($saved.' product(s) costed.');
 
         return $saved > 0 ? $this->afterCosts() : self::SUCCESS;
+    }
+
+    /**
+     * What still needs a cost, and the id to type. Nothing interactive.
+     */
+    private function list(): int
+    {
+        $rows = $this->needingCost(max(1, (int) $this->option('limit')));
+
+        if (! $rows) {
+            $this->info('Every product that has sold or been advertised already has a cost.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info('These need a dealer cost, most important first.');
+        $this->newLine();
+
+        $this->table(
+            ['id', 'Product', 'Sells for'],
+            array_map(fn ($r) => [
+                $r->woo_product_id,
+                mb_substr((string) $r->product_name, 0, 42),
+                $r->sell_price_ghs !== null ? 'GHS '.number_format((float) $r->sell_price_ghs, 2) : 'unknown',
+            ], $rows)
+        );
+
+        $example = array_slice($rows, 0, 2);
+        $pairs = implode(', ', array_map(
+            fn ($r) => $r->woo_product_id.'='.($r->sell_price_ghs !== null
+                ? number_format((float) $r->sell_price_ghs * 0.65, 0, '.', '')
+                : '000').':25',
+            $example
+        ));
+
+        $this->line('  Enter them in one line, as <options=bold>id=dealer_cost:delivery_cost</>:');
+        $this->newLine();
+        $this->line('    php artisan wgh:costs --quick="'.$pairs.'"');
+        $this->newLine();
+        $this->line('  (those dealer figures are made up to show the shape, replace them)');
+        $this->line('  The :delivery part is optional. Do as many or as few as you know.');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Many costs in one line, for a terminal that cannot prompt.
+     *
+     * "36=700:25, 33=75" sets two products. Everything is validated before
+     * anything is written, so a typo in the fourth pair does not leave three
+     * saved and the command half done.
+     */
+    private function quick(string $raw): int
+    {
+        $parsed = [];
+        $problems = [];
+
+        foreach (preg_split('/[,\n]+/', $raw) ?: [] as $chunk) {
+            $chunk = trim($chunk);
+
+            if ($chunk === '') {
+                continue;
+            }
+
+            if (! preg_match('/^(\d+)\s*=\s*([0-9.,]+)\s*(?::\s*([0-9.,]+))?$/', $chunk, $m)) {
+                $problems[] = "\"{$chunk}\" is not id=dealer or id=dealer:delivery";
+
+                continue;
+            }
+
+            $id = (int) $m[1];
+            $dealer = $this->money($m[2]);
+            $delivery = isset($m[3]) ? $this->money($m[3]) : null;
+
+            $row = ProductCost::where('woo_product_id', $id)->first();
+
+            if (! $row) {
+                $problems[] = "no product with id {$id}. Run php artisan wgh:costs --list to see the real ids";
+
+                continue;
+            }
+
+            if ($dealer === null) {
+                $problems[] = "product {$id} has no usable dealer cost. A blank stays unknown by design";
+
+                continue;
+            }
+
+            if ($row->sell_price_ghs !== null && $dealer >= (float) $row->sell_price_ghs) {
+                $problems[] = sprintf(
+                    'product %d: %s is at or above the %s selling price. Selling at a loss, or a typo?',
+                    $id, number_format($dealer, 2), number_format((float) $row->sell_price_ghs, 2)
+                );
+
+                continue;
+            }
+
+            $parsed[] = [$row, $dealer, $delivery];
+        }
+
+        /*
+         * All or nothing. Writing the good pairs and reporting the bad ones
+         * would leave the person guessing which half landed, and the natural
+         * response is to re-run the whole line, which then complains about
+         * costs it has already saved.
+         */
+        if ($problems) {
+            $this->error('Nothing was saved. Fix these and run it again:');
+            foreach ($problems as $p) {
+                $this->line('  <fg=yellow>*</> '.$p);
+            }
+
+            return self::FAILURE;
+        }
+
+        if (! $parsed) {
+            $this->error('Nothing to set. The format is: --quick="36=700:25, 33=75"');
+
+            return self::FAILURE;
+        }
+
+        $now = CarbonImmutable::now('UTC');
+
+        foreach ($parsed as [$row, $dealer, $delivery]) {
+            $row->forceFill([
+                'dealer_cost_ghs' => $dealer,
+                'delivery_cost_ghs' => $delivery ?? $row->delivery_cost_ghs,
+                'is_estimate' => true,
+                'updated_at' => $now,
+            ])->save();
+
+            $profit = $row->unitProfit();
+
+            $this->line(sprintf(
+                '  <fg=green>%s</>  %s',
+                mb_substr((string) $row->product_name, 0, 40),
+                $profit !== null
+                    ? 'leaves GHS '.number_format($profit, 2).' a unit, '.$row->marginPercent().'% margin'
+                    : 'saved'
+            ));
+        }
+
+        $this->newLine();
+        $this->info(count($parsed).' product(s) costed.');
+        $this->line('  All marked as estimates. Add --confirmed with --set once a supplier has quoted you.');
+
+        return $this->afterCosts();
     }
 
     private function set(int $productId): int

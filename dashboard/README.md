@@ -252,19 +252,35 @@ month here. Profit per order has no ceiling, and it is a multiplier on every
 keyword at once. Raise it and the whole account gets more affordable the same
 day.
 
-Two ways in. Use the first.
+Two commands, no spreadsheet, no prompts:
 
 ```bash
-php artisan wgh:costs --enter               # type them in here, one at a time
-php artisan wgh:costs --set=1003 --dealer=276.99 --delivery=25
+php artisan wgh:costs --list
+php artisan wgh:costs --quick="36=700:25, 33=75:20"
 ```
 
-`--enter` walks the products that actually need a cost, most urgent first, shows
-what each one sells for, and asks two questions. Press ENTER to skip one, type
-`q` to stop. The rider fee carries forward as the default, because typing 25
-forty times is how a good idea becomes an abandoned one. It refuses a dealer
-cost at or above the selling price unless you confirm, since that is nearly
-always a typo and it would turn a healthy product into a KILL on one keystroke.
+`--list` shows what still needs a cost, most urgent first, with the id to use.
+`--quick` takes `id=dealer_cost:delivery_cost` pairs; the delivery part is
+optional. It validates everything before writing anything, so a typo in the
+fourth pair does not leave three saved and the command half done.
+
+Use these by default. **cPanel's browser terminal does not give PHP an
+interactive STDIN**, so any prompt answers itself with the default: the first
+version of this walked ten products, printed "skipped, still unknown" ten times
+in under a second, and exited reporting success having written nothing.
+`--enter` now detects that and refuses to run rather than pretending.
+
+In a terminal that does accept typing:
+
+```bash
+php artisan wgh:costs --enter               # one product at a time
+php artisan wgh:costs --set=36 --dealer=700 --delivery=25 --confirmed
+```
+
+`--enter` shows what each product sells for and asks two questions. ENTER skips,
+`q` stops, and the rider fee carries forward as the default. Both forms refuse a
+dealer cost at or above the selling price, since that is nearly always a typo
+and would turn a healthy product into a KILL on one keystroke.
 
 The spreadsheet is still there, and is the right tool for forty products after a
 round of supplier calls:
