@@ -21,7 +21,7 @@ class PackWriter
 {
     /**
      * @param  array<string, mixed>  $pack
-     * @return array{md: string, csv: string}
+     * @return array{md: string, csv: string, html: string}
      */
     public function write(array $pack, string $dir): array
     {
@@ -30,13 +30,21 @@ class PackWriter
         }
 
         $stamp = $pack['period']['from'].'_to_'.$pack['period']['to'];
-        $md = rtrim($dir, '/')."/wgh-briefing-{$stamp}.md";
+        $base = rtrim($dir, '/')."/wgh-briefing-{$stamp}";
+        $md = $base.'.md';
         $csv = rtrim($dir, '/')."/wgh-data-{$stamp}.csv";
+        $html = $base.'.html';
 
-        file_put_contents($md, $this->markdown($pack));
+        $markdown = $this->markdown($pack);
+
+        file_put_contents($md, $markdown);
         file_put_contents($csv, $this->csv($pack));
+        file_put_contents($html, (new HtmlRenderer)->render(
+            $markdown,
+            "WGH briefing {$pack['period']['from']} to {$pack['period']['to']}"
+        ));
 
-        return ['md' => $md, 'csv' => $csv];
+        return ['md' => $md, 'csv' => $csv, 'html' => $html];
     }
 
     /**

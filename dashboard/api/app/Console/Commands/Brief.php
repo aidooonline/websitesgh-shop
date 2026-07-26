@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AgentBriefing;
 use App\Services\Agent\BriefingPack;
+use App\Services\Agent\HtmlRenderer;
 use App\Services\Agent\PackWriter;
 use App\Services\Agent\ResponseParser;
 use Carbon\CarbonImmutable;
@@ -30,6 +31,7 @@ class Brief extends Command
         {--export : Write the briefing pack to send out}
         {--import= : Read a briefing response back in}
         {--show : Show the most recent stored briefing}
+        {--html : With --show, also write the stored briefing as a readable HTML page}
         {--dir= : Where to write the pack. Defaults to storage/app/briefings.}';
 
     protected $description = 'Export the consolidated picture for analysis, and import the answer';
@@ -75,8 +77,12 @@ class Brief extends Command
         ]);
 
         $this->newLine();
-        $this->line('  <options=bold>Send this one:</>  '.$files['md']);
-        $this->line('  For a spreadsheet: '.$files['csv']);
+        $this->line('  <options=bold>To read it yourself:</> '.$files['html']);
+        $this->line('  <options=bold>To send for analysis:</> '.$files['md']);
+        $this->line('  For a spreadsheet:      '.$files['csv']);
+        $this->newLine();
+        $this->line('Download the HTML through cPanel > File Manager and open it in a browser.');
+        $this->line('It is self-contained, so it needs no server and prints straight to PDF.');
         $this->newLine();
         $this->line('The markdown file explains itself. It carries the goal, the constraints, the');
         $this->line('numbers and the exact reply format, so it can be handed to anyone without a');
@@ -142,6 +148,25 @@ class Brief extends Command
         $this->info("Briefing {$briefing->id}, {$briefing->period_covered}, via {$briefing->model_used}");
         $this->newLine();
         $this->line($briefing->summary_md);
+
+        if ($this->option('html')) {
+            $dir = $this->option('dir') ?: storage_path('app/briefings');
+
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+
+            $path = rtrim($dir, '/').'/wgh-advice-'.$briefing->id.'.html';
+
+            file_put_contents($path, (new HtmlRenderer)->render(
+                $briefing->summary_md,
+                'WGH advice, '.$briefing->period_covered
+            ));
+
+            $this->newLine();
+            $this->line('  Written to: '.$path);
+            $this->line('  Download it through cPanel > File Manager and open it in a browser.');
+        }
 
         return self::SUCCESS;
     }

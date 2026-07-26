@@ -184,25 +184,83 @@ class JoinEngine
      */
     private function joinChannels(Collection $spend, Collection $events, ?float $rate): array
     {
+        /*
+         * EVERY EVENT BELONGS TO AT MOST ONE CHANNEL.
+         *
+         * The first version matched each campaign against every event and fell
+         * back to "same utm_source" when the campaign name did not match. With
+         * three Meta campaigns running, all three then claimed all Meta
+         * attribution: identical taps, identical sales, identical revenue on
+         * every row, and total attributed revenue 2.6 times the money actually
+         * taken. Cost per order was understated everywhere, and a cold audience
+         * that had sold nothing was handed a KEEP verdict at $4.00 an order.
+         * That is the exact failure that gets a losing campaign scaled.
+         *
+         * So attribution is now assigned, once, in strict precedence, and what
+         * cannot be assigned is reported as unassigned rather than shared out.
+         */
+        $byId = [];
+        $byName = [];
+        $platformCampaigns = [];
+
+        foreach ($spend->groupBy(fn ($s) => $s->platform.'|'.$s->campaign) as $key => $group) {
+            [$platform, $campaign] = array_pad(explode('|', (string) $key, 2), 2, '');
+            $byName[$platform][mb_strtolower($campaign)] = $key;
+            $byId[$campaign] = $key;      // Campaign ids arrive as the campaign string on Google.
+            $platformCampaigns[$platform][] = $key;
+        }
+
+        /** @var array<string, list<AttributionEvent>> $assigned */
+        $assigned = [];
+        $unassigned = [];
+
+        foreach ($events as $e) {
+            $key = null;
+
+            // 1. Campaign id. Strongest: it survives a rename.
+            if ($e->campaign_id !== null && isset($byId[$e->campaign_id])) {
+                $key = $byId[$e->campaign_id];
+            }
+
+            // 2. Campaign name, case-insensitive.
+            if ($key === null && $e->utm_campaign !== null) {
+                $needle = mb_strtolower($e->utm_campaign);
+                foreach ($byName as $platform => $names) {
+                    if (isset($names[$needle])) {
+                        $key = $names[$needle];
+                        break;
+                    }
+                }
+            }
+
+            /*
+             * 3. Source only. Safe ONLY when that platform is running a single
+             * campaign, because then there is nothing to be ambiguous about.
+             * With two or more, guessing would be inventing precision.
+             */
+            if ($key === null && $e->utm_source !== null) {
+                $platform = mb_strtolower($e->utm_source);
+                if (isset($platformCampaigns[$platform]) && count($platformCampaigns[$platform]) === 1) {
+                    $key = $platformCampaigns[$platform][0];
+                }
+            }
+
+            if ($key === null) {
+                if ($e->utm_source !== null && isset($platformCampaigns[mb_strtolower($e->utm_source)])) {
+                    $unassigned[mb_strtolower($e->utm_source)][] = $e;
+                }
+
+                continue;
+            }
+
+            $assigned[$key][] = $e;
+        }
+
         $rows = [];
 
         foreach ($spend->groupBy(fn ($s) => $s->platform.'|'.$s->campaign) as $key => $group) {
             [$platform, $campaign] = array_pad(explode('|', (string) $key, 2), 2, '');
-
-            $mine = $events->filter(function ($e) use ($platform, $campaign) {
-                // Campaign id is the strong key because it survives a rename.
-                // Campaign NAME is the fallback, and utm_source alone is the
-                // last resort for a platform that sends neither.
-                if ($e->campaign_id !== null && $e->campaign_id === $campaign) {
-                    return true;
-                }
-                if ($e->utm_campaign !== null && mb_strtolower($e->utm_campaign) === mb_strtolower($campaign)) {
-                    return true;
-                }
-
-                return $e->utm_source !== null
-                    && mb_strtolower($e->utm_source) === $this->sourceFor($platform);
-            });
+            $mine = collect($assigned[$key] ?? []);
 
             $sales = $mine->where('status', 'converted');
             $spendUsd = $this->sum($group->pluck('spend_usd'));
@@ -222,6 +280,37 @@ class JoinEngine
                 'days' => $this->daysCovered($group),
                 'cost_per_order_usd' => $orders > 0 ? $this->div($spendUsd, $orders) : null,
                 'revenue_usd' => $rate ? number_format((float) $revenueGhs / $rate, 2, '.', '') : null,
+                'attribution_confidence' => $mine->isEmpty()
+                    ? 'none'
+                    : ($mine->filter(fn ($e) => $e->campaign_id !== null || $e->utm_campaign !== null)->isNotEmpty()
+                        ? 'campaign' : 'platform only'),
+            ];
+        }
+
+        /*
+         * Traffic that names a platform but no campaign, where more than one
+         * campaign is running. Shown as its own line rather than shared out,
+         * because a number split on a guess is worse than a number labelled
+         * unknown: it looks like knowledge.
+         */
+        foreach ($unassigned as $platform => $list) {
+            $mine = collect($list);
+            $sales = $mine->where('status', 'converted');
+
+            $rows[] = [
+                'platform' => $platform,
+                'campaign' => '(campaign not identified)',
+                'spend_usd' => '0.00',
+                'impressions' => 0,
+                'clicks' => 0,
+                'carts' => $mine->where('status', 'cart')->count(),
+                'taps' => $mine->whereNotIn('status', ['cart'])->count(),
+                'orders' => $sales->count(),
+                'revenue_ghs' => $this->sum($sales->pluck('conv_value_ghs')),
+                'days' => 0,
+                'cost_per_order_usd' => null,
+                'revenue_usd' => null,
+                'attribution_confidence' => 'unassigned',
             ];
         }
 

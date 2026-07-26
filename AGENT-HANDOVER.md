@@ -354,11 +354,20 @@ the class of problem, not just the instance.
     report covering 1 to 28 July, read on the 26th, vanished entirely. A month
     of real spend showed as zero and every keyword sat on WATCH for lack of
     data. Use `period_start <= to AND period_end >= from`.
-23. **A date column cast to `date` does not match a bare `YYYY-MM-DD` string
+23. **Matching every campaign against every event double counts revenue.** The
+    channel join fell back to "same utm_source" when the campaign name did not
+    match, so with three Meta campaigns running, all three claimed all Meta
+    sales: attributed revenue came to 2.6x the money actually taken and a cold
+    audience that had sold nothing got a KEEP verdict at $4.00 an order. Each
+    event now belongs to exactly ONE channel, matched by campaign id, then
+    campaign name, then source ONLY when that platform runs a single campaign.
+    Anything left over is shown as "(campaign not identified)" rather than
+    shared out. A number split on a guess looks like knowledge.
+24. **A date column cast to `date` does not match a bare `YYYY-MM-DD` string
     in a `where()`.** The spend importer's natural-key lookup missed every
     time, decided the row was new, and died on the unique constraint it was
     meant to respect. Use `whereDate()` for those columns.
-24. **`click_id <> ''` no longer means "a Google click".** The tap now also
+25. **`click_id <> ''` no longer means "a Google click".** The tap now also
     captures fbclid, ttclid and msclkid. Every query feeding the Google Ads
     offline conversion export must also test
     `click_type IN ('gclid','gbraid','wbraid')`, or a Meta click gets uploaded

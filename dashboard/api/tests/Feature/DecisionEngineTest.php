@@ -216,6 +216,140 @@ class DecisionEngineTest extends TestCase
         $this->assertNotContains('were broad match', array_column($patterns, 'pattern'));
     }
 
+/* ---------------- the join must not invent revenue ---------------- */
+
+    public function test_two_campaigns_on_one_platform_do_not_both_claim_the_same_sales(): void
+    {
+        // This bug shipped once and it is the worst kind: every Meta campaign
+        // claimed every Meta sale, so total attributed revenue came to 2.6x the
+        // money actually taken, cost per order was understated everywhere, and a
+        // cold audience that had sold nothing was handed a KEEP verdict at $4.00
+        // an order. That is exactly how a losing campaign gets scaled.
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'CTWA-Blenders', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 1000, 'clicks' => 100, 'spend_usd' => '50.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'CTWA-Cold', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 900, 'clicks' => 90, 'spend_usd' => '40.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        // One sale, belonging to CTWA-Blenders by name.
+        AttributionEvent::create([
+            'woo_attr_id' => 1, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+            'status' => 'converted', 'converted_at' => '2026-07-10 11:00:00', 'conv_value_ghs' => '900.00',
+            'utm_source' => 'meta', 'utm_campaign' => 'CTWA-Blenders',
+            'payload_hash' => hash('sha256', 'a'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $picture = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28');
+
+        $named = collect($picture['channels'])->firstWhere('campaign', 'CTWA-Blenders');
+        $cold = collect($picture['channels'])->firstWhere('campaign', 'CTWA-Cold');
+
+        $this->assertSame(1, $named['orders']);
+        $this->assertSame(0, $cold['orders'], 'the cold campaign sold nothing and must not borrow the other one\'s sale');
+        $this->assertSame('900.00', $named['revenue_ghs']);
+        $this->assertSame('0.00', $cold['revenue_ghs']);
+    }
+
+    public function test_channel_revenue_never_exceeds_the_revenue_actually_taken(): void
+    {
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'A', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 100, 'clicks' => 10, 'spend_usd' => '10.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'B', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 100, 'clicks' => 10, 'spend_usd' => '10.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        foreach ([1, 2, 3] as $i) {
+            AttributionEvent::create([
+                'woo_attr_id' => $i, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+                'status' => 'converted', 'converted_at' => '2026-07-10 11:00:00', 'conv_value_ghs' => '500.00',
+                'utm_source' => 'meta',   // platform known, campaign NOT known
+                'payload_hash' => hash('sha256', (string) $i), 'synced_at' => CarbonImmutable::now('UTC'),
+            ]);
+        }
+
+        $picture = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28');
+
+        $attributed = 0.0;
+        foreach ($picture['channels'] as $c) {
+            $attributed += (float) $c['revenue_ghs'];
+        }
+
+        // 1500 taken. Anything above that means a sale was counted twice.
+        $this->assertSame(1500.0, $attributed);
+        $this->assertSame('1500.00', $picture['totals']['revenue_ghs']);
+    }
+
+    public function test_ambiguous_traffic_is_labelled_unknown_rather_than_shared_out(): void
+    {
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'A', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 100, 'clicks' => 10, 'spend_usd' => '10.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+        \App\Models\AdSpend::create([
+            'platform' => 'meta', 'campaign' => 'B', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 100, 'clicks' => 10, 'spend_usd' => '10.00',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        AttributionEvent::create([
+            'woo_attr_id' => 1, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+            'status' => 'converted', 'converted_at' => '2026-07-10 11:00:00', 'conv_value_ghs' => '500.00',
+            'utm_source' => 'meta',
+            'payload_hash' => hash('sha256', 'x'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $picture = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28');
+        $unknown = collect($picture['channels'])->firstWhere('campaign', '(campaign not identified)');
+
+        // A number split on a guess is worse than one labelled unknown: it
+        // looks like knowledge.
+        $this->assertNotNull($unknown);
+        $this->assertSame(1, $unknown['orders']);
+        $this->assertSame('unassigned', $unknown['attribution_confidence']);
+    }
+
+    public function test_a_platform_running_a_single_campaign_can_still_claim_its_traffic(): void
+    {
+        // With only one campaign there is nothing to be ambiguous about, so
+        // refusing to attribute would be uselessly pedantic.
+        \App\Models\AdSpend::create([
+            'platform' => 'tiktok', 'campaign' => 'Promote-blender', 'ad_group' => '', 'keyword' => '',
+            'period_start' => '2026-07-01', 'period_end' => '2026-07-28',
+            'impressions' => 100, 'clicks' => 10, 'spend_usd' => '18.50',
+            'currency' => 'USD', 'imported_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        AttributionEvent::create([
+            'woo_attr_id' => 1, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+            'status' => 'converted', 'converted_at' => '2026-07-10 11:00:00', 'conv_value_ghs' => '300.00',
+            'utm_source' => 'tiktok',
+            'payload_hash' => hash('sha256', 'y'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $picture = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28');
+        $c = collect($picture['channels'])->firstWhere('campaign', 'Promote-blender');
+
+        $this->assertSame(1, $c['orders']);
+        $this->assertSame('300.00', $c['revenue_ghs']);
+    }
+
     /* ---------------- the milestone ladder ---------------- */
 
     private function seedConversions(int $n, bool $withPhone = true, bool $exported = false, int $offset = 0): void

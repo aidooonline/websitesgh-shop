@@ -251,21 +251,37 @@ travels differs.
 php artisan wgh:brief --export
 ```
 
-That writes two files:
+That writes three files into `storage/app/briefings/`:
 
-- **`wgh-briefing-<period>.md`** is the one to send. It is self-describing: it
-  carries the goal, the constraints of this business, every number, the engine's
-  verdicts, the patterns, the unmatched spend, the state of the conversion loop,
-  and the exact template of the reply expected back. It can be handed to any
-  analyst or any model with no covering note.
+- **`wgh-briefing-<period>.html`** is the one to READ. Open it in a browser. It
+  is a single self-contained page with the verdicts colour coded, and it prints
+  straight to PDF. No server, no login, no network.
+- **`wgh-briefing-<period>.md`** is the one to SEND for analysis. It is
+  self-describing: it carries the goal, the constraints of this business, every
+  number, the engine's verdicts, the patterns, the unmatched spend, the state of
+  the conversion loop, and the exact template of the reply expected back. It can
+  be handed to any analyst or any model with no covering note.
 - **`wgh-data-<period>.csv`** is the same per-keyword and per-channel numbers
   flattened for a spreadsheet.
 
-Send the markdown file. When the answer comes back:
+### Getting the files off the server
+
+They are written inside `storage/`, which the web server cannot serve, because
+these are the business's profit numbers and this application has no login yet.
+To read one:
+
+**cPanel > File Manager**, navigate to
+`shop.websitesgh.com/wp-content/themes/websitesgh-shop/dashboard/api/storage/app/briefings/`,
+select the `.html` file, click **Download**, then open it.
+
+When sprint 4 lands, this becomes a screen and the download step disappears.
+
+Send the markdown file for analysis. When the answer comes back:
 
 ```bash
 php artisan wgh:brief --import=response.md
-php artisan wgh:brief --show
+php artisan wgh:brief --show            # prints it in the terminal
+php artisan wgh:brief --show --html     # writes it as a page you can download
 ```
 
 The parser is deliberately forgiving about headings, because a response copied
