@@ -436,6 +436,15 @@ the class of problem, not just the instance.
     SQLite and failed on the live engine, because there the lookup matches the
     lowercase row. Assert the stored value, never the miss: a lookup-by-casing
     test measures the database's collation rather than your own normalisation.
+37. **A workflow that leaves the terminal does not get done.** The dealer cost
+    sheet was exported and re-imported three times without a single cost being
+    entered, because the middle of the loop was "download through cPanel File
+    Manager, open in a spreadsheet, upload back over the original". The command
+    worked perfectly and the job never happened. When something blocks
+    everything else, put the entry where the person already is:
+    `wgh:costs --enter` asks two questions per product in the shell he is
+    already logged into. Watch for this shape generally, and count a feature as
+    unfinished until the step a human has to take is the easy one.
 
 ---
 

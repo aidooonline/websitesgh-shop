@@ -48,14 +48,14 @@ class CostSheet
      *
      * @return array{path: string, rows: int, already_costed: int}
      */
-    public function export(string $dir): array
+    /**
+     * Every product the system knows about, ranked by how much a cost on it
+     * would change a decision.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function ranked(): array
     {
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        $path = rtrim($dir, '/').'/wgh-product-costs.csv';
-
         // Units sold, per product.
         $sold = OrderItem::query()
             ->selectRaw('woo_product_id, MAX(product_name) AS product_name,
@@ -159,6 +159,32 @@ class CostSheet
                 ?: $b['baskets'] <=> $a['baskets']
                 ?: strcmp((string) $a['name'], (string) $b['name']);
         });
+
+        return $rows;
+    }
+
+    /**
+     * Product ids in the order they are worth costing, most urgent first.
+     *
+     * Shared with the interactive entry command, so the spreadsheet and the
+     * terminal never disagree about which product matters most. Two rankings
+     * for one question is how a person ends up costing the wrong ten.
+     *
+     * @return list<int>
+     */
+    public function priorityOrder(): array
+    {
+        return array_map(fn ($r) => (int) $r['id'], $this->ranked());
+    }
+
+    public function export(string $dir): array
+    {
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $path = rtrim($dir, '/').'/wgh-product-costs.csv';
+        $rows = $this->ranked();
 
         $fh = fopen($path, 'w');
         fputcsv($fh, self::HEADER);

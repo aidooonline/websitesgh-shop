@@ -161,6 +161,74 @@ class ProfitAndCustomersTest extends TestCase
         $this->assertSame(30.0, $rows[0]['margin_percent']);
     }
 
+    public function test_costs_can_be_typed_in_without_a_spreadsheet(): void
+    {
+        /*
+         * The CSV was the right idea and the wrong workflow. It assumed a round
+         * trip through cPanel File Manager and a spreadsheet, and in practice
+         * the sheet was exported and re-imported three times without a single
+         * cost being entered, because the middle of that loop happens outside
+         * the terminal and is the part that does not get done.
+         */
+        $this->order(1, [[100, 1, 400.0]]);
+        ProductCost::create([
+            'woo_product_id' => 100, 'product_name' => 'Blender',
+            'sell_price_ghs' => 400, 'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $this->artisan('wgh:costs', ['--set' => 100, '--dealer' => '250', '--delivery' => '30', '--confirmed' => true])
+            ->assertSuccessful();
+
+        $c = ProductCost::where('woo_product_id', 100)->first();
+
+        $this->assertSame('250.00', (string) $c->dealer_cost_ghs);
+        $this->assertSame('30.00', (string) $c->delivery_cost_ghs);
+        $this->assertFalse($c->is_estimate, 'a quoted price is not an estimate');
+        $this->assertSame(120.0, $c->unitProfit());
+    }
+
+    public function test_typed_entry_refuses_a_blank_rather_than_writing_zero(): void
+    {
+        ProductCost::create([
+            'woo_product_id' => 100, 'product_name' => 'Blender',
+            'sell_price_ghs' => 400, 'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        // Not an inconvenience: a zero dealer cost makes the product look like
+        // pure profit and bends every verdict that touches it.
+        $this->artisan('wgh:costs', ['--set' => 100, '--dealer' => ''])->assertFailed();
+
+        $this->assertNull(ProductCost::where('woo_product_id', 100)->first()->dealer_cost_ghs);
+    }
+
+    public function test_the_terminal_and_the_spreadsheet_agree_on_what_matters_most(): void
+    {
+        // Two rankings for one question is how somebody ends up costing the
+        // wrong ten products.
+        $this->order(1, [[700, 1, 400.0]]);
+
+        AttributionEvent::create([
+            'woo_attr_id' => 1, 'created_at' => '2026-07-05 10:00:00', 'updated_at' => '2026-07-05 10:00:00',
+            'status' => 'pending', 'product_id' => 800, 'visitor' => 'human',
+            'payload_hash' => hash('sha256', 'tap'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        ProductCost::create([
+            'woo_product_id' => 900, 'product_name' => 'Never Touched',
+            'sell_price_ghs' => 300, 'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $sheet = new CostSheet;
+        $order = $sheet->priorityOrder();
+
+        $r = $sheet->export(sys_get_temp_dir().'/wgh-agree');
+        $lines = array_values(array_filter(explode("\n", (string) file_get_contents($r['path']))));
+        $fromFile = array_map(fn ($l) => (int) str_getcsv($l)[0], array_slice($lines, 1));
+
+        $this->assertSame($fromFile, $order, 'the sheet and the prompt walk products in the same order');
+        $this->assertSame([700, 800, 900], $order);
+    }
+
     /* ---------------- profit ---------------- */
 
     public function test_a_basket_with_one_uncosted_line_produces_no_profit_figure(): void

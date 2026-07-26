@@ -252,12 +252,32 @@ month here. Profit per order has no ceiling, and it is a multiplier on every
 keyword at once. Raise it and the whole account gets more affordable the same
 day.
 
+Two ways in. Use the first.
+
+```bash
+php artisan wgh:costs --enter               # type them in here, one at a time
+php artisan wgh:costs --set=1003 --dealer=276.99 --delivery=25
+```
+
+`--enter` walks the products that actually need a cost, most urgent first, shows
+what each one sells for, and asks two questions. Press ENTER to skip one, type
+`q` to stop. The rider fee carries forward as the default, because typing 25
+forty times is how a good idea becomes an abandoned one. It refuses a dealer
+cost at or above the selling price unless you confirm, since that is nearly
+always a typo and it would turn a healthy product into a KILL on one keystroke.
+
+The spreadsheet is still there, and is the right tool for forty products after a
+round of supplier calls:
+
 ```bash
 php artisan wgh:costs --export              # pulls the catalogue, writes the sheet
 php artisan wgh:costs --import=path/to.csv  # read it back filled
 php artisan wgh:costs --show                # coverage and the measured margin
 php artisan wgh:costs --export --sold-only  # skip the shop, list only what sold
 ```
+
+Both paths rank products identically, so the terminal and the sheet never
+disagree about what to cost first.
 
 `--export` pulls the product list from the shop first, so every product can hold
 a cost from day one rather than only after it has sold. It never touches a

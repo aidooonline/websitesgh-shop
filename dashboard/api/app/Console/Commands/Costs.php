@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ProductCost;
 use App\Services\Costs\CostSheet;
 use App\Services\Costs\ProfitEngine;
 use App\Services\Woo\CatalogueSync;
@@ -20,17 +21,32 @@ use Throwable;
 class Costs extends Command
 {
     protected $signature = 'wgh:costs
+        {--enter : Type costs in here, one product at a time. No spreadsheet.}
+        {--set= : Set one product by id, with --dealer and --delivery}
+        {--dealer= : Dealer cost in GHS, with --set}
+        {--delivery= : Delivery cost in GHS, with --set}
+        {--supplier= : Supplier name, with --set}
+        {--confirmed : Mark the price as quoted by a supplier, with --set}
         {--export : Write the cost sheet to fill in}
         {--import= : Read a filled cost sheet back}
         {--show : Show what margins are known so far}
         {--pull : Refresh the product list from the shop before exporting}
         {--sold-only : Only list products that have already sold}
+        {--limit=10 : How many products to walk through with --enter}
         {--dir= : Where to write the sheet. Defaults to storage/app/costs.}';
 
     protected $description = 'Enter dealer costs, so profit per order stops being a guess';
 
     public function handle(): int
     {
+        if ($this->option('enter')) {
+            return $this->enter();
+        }
+
+        if ($this->option('set')) {
+            return $this->set((int) $this->option('set'));
+        }
+
         if ($this->option('import')) {
             return $this->import((string) $this->option('import'));
         }
@@ -40,6 +56,218 @@ class Costs extends Command
         }
 
         return $this->export();
+    }
+
+    /*
+     * ------------------------------------------------------------------
+     * Typing costs in directly.
+     *
+     * WHY THIS EXISTS ALONGSIDE THE SPREADSHEET
+     * The CSV was the right idea and the wrong workflow. It assumed a round
+     * trip: download through cPanel File Manager, open in a spreadsheet, fill
+     * in, upload back over the original. In practice the sheet was exported and
+     * re-imported three times without a single cost being entered, because the
+     * middle of that loop happens outside the terminal, often on a phone, and
+     * it is the part that does not get done.
+     *
+     * The spreadsheet stays: it is still the right tool for forty products
+     * after a round of supplier calls. This is for the three that matter today,
+     * typed where the person already is.
+     * ------------------------------------------------------------------
+     */
+
+    private function enter(): int
+    {
+        $limit = max(1, (int) $this->option('limit'));
+
+        $rows = $this->needingCost($limit);
+
+        if (! $rows) {
+            $this->info('Every product that has sold or been advertised already has a cost. Nothing to do.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info('Type the cost. Press ENTER to skip a product, or type q to stop.');
+        $this->line('  Blank stays unknown. A zero would make the product look like pure profit.');
+        $this->newLine();
+
+        // Delivery is usually the same rider fee across similar products, so
+        // the last answer is offered as the default. Typing 25 forty times is
+        // how a good idea becomes an abandoned one.
+        $lastDelivery = null;
+        $saved = 0;
+
+        foreach ($rows as $i => $row) {
+            $price = $row->sell_price_ghs !== null ? 'GHS '.number_format((float) $row->sell_price_ghs, 2) : 'price unknown';
+
+            $this->newLine();
+            $this->line(sprintf('  <options=bold>%d of %d</>  %s', $i + 1, count($rows), $row->product_name));
+            $this->line('  sells for '.$price.'   (product id '.$row->woo_product_id.')');
+
+            $dealer = $this->ask('  What do you pay the supplier');
+
+            if ($dealer !== null && in_array(strtolower(trim($dealer)), ['q', 'quit', 'stop'], true)) {
+                break;
+            }
+
+            $dealerValue = $this->money((string) $dealer);
+
+            if ($dealerValue === null) {
+                $this->line('  <fg=gray>skipped, still unknown</>');
+
+                continue;
+            }
+
+            if ($row->sell_price_ghs !== null && $dealerValue >= (float) $row->sell_price_ghs) {
+                $this->line('  <fg=yellow>That is at or above the selling price.</> Selling at a loss, or a typo?');
+
+                if (! $this->confirm('  Save it anyway', false)) {
+                    continue;
+                }
+            }
+
+            $delivery = $this->ask('  What does the rider cost'.($lastDelivery !== null ? " [{$lastDelivery}]" : ''));
+            $deliveryValue = $this->money((string) $delivery) ?? $lastDelivery;
+            $lastDelivery = $deliveryValue ?? $lastDelivery;
+
+            $supplier = $this->ask('  Supplier name (optional)');
+            $quoted = $this->confirm('  Did a supplier actually quote you this', false);
+
+            $row->forceFill([
+                'dealer_cost_ghs' => $dealerValue,
+                'delivery_cost_ghs' => $deliveryValue,
+                'supplier' => $supplier ? mb_substr(trim($supplier), 0, 120) : $row->supplier,
+                'is_estimate' => ! $quoted,
+                'confirmed_at' => $quoted ? CarbonImmutable::now('UTC') : null,
+                'updated_at' => CarbonImmutable::now('UTC'),
+            ])->save();
+
+            $saved++;
+
+            $profit = $row->unitProfit();
+            if ($profit !== null) {
+                $this->line(sprintf('  <fg=green>saved.</> Leaves GHS %s a unit, %s%% margin.',
+                    number_format($profit, 2), $row->marginPercent()));
+            } else {
+                $this->line('  <fg=green>saved.</>');
+            }
+        }
+
+        $this->newLine();
+        $this->info($saved.' product(s) costed.');
+
+        return $saved > 0 ? $this->afterCosts() : self::SUCCESS;
+    }
+
+    private function set(int $productId): int
+    {
+        $row = ProductCost::where('woo_product_id', $productId)->first();
+
+        if (! $row) {
+            $this->error("No product with id {$productId}. Run php artisan wgh:costs --export to refresh the catalogue.");
+
+            return self::FAILURE;
+        }
+
+        $dealer = $this->money((string) $this->option('dealer'));
+
+        if ($dealer === null) {
+            $this->error('--dealer is required, and must be a number. A blank cost stays unknown by design.');
+
+            return self::FAILURE;
+        }
+
+        if ($row->sell_price_ghs !== null && $dealer >= (float) $row->sell_price_ghs) {
+            $this->line('  <fg=yellow>Warning:</> that is at or above the '
+                .number_format((float) $row->sell_price_ghs, 2).' selling price. Saved anyway, but check it.');
+        }
+
+        $quoted = (bool) $this->option('confirmed');
+
+        $row->forceFill([
+            'dealer_cost_ghs' => $dealer,
+            'delivery_cost_ghs' => $this->money((string) $this->option('delivery')) ?? $row->delivery_cost_ghs,
+            'supplier' => $this->option('supplier') ? mb_substr((string) $this->option('supplier'), 0, 120) : $row->supplier,
+            'is_estimate' => ! $quoted,
+            'confirmed_at' => $quoted ? CarbonImmutable::now('UTC') : null,
+            'updated_at' => CarbonImmutable::now('UTC'),
+        ])->save();
+
+        $profit = $row->unitProfit();
+
+        $this->info($row->product_name.' costed.');
+        if ($profit !== null) {
+            $this->line(sprintf('  Leaves GHS %s a unit, %s%% margin.', number_format($profit, 2), $row->marginPercent()));
+        }
+
+        return $this->afterCosts();
+    }
+
+    /**
+     * Products that have sold or drawn interest and still have no cost, most
+     * important first. The same ranking the spreadsheet uses.
+     *
+     * @return list<ProductCost>
+     */
+    private function needingCost(int $limit): array
+    {
+        $sheet = (new CostSheet)->priorityOrder();
+        $out = [];
+
+        foreach ($sheet as $id) {
+            $row = ProductCost::where('woo_product_id', $id)->first();
+
+            if ($row && $row->dealer_cost_ghs === null) {
+                $out[] = $row;
+            }
+
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Recost the orders and say what the margin now is. Shared by every entry
+     * path, so typing a cost and importing a sheet report the same thing.
+     */
+    private function afterCosts(): int
+    {
+        $stamped = (new ProfitEngine)->stampOrders();
+        $this->line("  {$stamped} order(s) re-costed.");
+
+        $to = CarbonImmutable::now('UTC')->toDateString();
+        $from = CarbonImmutable::parse($to)->subDays(30)->toDateString();
+        $t = (new ProfitEngine)->judgingThreshold($from, $to);
+
+        $this->newLine();
+        $this->line('  <options=bold>Profit per order the engine will now judge by</>');
+        $this->line('  $'.number_format($t['value_usd'], 2).'  ('.$t['source'].')');
+        $this->line('  '.$t['explanation']);
+
+        if ($t['source'] === 'measured') {
+            $this->newLine();
+            $this->line('  <fg=green>This is now measured rather than assumed.</> Re-run php artisan wgh:judge');
+            $this->line('  and the verdicts will move: keywords change side as the real margin lands.');
+        }
+
+        return self::SUCCESS;
+    }
+
+    private function money(string $raw): ?float
+    {
+        $raw = trim($raw);
+
+        if ($raw === '' || $raw === '-') {
+            return null;
+        }
+
+        $clean = preg_replace('/[^0-9.\-]/', '', str_replace(',', '', $raw)) ?? '';
+
+        return $clean === '' ? null : round((float) $clean, 2);
     }
 
     private function export(): int
