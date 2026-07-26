@@ -109,8 +109,27 @@ function wghs_cart_whatsapp_button() {
 		return;
 	}
 	?>
+	<?php
+	/*
+	 * A server-rendered snapshot of the basket, read by the attribution beacon.
+	 *
+	 * The endpoint prefers to read the live cart from WooCommerce, which cannot
+	 * be tampered with. These attributes are the fallback for the case where the
+	 * beacon's REST request arrives without a usable cart session, which is the
+	 * difference between an attributed order and a row reading product 0 at
+	 * value 0. WooCommerce re-renders this block on every cart update, so it
+	 * does not go stale.
+	 */
+	$cart_snapshot = function_exists( 'wghs_attr_cart_snapshot' ) ? wghs_attr_cart_snapshot() : null;
+	?>
 	<a class="wghs-wa-order__btn wghs-cartwa" href="<?php echo wghs_wa_href( $msg ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped by wghs_wa_href ?>"
-		target="_blank" rel="noopener" data-wghs-event="cart_whatsapp">
+		target="_blank" rel="noopener" data-wghs-event="cart_whatsapp"
+		<?php if ( $cart_snapshot ) : ?>
+		data-product-id="<?php echo esc_attr( $cart_snapshot['product_id'] ); ?>"
+		data-cart-value="<?php echo esc_attr( number_format( $cart_snapshot['price'], 2, '.', '' ) ); ?>"
+		data-cart-items="<?php echo esc_attr( $cart_snapshot['cart_items'] ); ?>"
+		<?php endif; ?>
+	>
 		<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
 		<span><?php esc_html_e( 'Send order on WhatsApp', 'wghshop' ); ?></span>
 	</a>

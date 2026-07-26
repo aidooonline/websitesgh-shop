@@ -96,6 +96,15 @@ class OrderSyncTest extends TestCase
             'utm_medium' => 'cpc',
             'utm_campaign' => 'Search-Blenders-Accra',
             'placement' => 'product_page',
+            'utm_term' => 'blender price accra',
+            'utm_content' => '712345678',
+            'match_type' => 'E',
+            'campaign_id' => '22334455',
+            'adgroup_id' => '99887766',
+            'creative_id' => '712345678',
+            'target_id' => 'kwd-31415926',
+            'network' => 'g',
+            'device' => 'm',
             'customer_name' => 'Ama Mensah',
             'customer_phone' => '0542148020',
             'customer_area' => 'East Legon',
@@ -120,6 +129,14 @@ class OrderSyncTest extends TestCase
             'utm_source' => 'google',
             'utm_medium' => 'cpc',
             'utm_campaign' => 'Search-Blenders-Accra',
+            'utm_term' => 'blender price accra',
+            'match_type' => 'E',
+            'campaign_id' => '22334455',
+            'adgroup_id' => '99887766',
+            'creative_id' => '712345678',
+            'network' => 'g',
+            'device' => 'm',
+            'cart_items' => '1001:2:640.00,1002:1:180.00',
             'status' => 'pending',
             'converted_at' => '',
             'conv_value_ghs' => 0,
@@ -300,6 +317,75 @@ class OrderSyncTest extends TestCase
         $this->expectExceptionMessageMatches('/clock/');
 
         $this->sync()->run();
+    }
+
+public function test_keyword_level_campaign_detail_survives_the_sync(): void
+    {
+        $this->shopReturns($this->payload([$this->order()], [$this->attr()]));
+        $this->sync()->run();
+
+        $event = AttributionEvent::first();
+
+        // Without these there is no exact join in sprint 2, and a gclid can
+        // never be resolved back to its keyword from outside Google.
+        $this->assertSame('blender price accra', $event->utm_term);
+        $this->assertSame('22334455', $event->campaign_id);
+        $this->assertSame('99887766', $event->adgroup_id);
+        $this->assertSame('712345678', $event->creative_id);
+        $this->assertSame('g', $event->network);
+        $this->assertSame('m', $event->device);
+
+        $order = Order::first();
+        $this->assertSame('blender price accra', $order->utm_term);
+        $this->assertSame('22334455', $order->campaign_id);
+    }
+
+    public function test_match_type_is_lowercased_so_one_bid_is_not_counted_as_two(): void
+    {
+        $this->shopReturns($this->payload([$this->order()], [$this->attr()]));
+        $this->sync()->run();
+
+        // Google's reports vary the casing. Grouping on a mix of 'E' and 'e'
+        // would split one exact-match keyword into two rows that each look
+        // half as profitable as the real thing.
+        $this->assertSame('e', AttributionEvent::first()->match_type);
+        $this->assertSame('e', Order::first()->match_type);
+    }
+
+    public function test_a_cart_tap_carries_its_basket(): void
+    {
+        $this->shopReturns($this->payload([], [$this->attr([
+            'placement' => 'cart_whatsapp',
+            'product_id' => 1001,
+            'price_ghs' => 820.00,
+            'cart_items' => '1001:2:640.00,1002:1:180.00',
+        ])]));
+        $this->sync()->run();
+
+        $event = AttributionEvent::first();
+
+        // The shop is cart first, so this IS the main order path. A blank
+        // basket here means revenue can never be attributed to a product.
+        $this->assertSame('1001:2:640.00,1002:1:180.00', $event->cart_items);
+        $this->assertSame('820.00', $event->price_ghs);
+        $this->assertSame(1001, $event->product_id);
+    }
+
+    public function test_campaign_detail_is_null_not_empty_string_when_absent(): void
+    {
+        $this->shopReturns($this->payload([], [$this->attr([
+            'utm_term' => '', 'match_type' => '', 'campaign_id' => '',
+            'adgroup_id' => '', 'creative_id' => '', 'network' => '', 'device' => '',
+        ])]));
+        $this->sync()->run();
+
+        $event = AttributionEvent::first();
+
+        // Null means "no ad data". An empty string would group as its own
+        // keyword and quietly invent a campaign called nothing.
+        $this->assertNull($event->utm_term);
+        $this->assertNull($event->match_type);
+        $this->assertNull($event->campaign_id);
     }
 
     public function test_the_canonical_string_ignores_query_argument_order(): void

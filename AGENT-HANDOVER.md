@@ -315,6 +315,20 @@ the class of problem, not just the instance.
 18. **Silent artisan failures are `display_errors=Off` in the CLI php.ini.**
     A missing `vendor/` prints nothing at all. Diagnose with
     `php -d display_errors=1 -d error_reporting=E_ALL artisan ...`.
+19. **The cart WhatsApp button carries no product, so it logged product 0 at
+    value 0.** The shop is cart first, so `cart_whatsapp` is the MAIN order
+    path, and every real order was arriving with no product and no money
+    attached. Fixed by reading the live basket from WooCommerce server side in
+    the beacon endpoint (`wghs_attr_cart_snapshot()`), with a server-rendered
+    `data-cart-*` fallback on the button. If you add another WhatsApp entry
+    point, give it a product id or make sure the snapshot covers it.
+20. **A gclid cannot be resolved back to its keyword after the click.** Google
+    will not tell you later; only ValueTrack on the landing URL at click time
+    will. Every click that lands before the Final URL suffix is set is
+    permanently anonymous. See `dashboard/docs/TRACKING-TEMPLATES.md`.
+21. **`{keyword}` is the keyword BID ON, not the search query.** Never label
+    `utm_term` "what people searched". The real query is only in the Search
+    Terms report.
 
 ---
 
@@ -409,6 +423,11 @@ He has answered them already and asking again wastes his time:
   erase the decision history, which cannot be rebuilt.
 - Whether to build a UI in sprint 1. **No.** Sprint 1 is the connector. The
   React dashboard is sprint 4.
+- Which UTM tags to use. **Settled and documented** in
+  `dashboard/docs/TRACKING-TEMPLATES.md`: the exact Final URL suffix for
+  Google, the macro string for Meta, and what TikTok Promote can and cannot
+  give. Keyword, match type, campaign id, ad group id, creative, network,
+  device and target id are all captured.
 
 ---
 
@@ -435,6 +454,7 @@ content-factory/                    content strategy, writing standard, GEO laye
 inc/dashboard-export.php            signed wghs/v1/export, Tools > WGH
                                     Dashboard Access, the shared secret
 dashboard/README.md                 how to install and run the dashboard
+dashboard/docs/TRACKING-TEMPLATES.md  the exact URL suffix per ad platform
 dashboard/api/                      the Laravel app (sprint 1)
 dashboard/docs/                     ENGINEERING-SPEC.md, system-overview.html
 docs/                               older sprint and conversion notes

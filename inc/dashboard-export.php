@@ -207,7 +207,7 @@ function wghs_export_handler( WP_REST_Request $req ) {
 
 	return new WP_REST_Response( array(
 		'ok'            => true,
-		'schema'        => 1,
+		'schema'        => 2,
 		'generated_at'  => gmdate( 'Y-m-d\TH:i:s\Z' ),
 		'site'          => home_url( '/' ),
 		'currency'      => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'GHS',
@@ -330,7 +330,9 @@ function wghs_export_order_row( $order ) {
 	$ref      = (string) $order->get_meta( '_wghs_ref' );
 	$click_id = (string) $order->get_meta( '_wghs_click_id' );
 	$link     = $wpdb->get_row( $wpdb->prepare(
-		'SELECT ref, click_id, click_type, placement, utm_source, utm_medium, utm_campaign, cust_phone, cust_name, cust_area'
+		'SELECT ref, click_id, click_type, placement, utm_source, utm_medium, utm_campaign,'
+		. ' utm_term, utm_content, utm_id, match_type, campaign_id, adgroup_id, creative_id,'
+		. ' target_id, network, device, ad_placement, cust_phone, cust_name, cust_area'
 		. ' FROM ' . wghs_attr_table() . ' WHERE order_id = %d ORDER BY id DESC LIMIT 1',
 		$order->get_id()
 	) );
@@ -356,6 +358,17 @@ function wghs_export_order_row( $order ) {
 		'utm_source'     => $pick( (string) $order->get_meta( '_wghs_utm_source' ), 'utm_source' ),
 		'utm_medium'     => $pick( (string) $order->get_meta( '_wghs_utm_medium' ), 'utm_medium' ),
 		'utm_campaign'   => $pick( (string) $order->get_meta( '_wghs_utm_campaign' ), 'utm_campaign' ),
+		'utm_term'       => $pick( (string) $order->get_meta( '_wghs_utm_term' ), 'utm_term' ),
+		'utm_content'    => $pick( (string) $order->get_meta( '_wghs_utm_content' ), 'utm_content' ),
+		'utm_id'         => $pick( (string) $order->get_meta( '_wghs_utm_id' ), 'utm_id' ),
+		'match_type'     => $pick( (string) $order->get_meta( '_wghs_match_type' ), 'match_type' ),
+		'campaign_id'    => $pick( (string) $order->get_meta( '_wghs_campaign_id' ), 'campaign_id' ),
+		'adgroup_id'     => $pick( (string) $order->get_meta( '_wghs_adgroup_id' ), 'adgroup_id' ),
+		'creative_id'    => $pick( (string) $order->get_meta( '_wghs_creative_id' ), 'creative_id' ),
+		'target_id'      => $pick( (string) $order->get_meta( '_wghs_target_id' ), 'target_id' ),
+		'network'        => $pick( (string) $order->get_meta( '_wghs_network' ), 'network' ),
+		'device'         => $pick( (string) $order->get_meta( '_wghs_device' ), 'device' ),
+		'ad_placement'   => $pick( (string) $order->get_meta( '_wghs_ad_placement' ), 'ad_placement' ),
 		'placement'      => $link ? (string) $link->placement : '',
 		'customer_name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 		'customer_phone' => $phone,
@@ -380,7 +393,9 @@ function wghs_export_attribution( $since, $limit, $offset = 0 ) {
 	$table = wghs_attr_table();
 
 	$cols = 'id, created_at, updated_at, click_id, click_type, product_id, product_name, price,'
-		. ' placement, utm_source, utm_medium, utm_campaign, status, converted_at, conv_value,'
+		. ' placement, utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,'
+		. ' match_type, campaign_id, adgroup_id, creative_id, target_id, network, device,'
+		. ' ad_placement, cart_items, status, converted_at, conv_value,'
 		. ' order_id, exported, ref, cust_name, cust_phone, cust_area';
 
 	// COALESCE covers any row written before the updated_at column existed, in
@@ -425,6 +440,18 @@ function wghs_export_attribution( $since, $limit, $offset = 0 ) {
 			'utm_source'     => (string) $r['utm_source'],
 			'utm_medium'     => (string) $r['utm_medium'],
 			'utm_campaign'   => (string) $r['utm_campaign'],
+			'utm_term'       => (string) $r['utm_term'],
+			'utm_content'    => (string) $r['utm_content'],
+			'utm_id'         => (string) $r['utm_id'],
+			'match_type'     => (string) $r['match_type'],
+			'campaign_id'    => (string) $r['campaign_id'],
+			'adgroup_id'     => (string) $r['adgroup_id'],
+			'creative_id'    => (string) $r['creative_id'],
+			'target_id'      => (string) $r['target_id'],
+			'network'        => (string) $r['network'],
+			'device'         => (string) $r['device'],
+			'ad_placement'   => (string) $r['ad_placement'],
+			'cart_items'     => (string) $r['cart_items'],
 			'status'         => (string) $r['status'],
 			'converted_at'   => (string) $r['converted_at'],
 			'conv_value_ghs' => round( (float) $r['conv_value'], 2 ),

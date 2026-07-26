@@ -55,6 +55,18 @@ function wghs_attr_install() {
 		utm_source VARCHAR(60) NOT NULL DEFAULT '',
 		utm_medium VARCHAR(60) NOT NULL DEFAULT '',
 		utm_campaign VARCHAR(120) NOT NULL DEFAULT '',
+		utm_term VARCHAR(191) NOT NULL DEFAULT '',
+		utm_content VARCHAR(191) NOT NULL DEFAULT '',
+		utm_id VARCHAR(64) NOT NULL DEFAULT '',
+		match_type VARCHAR(4) NOT NULL DEFAULT '',
+		campaign_id VARCHAR(32) NOT NULL DEFAULT '',
+		adgroup_id VARCHAR(32) NOT NULL DEFAULT '',
+		creative_id VARCHAR(32) NOT NULL DEFAULT '',
+		target_id VARCHAR(64) NOT NULL DEFAULT '',
+		network VARCHAR(8) NOT NULL DEFAULT '',
+		device VARCHAR(4) NOT NULL DEFAULT '',
+		ad_placement VARCHAR(191) NOT NULL DEFAULT '',
+		cart_items TEXT NULL,
 		status VARCHAR(12) NOT NULL DEFAULT 'pending',
 		converted_at DATETIME NULL DEFAULT NULL,
 		conv_value DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -69,6 +81,8 @@ function wghs_attr_install() {
 		KEY click_id (click_id(32)),
 		KEY created_at (created_at),
 		KEY updated_at (updated_at),
+		KEY utm_term (utm_term(64)),
+		KEY campaign_id (campaign_id),
 		KEY ref (ref),
 		KEY cust_phone (cust_phone)
 	) {$charset};" );
@@ -78,11 +92,11 @@ function wghs_attr_install() {
 	// like it had never been touched and COALESCE would carry the work forever.
 	$wpdb->query( "UPDATE {$table} SET updated_at = created_at WHERE updated_at IS NULL" );
 
-	update_option( 'wghs_attr_db_version', '1.3' );
+	update_option( 'wghs_attr_db_version', '1.4' );
 }
 add_action( 'after_switch_theme', 'wghs_attr_install' );
 add_action( 'admin_init', function () {
-	if ( '1.3' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
+	if ( '1.4' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
 } );
 
 /* --------------------------------------------------------------------------
@@ -122,6 +136,157 @@ function wghs_attr_update( array $data, array $where ) {
 }
 
 /* --------------------------------------------------------------------------
+ * Campaign parameters.
+ *
+ * A click id alone says "a Google click happened". It never says which keyword
+ * or ad group produced it, and there is no way to ask Google later: the click
+ * id only resolves inside Google's own reports. Whatever ValueTrack puts on
+ * the landing URL at click time is the only chance to capture it. These two
+ * helpers make sure the beacon, the add-to-cart hook and the checkout hook all
+ * record exactly the same set, because a field captured on one path and missed
+ * on another is worse than not capturing it: it looks like real data.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * The campaign columns, mapped from a request payload.
+ *
+ * @param array $p Decoded JSON payload from the beacon.
+ * @return array
+ */
+function wghs_attr_campaign_from_payload( array $p ) {
+	$take = function ( $key, $len ) use ( $p ) {
+		return substr( sanitize_text_field( (string) ( $p[ $key ] ?? '' ) ), 0, $len );
+	};
+	return array(
+		'utm_source'   => $take( 'utm_source', 60 ),
+		'utm_medium'   => $take( 'utm_medium', 60 ),
+		'utm_campaign' => $take( 'utm_campaign', 120 ),
+		'utm_term'     => $take( 'utm_term', 191 ),
+		'utm_content'  => $take( 'utm_content', 191 ),
+		'utm_id'       => $take( 'utm_id', 64 ),
+		'match_type'   => $take( 'wg_mt', 4 ),
+		'campaign_id'  => $take( 'wg_cid', 32 ),
+		'adgroup_id'   => $take( 'wg_ag', 32 ),
+		'creative_id'  => $take( 'wg_cr', 32 ),
+		'network'      => $take( 'wg_net', 8 ),
+		'device'       => $take( 'wg_dev', 4 ),
+		'target_id'    => $take( 'wg_tgt', 64 ),
+		'ad_placement' => $take( 'wg_pl', 191 ),
+	);
+}
+
+/**
+ * The campaign columns, mapped from the first-party cookies.
+ *
+ * Used by the server-side paths (add to cart, checkout) where there is no
+ * beacon payload to read.
+ *
+ * @return array
+ */
+function wghs_attr_campaign_from_cookies() {
+	$map = array(
+		'utm_source' => array( 'utm_source', 60 ),
+		'utm_medium' => array( 'utm_medium', 60 ),
+		'utm_campaign' => array( 'utm_campaign', 120 ),
+		'utm_term' => array( 'utm_term', 191 ),
+		'utm_content' => array( 'utm_content', 191 ),
+		'utm_id' => array( 'utm_id', 64 ),
+		'match_type' => array( 'wg_mt', 4 ),
+		'campaign_id' => array( 'wg_cid', 32 ),
+		'adgroup_id' => array( 'wg_ag', 32 ),
+		'creative_id' => array( 'wg_cr', 32 ),
+		'network' => array( 'wg_net', 8 ),
+		'device' => array( 'wg_dev', 4 ),
+		'target_id' => array( 'wg_tgt', 64 ),
+		'ad_placement' => array( 'wg_pl', 191 ),
+	);
+	$out = array();
+	foreach ( $map as $column => $spec ) {
+		list( $cookie, $len ) = $spec;
+		$out[ $column ] = ! empty( $_COOKIE[ 'wghs_' . $cookie ] )
+			? substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $cookie ] ) ), 0, $len )
+			: '';
+	}
+	return $out;
+}
+
+/**
+ * The click id and its type, from the first-party cookies.
+ *
+ * Google first: it is the only click id that feeds offline conversions back
+ * into Smart Bidding, which is the growth loop the whole system protects.
+ *
+ * @return array{0:string,1:string}
+ */
+function wghs_attr_click_from_cookies() {
+	foreach ( array( 'gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid' ) as $k ) {
+		if ( ! empty( $_COOKIE[ 'wghs_' . $k ] ) ) {
+			return array( substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 191 ), $k );
+		}
+	}
+	return array( '', '' );
+}
+
+/**
+ * Resolve the current cart into a product id, a label and a value.
+ *
+ * WHY THIS EXISTS
+ * The shop is cart first, by design: "Get it now" adds to the cart and the
+ * order is sent from the cart in one message. That makes cart_whatsapp the
+ * MAIN order path, and it was logging product 0 at value 0, because the cart
+ * button carries no single product. Every real order therefore arrived in the
+ * dashboard with no product and no money attached, and no amount of ad data
+ * downstream could have said which product earned what. Read from WooCommerce
+ * on the server, so it cannot be faked and does not depend on the markup being
+ * fresh.
+ *
+ * @return array{product_id:int,product_name:string,price:float,cart_items:string}|null
+ */
+function wghs_attr_cart_snapshot() {
+	if ( ! function_exists( 'WC' ) ) { return null; }
+	if ( ( ! WC()->cart || WC()->cart->is_empty() ) && function_exists( 'wc_load_cart' ) ) {
+		// REST runs without a cart loaded. The session cookie is on the request,
+		// so this rehydrates the real basket rather than guessing from markup.
+		wc_load_cart();
+	}
+	if ( ! WC()->cart || WC()->cart->is_empty() ) { return null; }
+
+	$items = array();
+	$lead  = 0;
+	$best  = -1;
+	$count = 0;
+	foreach ( WC()->cart->get_cart() as $line ) {
+		$pid = (int) ( $line['product_id'] ?? 0 );
+		$qty = max( 1, (int) ( $line['qty'] ?? 1 ) );
+		$sub = (float) ( $line['line_subtotal'] ?? 0 );
+		if ( ! $pid ) { continue; }
+		$items[] = $pid . ':' . $qty . ':' . number_format( $sub, 2, '.', '' );
+		$count  += $qty;
+		// The dearest line represents the basket in single-product views, so a
+		// basket is never filed under a GHS 20 add-on.
+		if ( $sub > $best ) { $best = $sub; $lead = $pid; }
+	}
+	if ( ! $items ) { return null; }
+
+	$name = $lead && function_exists( 'wc_get_product' ) && wc_get_product( $lead )
+		? wc_get_product( $lead )->get_name()
+		: __( 'Cart', 'wghshop' );
+	if ( count( $items ) > 1 ) {
+		/* translators: 1: lead product name, 2: number of other items */
+		$name = sprintf( __( '%1$s + %2$d more', 'wghshop' ), $name, count( $items ) - 1 );
+	}
+
+	return array(
+		'product_id'   => $lead,
+		'product_name' => substr( $name, 0, 191 ),
+		'price'        => (float) WC()->cart->get_cart_contents_total(),
+		'cart_items'   => substr( implode( ',', $items ), 0, 65000 ),
+	);
+}
+
+/* ------------------------------------------------------------------------ */
+
+/* --------------------------------------------------------------------------
  * Front end: capture the click IDs and UTMs, log WhatsApp taps.
  * ------------------------------------------------------------------------ */
 
@@ -131,9 +296,27 @@ add_action( 'wp_footer', function () {
 	<script>
 	(function () {
 		'use strict';
-		/* 1. Persist ad click IDs and UTMs for 90 days, first party. */
+		/* 1. Persist ad click IDs and campaign parameters for 90 days, first
+		   party.
+
+		   A gclid alone tells you a Google click happened. It does not tell you
+		   WHICH keyword, ad group or ad produced it, and Google will not tell
+		   you later either: the click id is only resolvable inside Google's own
+		   reports. If the keyword is not on the landing URL at click time, it is
+		   gone. So everything Google offers through ValueTrack is captured here,
+		   and the campaign CSV import in sprint 2 resolves the numeric ids to
+		   names.
+
+		   wg_* are our own short names, filled from ValueTrack on Google, from
+		   the {{...}} macros on Meta, and from __MACROS__ on TikTok. See
+		   dashboard/docs/TRACKING-TEMPLATES.md for the exact strings to paste
+		   into each platform. */
 		var qs = new URLSearchParams(location.search);
-		var keep = ['gclid','gbraid','wbraid','utm_source','utm_medium','utm_campaign'];
+		var keep = [
+			'gclid','gbraid','wbraid','fbclid','ttclid','msclkid',
+			'utm_source','utm_medium','utm_campaign','utm_term','utm_content','utm_id',
+			'wg_mt','wg_cid','wg_ag','wg_cr','wg_net','wg_dev','wg_tgt','wg_pl'
+		];
 		keep.forEach(function (k) {
 			var v = qs.get(k);
 			if (v) { document.cookie = 'wghs_' + k + '=' + encodeURIComponent(v) + ';path=/;max-age=7776000;SameSite=Lax'; }
@@ -168,13 +351,28 @@ add_action( 'wp_footer', function () {
 			} catch (err) { /* leave the link untouched */ }
 			var lead = {};
 			try { var lm = document.cookie.match(/(?:^|; )wghs_lead=([^;]*)/); if (lm) { lead = JSON.parse(decodeURIComponent(lm[1])); } } catch (e2) { lead = {}; }
+			/* Click id, in priority order. Google first because it is the only
+			   one that feeds offline conversions back for Smart Bidding. */
+			var cid = '', ctype = '';
+			['gclid','gbraid','wbraid','fbclid','ttclid','msclkid'].forEach(function (k) {
+				if (!cid && ck(k)) { cid = ck(k); ctype = k; }
+			});
+
 			var payload = {
 				ref: ref,
-				click_id: ck('gclid') || ck('gbraid') || ck('wbraid'),
-				click_type: ck('gclid') ? 'gclid' : (ck('gbraid') ? 'gbraid' : (ck('wbraid') ? 'wbraid' : '')),
+				click_id: cid,
+				click_type: ctype,
 				product_id: parseInt(a.getAttribute('data-product-id') || (document.body.className.match(/postid-(\d+)/) || [0,0])[1], 10) || 0,
 				placement: a.getAttribute('data-wghs-event') || 'generic',
+				/* The cart button carries the whole basket. Without these the
+				   main order path logs product 0 at value 0, and no amount of
+				   ad data downstream can say which product earned the money. */
+				cart_value: a.getAttribute('data-cart-value') || '',
+				cart_items: a.getAttribute('data-cart-items') || '',
 				utm_source: ck('utm_source'), utm_medium: ck('utm_medium'), utm_campaign: ck('utm_campaign'),
+				utm_term: ck('utm_term'), utm_content: ck('utm_content'), utm_id: ck('utm_id'),
+				wg_mt: ck('wg_mt'), wg_cid: ck('wg_cid'), wg_ag: ck('wg_ag'), wg_cr: ck('wg_cr'),
+				wg_net: ck('wg_net'), wg_dev: ck('wg_dev'), wg_tgt: ck('wg_tgt'), wg_pl: ck('wg_pl'),
 				cust_name: lead.name || '', cust_phone: lead.phone || '', cust_area: lead.area || ''
 			};
 			try {
@@ -211,9 +409,12 @@ add_action( 'rest_api_init', function () {
 			$p  = $req->get_json_params();
 			if ( ! is_array( $p ) ) { return new WP_REST_Response( array( 'ok' => false ), 400 ); }
 
+			$placement    = substr( sanitize_text_field( $p['placement'] ?? '' ), 0, 60 );
 			$product_id   = absint( $p['product_id'] ?? 0 );
 			$product_name = '';
 			$price        = 0;
+			$cart_items   = null;
+
 			if ( $product_id && function_exists( 'wc_get_product' ) ) {
 				$product = wc_get_product( $product_id );
 				if ( $product ) {
@@ -222,30 +423,48 @@ add_action( 'rest_api_init', function () {
 				}
 			}
 
+			// The cart button is the main order path and carries no single
+			// product. Read the real basket from WooCommerce rather than
+			// filing the order under product 0 at value 0.
+			if ( 'cart_whatsapp' === $placement || ! $product_id ) {
+				$cart = wghs_attr_cart_snapshot();
+				if ( $cart ) {
+					$product_id   = $cart['product_id'];
+					$product_name = $cart['product_name'];
+					$price        = $cart['price'];
+					$cart_items   = $cart['cart_items'];
+				} elseif ( '' !== (string) ( $p['cart_value'] ?? '' ) ) {
+					// Fallback: the button carries a server-rendered snapshot,
+					// used when the REST request arrives without a cart session.
+					$price      = (float) $p['cart_value'];
+					$cart_items = substr( preg_replace( '/[^0-9:.,]/', '', (string) ( $p['cart_items'] ?? '' ) ), 0, 65000 );
+				}
+			}
+
 			// Basic flood guard: same click id + product within 60s is a double tap.
 			$click_id = substr( sanitize_text_field( $p['click_id'] ?? '' ), 0, 191 );
 			$dupe = $wpdb->get_var( $wpdb->prepare(
-				"SELECT id FROM " . wghs_attr_table() . " WHERE click_id = %s AND product_id = %d AND created_at > %s LIMIT 1",
-				$click_id, $product_id, gmdate( 'Y-m-d H:i:s', time() - 60 )
+				"SELECT id FROM " . wghs_attr_table() . " WHERE click_id = %s AND product_id = %d AND placement = %s AND created_at > %s LIMIT 1",
+				$click_id, $product_id, $placement, gmdate( 'Y-m-d H:i:s', time() - 60 )
 			) );
 			if ( $dupe ) { return new WP_REST_Response( array( 'ok' => true, 'dupe' => true ), 200 ); }
 
-			wghs_attr_insert( array(
+			$types = array( 'gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid' );
+
+			wghs_attr_insert( array_merge( wghs_attr_campaign_from_payload( $p ), array(
 				'created_at'   => current_time( 'mysql', true ),
 				'click_id'     => $click_id,
-				'click_type'   => in_array( $p['click_type'] ?? '', array( 'gclid', 'gbraid', 'wbraid' ), true ) ? $p['click_type'] : '',
+				'click_type'   => in_array( $p['click_type'] ?? '', $types, true ) ? $p['click_type'] : '',
 				'product_id'   => $product_id,
 				'product_name' => $product_name,
 				'price'        => $price,
-				'placement'    => substr( sanitize_text_field( $p['placement'] ?? '' ), 0, 60 ),
-				'utm_source'   => substr( sanitize_text_field( $p['utm_source'] ?? '' ), 0, 60 ),
-				'utm_medium'   => substr( sanitize_text_field( $p['utm_medium'] ?? '' ), 0, 60 ),
-				'utm_campaign' => substr( sanitize_text_field( $p['utm_campaign'] ?? '' ), 0, 120 ),
+				'cart_items'   => $cart_items,
+				'placement'    => $placement,
 				'ref'          => substr( preg_replace( '/[^A-Z0-9-]/', '', strtoupper( (string) ( $p['ref'] ?? '' ) ) ), 0, 12 ),
 				'cust_name'    => substr( sanitize_text_field( $p['cust_name'] ?? '' ), 0, 120 ),
 				'cust_phone'   => substr( preg_replace( '/[^0-9+]/', '', (string) ( $p['cust_phone'] ?? '' ) ), 0, 24 ),
 				'cust_area'    => substr( sanitize_text_field( $p['cust_area'] ?? '' ), 0, 120 ),
-			) );
+			) ) );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		},
 	) );
@@ -266,33 +485,18 @@ add_action( 'woocommerce_add_to_cart', function ( $cart_item_key, $product_id, $
 	$product = wc_get_product( $product_id );
 	if ( ! $product ) { return; }
 
-	$click_id = '';
-	$type     = '';
-	foreach ( array( 'gclid', 'gbraid', 'wbraid' ) as $k ) {
-		if ( ! empty( $_COOKIE[ 'wghs_' . $k ] ) ) {
-			$click_id = substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 191 );
-			$type     = $k;
-			break;
-		}
-	}
-	$utm = array();
-	foreach ( array( 'utm_source', 'utm_medium', 'utm_campaign' ) as $k ) {
-		$utm[ $k ] = ! empty( $_COOKIE[ 'wghs_' . $k ] ) ? substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 120 ) : '';
-	}
+	list( $click_id, $type ) = wghs_attr_click_from_cookies();
 
-	wghs_attr_insert( array(
+	wghs_attr_insert( array_merge( wghs_attr_campaign_from_cookies(), array(
 		'created_at'   => current_time( 'mysql', true ),
 		'click_id'     => $click_id,
 		'click_type'   => $type,
 		'product_id'   => (int) $product_id,
 		'product_name' => $product->get_name(),
-		'price'    => (float) $product->get_price(),
+		'price'        => (float) $product->get_price() * max( 1, (int) $qty ),
 		'placement'    => 'add_to_cart',
-		'utm_source'   => $utm['utm_source'],
-		'utm_medium'   => $utm['utm_medium'],
-		'utm_campaign' => $utm['utm_campaign'],
 		'status'       => 'cart',
-	) );
+	) ) );
 }, 20, 3 );
 
 add_action( 'woocommerce_checkout_order_processed', function ( $order_id ) {
@@ -300,21 +504,20 @@ add_action( 'woocommerce_checkout_order_processed', function ( $order_id ) {
 	$order = wc_get_order( $order_id );
 	if ( ! $order ) { return; }
 
-	$click_id = '';
-	$type     = '';
-	foreach ( array( 'gclid', 'gbraid', 'wbraid' ) as $k ) {
-		if ( ! empty( $_COOKIE[ 'wghs_' . $k ] ) ) {
-			$click_id = substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 191 );
-			$type     = $k;
-			break;
-		}
+	list( $click_id, $type ) = wghs_attr_click_from_cookies();
+	$campaign = wghs_attr_campaign_from_cookies();
+
+	// Stamp the whole campaign context onto the order, not just the three
+	// original UTMs. The dashboard reads these back through the export, and a
+	// field that was captured on the tap but dropped on the order would make
+	// on-site sales look like they came from nowhere.
+	foreach ( $campaign as $column => $value ) {
+		if ( '' !== $value ) { $order->update_meta_data( '_wghs_' . $column, $value ); }
 	}
-	foreach ( array( 'utm_source', 'utm_medium', 'utm_campaign' ) as $k ) {
-		if ( ! empty( $_COOKIE[ 'wghs_' . $k ] ) ) {
-			$order->update_meta_data( '_wghs_' . $k, sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ) );
-		}
+	if ( $click_id ) {
+		$order->update_meta_data( '_wghs_click_id', $click_id );
+		$order->update_meta_data( '_wghs_click_type', $type );
 	}
-	if ( $click_id ) { $order->update_meta_data( '_wghs_click_id', $click_id ); }
 	$order->save();
 
 	// Intelligence 1: a pending WhatsApp click with this click id becomes this
@@ -336,17 +539,20 @@ add_action( 'woocommerce_checkout_order_processed', function ( $order_id ) {
 		} else {
 			$items = $order->get_items();
 			$first = $items ? reset( $items ) : null;
-			wghs_attr_insert( array_merge( $data, array(
+			$lines = array();
+			foreach ( $items as $line ) {
+				$lines[] = (int) $line->get_product_id() . ':' . max( 1, (int) $line->get_quantity() )
+					. ':' . number_format( (float) $line->get_total(), 2, '.', '' );
+			}
+			wghs_attr_insert( array_merge( $campaign, $data, array(
 				'created_at'   => current_time( 'mysql', true ),
 				'click_id'     => $click_id,
 				'click_type'   => $type,
 				'product_id'   => $first ? (int) $first->get_product_id() : 0,
 				'product_name' => $first ? $first->get_name() : __( 'On-site order', 'wghshop' ),
 				'price'        => (float) $order->get_total(),
+				'cart_items'   => $lines ? substr( implode( ',', $lines ), 0, 65000 ) : null,
 				'placement'    => 'checkout',
-				'utm_source'   => (string) $order->get_meta( '_wghs_utm_source' ),
-				'utm_medium'   => (string) $order->get_meta( '_wghs_utm_medium' ),
-				'utm_campaign' => (string) $order->get_meta( '_wghs_utm_campaign' ),
 			) ) );
 		}
 	}
@@ -457,13 +663,32 @@ function wghs_attr_admin_page() {
 			</button>
 		</form>
 
+		<div class="wghs-bulkbar" style="clear:both;margin:10px 0;padding:8px 10px;background:#fff;border:1px solid #c3c4c7;display:none">
+			<strong><span class="wghs-bulkn">0</span> <?php esc_html_e( 'selected', 'wghshop' ); ?></strong>
+			<label style="margin-left:12px">
+				<?php esc_html_e( 'Value each (GHS)', 'wghshop' ); ?>
+				<input type="number" step="0.01" min="0" class="wghs-bulkval small-text" placeholder="<?php esc_attr_e( 'keep', 'wghshop' ); ?>">
+			</label>
+			<button class="button button-primary wghs-bulk" data-act="convert" style="margin-left:8px"><?php esc_html_e( 'Mark Sold', 'wghshop' ); ?></button>
+			<button class="button wghs-bulk" data-act="dismiss"><?php esc_html_e( 'Dismiss', 'wghshop' ); ?></button>
+			<button class="button wghs-bulk" data-act="pend"><?php esc_html_e( 'Reopen', 'wghshop' ); ?></button>
+			<span class="wghs-bulkmsg" style="margin-left:10px;color:#646970"></span>
+			<p class="description" style="margin:6px 0 0">
+				<?php esc_html_e( 'Leave the value blank to keep each row\'s own amount. Sold rows that have already been exported are skipped.', 'wghshop' ); ?>
+			</p>
+		</div>
+
 		<table class="widefat striped" style="clear:both;margin-top:8px">
 			<thead><tr>
+				<td class="check-column" style="width:2.2em;padding:8px 0 8px 3px">
+					<input type="checkbox" class="wghs-checkall" title="<?php esc_attr_e( 'Select all', 'wghshop' ); ?>">
+				</td>
 				<th><?php esc_html_e( 'When (GMT)', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Customer', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Product', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Placement', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Source', 'wghshop' ); ?></th>
+				<th><?php esc_html_e( 'Keyword', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Ref', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Click ID', 'wghshop' ); ?></th>
 				<th><?php esc_html_e( 'Value (GHS)', 'wghshop' ); ?></th>
@@ -472,10 +697,13 @@ function wghs_attr_admin_page() {
 			</tr></thead>
 			<tbody>
 			<?php if ( ! $rows ) : ?>
-				<tr><td colspan="10"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
+				<tr><td colspan="12"><?php esc_html_e( 'Nothing here yet. Rows appear when visitors tap WhatsApp or order with an ad click ID present.', 'wghshop' ); ?></td></tr>
 			<?php endif; ?>
 			<?php foreach ( $rows as $r ) : ?>
-				<tr data-id="<?php echo (int) $r->id; ?>">
+				<tr data-id="<?php echo (int) $r->id; ?>" data-exported="<?php echo (int) $r->exported; ?>" data-status="<?php echo esc_attr( $r->status ); ?>">
+					<th scope="row" class="check-column" style="padding:8px 0 8px 3px">
+						<input type="checkbox" class="wghs-cb">
+					</th>
 					<td><?php echo esc_html( $r->created_at ); ?></td>
 					<td><?php
 						if ( ! empty( $r->cust_name ) || ! empty( $r->cust_phone ) ) {
@@ -486,9 +714,27 @@ function wghs_attr_admin_page() {
 							echo '<small style="color:#a00">' . esc_html__( 'skipped', 'wghshop' ) . '</small>';
 						}
 					?></td>
-					<td><?php echo esc_html( $r->product_name ?: '#' . $r->product_id ); ?><?php echo $r->order_id ? ' <a href="' . esc_url( admin_url( 'post.php?post=' . (int) $r->order_id . '&action=edit' ) ) . '">#' . (int) $r->order_id . '</a>' : ''; ?></td>
+					<td>
+						<?php echo esc_html( $r->product_name ?: ( $r->product_id ? '#' . $r->product_id : '-' ) ); ?>
+						<?php if ( ! empty( $r->cart_items ) ) : ?>
+							<br><small style="color:#646970" title="<?php echo esc_attr( $r->cart_items ); ?>">
+								<?php printf( esc_html( _n( '%d line in basket', '%d lines in basket', substr_count( $r->cart_items, ',' ) + 1, 'wghshop' ) ), (int) substr_count( $r->cart_items, ',' ) + 1 ); ?>
+							</small>
+						<?php endif; ?>
+						<?php echo $r->order_id ? ' <a href="' . esc_url( admin_url( 'post.php?post=' . (int) $r->order_id . '&action=edit' ) ) . '">#' . (int) $r->order_id . '</a>' : ''; ?>
+					</td>
 					<td><?php echo esc_html( $r->placement ); ?></td>
 					<td><?php echo esc_html( trim( $r->utm_source . ' / ' . $r->utm_campaign, ' /' ) ?: ( $r->click_id ? 'google' : 'direct' ) ); ?></td>
+					<td>
+						<?php if ( ! empty( $r->utm_term ) ) : ?>
+							<code><?php echo esc_html( $r->utm_term ); ?></code>
+							<?php if ( ! empty( $r->match_type ) ) : ?>
+								<br><small style="color:#646970"><?php echo esc_html( wghs_attr_match_label( $r->match_type ) ); ?></small>
+							<?php endif; ?>
+						<?php else : ?>
+							<small style="color:#a7aaad"><?php esc_html_e( 'none', 'wghshop' ); ?></small>
+						<?php endif; ?>
+					</td>
 					<td><strong><?php echo esc_html( $r->ref ); ?></strong></td>
 					<td><?php echo $r->click_id ? '<code title="' . esc_attr( $r->click_id ) . '">' . esc_html( substr( $r->click_id, 0, 10 ) ) . '&hellip;</code> <small>' . esc_html( $r->click_type ) . '</small>' : '<small>' . esc_html__( 'none', 'wghshop' ) . '</small>'; ?></td>
 					<td><input type="number" step="0.01" class="wghs-attr-value small-text" value="<?php echo esc_attr( $r->conv_value > 0 ? $r->conv_value : $r->price ); ?>" <?php disabled( 'converted' === $r->status && $r->exported ); ?>></td>
@@ -509,45 +755,198 @@ function wghs_attr_admin_page() {
 		</table>
 	</div>
 	<script>
-	document.addEventListener('click', function (e) {
-		var b = e.target.closest('.wghs-attr-act');
-		if (!b) { return; }
-		var tr = b.closest('tr');
-		var body = new URLSearchParams({
-			action: 'wghs_attr_update', _wpnonce: '<?php echo esc_js( $nonce ); ?>',
-			id: tr.dataset.id, act: b.dataset.act,
-			value: (tr.querySelector('.wghs-attr-value') || { value: 0 }).value
+	(function () {
+		var AJAX  = '<?php echo esc_js( $ajax ); ?>';
+		var NONCE = '<?php echo esc_js( $nonce ); ?>';
+		var bar   = document.querySelector('.wghs-bulkbar');
+
+		function boxes() { return Array.prototype.slice.call(document.querySelectorAll('.wghs-cb')); }
+		function picked() { return boxes().filter(function (c) { return c.checked; }); }
+
+		function refresh() {
+			var n = picked().length;
+			if (bar) {
+				bar.style.display = n ? 'block' : 'none';
+				bar.querySelector('.wghs-bulkn').textContent = n;
+				bar.querySelector('.wghs-bulkmsg').textContent = '';
+			}
+			var all = document.querySelector('.wghs-checkall');
+			if (all) { all.checked = n > 0 && n === boxes().length; }
+		}
+
+		/* Shift-click selects a range, the way every list table on the web
+		   behaves. Marking thirty sales one checkbox at a time is the reason
+		   bulk actions were asked for in the first place. */
+		var last = null;
+		document.addEventListener('click', function (e) {
+			var cb = e.target.closest('.wghs-cb');
+			if (cb) {
+				var list = boxes();
+				if (e.shiftKey && last !== null) {
+					var a = list.indexOf(cb), b = last;
+					var lo = Math.min(a, b), hi = Math.max(a, b);
+					for (var i = lo; i <= hi; i++) { list[i].checked = cb.checked; }
+				}
+				last = boxes().indexOf(cb);
+				refresh();
+				return;
+			}
+
+			var all = e.target.closest('.wghs-checkall');
+			if (all) {
+				boxes().forEach(function (c) { c.checked = all.checked; });
+				refresh();
+				return;
+			}
+
+			/* Single row buttons, unchanged. */
+			var one = e.target.closest('.wghs-attr-act');
+			if (one) {
+				var tr = one.closest('tr');
+				one.disabled = true;
+				post({ id: tr.dataset.id, act: one.dataset.act, value: rowValue(tr) })
+					.then(function () { location.reload(); });
+				return;
+			}
+
+			var bulk = e.target.closest('.wghs-bulk');
+			if (bulk) { runBulk(bulk); }
 		});
-		b.disabled = true;
-		fetch('<?php echo esc_js( $ajax ); ?>', { method: 'POST', credentials: 'same-origin', body: body })
-			.then(function (r) { return r.json(); })
-			.then(function () { location.reload(); });
-	});
+
+		function rowValue(tr) {
+			var f = tr.querySelector('.wghs-attr-value');
+			return f ? f.value : 0;
+		}
+
+		function post(extra) {
+			var body = new URLSearchParams({ action: 'wghs_attr_update', _wpnonce: NONCE });
+			Object.keys(extra).forEach(function (k) { body.set(k, extra[k]); });
+			return fetch(AJAX, { method: 'POST', credentials: 'same-origin', body: body })
+				.then(function (r) { return r.json(); });
+		}
+
+		function runBulk(btn) {
+			var rows = picked().map(function (c) { return c.closest('tr'); });
+			if (!rows.length) { return; }
+
+			var act = btn.dataset.act;
+			var override = bar.querySelector('.wghs-bulkval').value;
+
+			/* An exported conversion has already been uploaded to Google.
+			   Re-marking it would either double count or desync the export
+			   flag, so those rows are skipped rather than silently rewritten. */
+			var usable = rows.filter(function (tr) {
+				return !(tr.dataset.exported === '1' && act !== 'convert');
+			});
+
+			var label = act === 'convert' ? 'Marking sold' : (act === 'dismiss' ? 'Dismissing' : 'Reopening');
+			if (!confirm(label + ' ' + usable.length + ' row(s). Continue?')) { return; }
+
+			var ids = usable.map(function (tr) { return tr.dataset.id; });
+			var values = usable.map(function (tr) { return override !== '' ? override : rowValue(tr); });
+
+			bar.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+			bar.querySelector('.wghs-bulkmsg').textContent = 'Working...';
+
+			/* One request for the whole selection. Thirty separate calls would
+			   be thirty chances for a half-applied batch. */
+			post({ act: act, ids: ids.join(','), values: values.join(','), bulk: 1 })
+				.then(function (r) {
+					var n = (r && r.data && r.data.updated) || 0;
+					bar.querySelector('.wghs-bulkmsg').textContent = n + ' updated';
+					location.reload();
+				})
+				.catch(function () {
+					bar.querySelector('.wghs-bulkmsg').textContent = 'Failed. Nothing was changed.';
+					bar.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+				});
+		}
+
+		refresh();
+	}());
 	</script>
 	<?php
+}
+
+/**
+ * Apply one status change to one row.
+ *
+ * Shared by the single-row buttons and the bulk bar so the two can never drift
+ * apart. A bulk path that reimplements the single path is how "Sold" starts
+ * meaning two different things.
+ *
+ * @param int    $id  Row id.
+ * @param string $act convert|dismiss|pend.
+ * @param float  $val Conversion value, used by convert only.
+ * @return bool Whether a row was changed.
+ */
+function wghs_attr_apply( $id, $act, $val = 0 ) {
+	$id = absint( $id );
+	if ( ! $id ) { return false; }
+
+	if ( 'convert' === $act ) {
+		return false !== wghs_attr_update( array(
+			'status'       => 'converted',
+			'converted_at' => current_time( 'mysql', true ),
+			'conv_value'   => (float) $val,
+		), array( 'id' => $id ) );
+	}
+	if ( 'dismiss' === $act ) {
+		return false !== wghs_attr_update( array( 'status' => 'dismissed' ), array( 'id' => $id ) );
+	}
+	if ( 'pend' === $act ) {
+		return false !== wghs_attr_update(
+			array( 'status' => 'pending', 'converted_at' => null, 'exported' => 0 ),
+			array( 'id' => $id )
+		);
+	}
+	return false;
+}
+
+/**
+ * Human label for a Google match type letter.
+ *
+ * @param string $code e, p, b or a.
+ * @return string
+ */
+function wghs_attr_match_label( $code ) {
+	$map = array(
+		'e' => __( 'exact', 'wghshop' ),
+		'p' => __( 'phrase', 'wghshop' ),
+		'b' => __( 'broad', 'wghshop' ),
+		'a' => __( 'AI Max, no keyword', 'wghshop' ),
+	);
+	return $map[ strtolower( (string) $code ) ] ?? (string) $code;
 }
 
 add_action( 'wp_ajax_wghs_attr_update', function () {
 	check_ajax_referer( 'wghs_attr' );
 	if ( ! current_user_can( 'manage_woocommerce' ) ) { wp_send_json_error(); }
-	global $wpdb;
-	$id  = absint( $_POST['id'] ?? 0 );
-	$act = sanitize_key( $_POST['act'] ?? '' );
-	$val = (float) ( $_POST['value'] ?? 0 );
-	if ( ! $id ) { wp_send_json_error(); }
 
-	if ( 'convert' === $act ) {
-		wghs_attr_update( array(
-			'status'       => 'converted',
-			'converted_at' => current_time( 'mysql', true ),
-			'conv_value'   => $val,
-		), array( 'id' => $id ) );
-	} elseif ( 'dismiss' === $act ) {
-		wghs_attr_update( array( 'status' => 'dismissed' ), array( 'id' => $id ) );
-	} elseif ( 'pend' === $act ) {
-		wghs_attr_update( array( 'status' => 'pending', 'converted_at' => null, 'exported' => 0 ), array( 'id' => $id ) );
+	$act = sanitize_key( $_POST['act'] ?? '' );
+	if ( ! in_array( $act, array( 'convert', 'dismiss', 'pend' ), true ) ) { wp_send_json_error(); }
+
+	// Bulk: ids and values arrive as parallel comma separated lists.
+	if ( ! empty( $_POST['bulk'] ) ) {
+		$ids  = array_filter( array_map( 'absint', explode( ',', (string) wp_unslash( $_POST['ids'] ?? '' ) ) ) );
+		$vals = array_map( 'floatval', explode( ',', (string) wp_unslash( $_POST['values'] ?? '' ) ) );
+
+		if ( ! $ids ) { wp_send_json_error(); }
+
+		// A runaway selection should not be able to rewrite the whole table in
+		// one request. The screen never lists more than 300 rows anyway.
+		$ids = array_slice( $ids, 0, 300 );
+
+		$updated = 0;
+		foreach ( $ids as $i => $id ) {
+			if ( wghs_attr_apply( $id, $act, $vals[ $i ] ?? 0 ) ) { $updated++; }
+		}
+		wp_send_json_success( array( 'updated' => $updated ) );
 	}
-	wp_send_json_success();
+
+	$ok = wghs_attr_apply( $_POST['id'] ?? 0, $act, (float) ( $_POST['value'] ?? 0 ) );
+	if ( ! $ok ) { wp_send_json_error(); }
+	wp_send_json_success( array( 'updated' => 1 ) );
 } );
 
 /* --------------------------------------------------------------------------

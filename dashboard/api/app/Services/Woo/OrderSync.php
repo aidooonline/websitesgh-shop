@@ -292,7 +292,7 @@ class OrderSync
 
         $phone = $this->normalisePhone((string) ($row['customer_phone'] ?? ''));
 
-        $attributes = [
+        $attributes = $this->campaignFields($row) + [
             'woo_order_id' => $wooId,
             'created_at' => $this->utc($row['created_at'] ?? null),
             'woo_modified_at' => $this->utc($row['modified_at'] ?? null),
@@ -392,8 +392,9 @@ class OrderSync
 
         $phone = $this->normalisePhone((string) ($row['cust_phone'] ?? ''));
 
-        $attributes = [
+        $attributes = $this->campaignFields($row) + [
             'woo_attr_id' => $wooId,
+            'cart_items' => $this->nullIfBlank($row['cart_items'] ?? null),
             'created_at' => $this->utc($row['created_at'] ?? null),
             'updated_at' => $this->utc($row['updated_at'] ?? null),
             'click_id' => $this->nullIfBlank($row['click_id'] ?? null),
@@ -480,6 +481,39 @@ class OrderSync
     private function money(mixed $value): string
     {
         return number_format((float) $value, 2, '.', '');
+    }
+
+    /**
+     * The keyword-level campaign columns, shared by orders and attribution.
+     *
+     * These come from ValueTrack on Google and from the platform macros on
+     * Meta and TikTok. They are captured at click time because there is no
+     * second chance: a gclid cannot be resolved back to its keyword from
+     * outside Google's own reports. Sprint 2's exact join depends on them.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, ?string>
+     */
+    private function campaignFields(array $row): array
+    {
+        $keys = [
+            'utm_term', 'utm_content', 'utm_id', 'match_type', 'campaign_id',
+            'adgroup_id', 'creative_id', 'target_id', 'network', 'device', 'ad_placement',
+        ];
+
+        $out = [];
+        foreach ($keys as $key) {
+            $out[$key] = $this->nullIfBlank($row[$key] ?? null);
+        }
+
+        // Google sends the match type as a single letter and casing varies by
+        // report. Lowercase once here so a later GROUP BY does not split 'E'
+        // and 'e' into two match types that look like two different bids.
+        if ($out['match_type'] !== null) {
+            $out['match_type'] = strtolower($out['match_type']);
+        }
+
+        return $out;
     }
 
     private function nullIfBlank(mixed $value): ?string
