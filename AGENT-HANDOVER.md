@@ -118,7 +118,7 @@ Then **LiteSpeed Purge All**. Pushes still need the PAT; scrub it afterwards.
 | Shop build | **Live and functionally complete.** Polish only. |
 | Content | **20 articles.** 5 live, 15 scheduled at 3-day intervals to 8 Sept. |
 | Marketing assets | **Built, not launched.** Nothing is spending. |
-| WGH Intelligence dashboard | **Sprint 1 live, acceptance test passed on real data.** Sprints 2 to 6 specced, not started. |
+| WGH Intelligence dashboard | **Sprints 1, 2 and 3 built.** 1 passed on real data; 2 and 3 pass on constructed data and await real spend. Sprints 4 to 6 not started. |
 
 ---
 
@@ -178,9 +178,9 @@ on the same server.
 1. **Foundation + WooCommerce connector.** Signed REST pull, cursor delta,
    idempotent. **BUILT.**
 2. **CSV ingest + join engine.** Per-platform parsers, spend to tap to order to
-   profit, unmatched spend surfaced not hidden.
+   profit, unmatched spend surfaced not hidden. **BUILT.**
 3. **Decision engine.** Keep / Watch / Fix / Kill on keywords, products,
-   channels, creatives. Plus the milestone gate ladder.
+   channels, creatives. Plus the milestone gate ladder. **BUILT.**
 4. **React dashboard.** Macro, meso, micro. Server-side aggregation.
 5. **Owner input, profit truth, Enhanced Conversions export** (gclid + SHA-256
    hashed phone), weekly export reminder.
@@ -202,7 +202,17 @@ halves: WhatsApp sales carrying a ref plus a click id, and on-site orders
 carrying the same. Do not "fix" a zero in the orders column; check the
 attribution column first.
 
-**Sprint 2 is the next thing to build**: the CSV parsers and the join engine.
+**Sprints 2 and 3 are built.** `wgh:import` parses Google, Meta and TikTok
+exports; `wgh:judge` joins spend to sales, judges every keyword and channel,
+detects patterns and evaluates the milestone ladder. Both pass their acceptance
+tests on constructed data in the real export formats. **Neither is done by our
+own standard until real spend flows through them**, which needs the owner to set
+the Google Ads Final URL suffix and start a campaign.
+
+**Sprint 4 is the next thing to build**: the React dashboard. Note that the
+Laravel app currently has NO HTTP layer at all: no routes/api.php, no app/Http,
+no public/. It is a CLI tool. Sprint 4 is the API layer, auth and the whole
+front end, and it is the largest of the six.
 
 The stack ended up MariaDB, not Postgres. See section 11 for why. Nothing else
 changed: the migrations were written driver-neutral for exactly this.
@@ -330,7 +340,16 @@ the class of problem, not just the instance.
 21. **`{keyword}` is the keyword BID ON, not the search query.** Never label
     `utm_term` "what people searched". The real query is only in the Search
     Terms report.
-22. **`click_id <> ''` no longer means "a Google click".** The tap now also
+22. **Two date ranges need an OVERLAP test, not containment.** The join first
+    selected spend with `period_start >= from AND period_end <= to`, so a
+    report covering 1 to 28 July, read on the 26th, vanished entirely. A month
+    of real spend showed as zero and every keyword sat on WATCH for lack of
+    data. Use `period_start <= to AND period_end >= from`.
+23. **A date column cast to `date` does not match a bare `YYYY-MM-DD` string
+    in a `where()`.** The spend importer's natural-key lookup missed every
+    time, decided the row was new, and died on the unique constraint it was
+    meant to respect. Use `whereDate()` for those columns.
+24. **`click_id <> ''` no longer means "a Google click".** The tap now also
     captures fbclid, ttclid and msclkid. Every query feeding the Google Ads
     offline conversion export must also test
     `click_type IN ('gclid','gbraid','wbraid')`, or a Meta click gets uploaded

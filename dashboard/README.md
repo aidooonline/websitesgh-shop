@@ -6,17 +6,21 @@ level: what do I do next to sell more at profit.
 The contract is `docs/ENGINEERING-SPEC.md`. The visual map is
 `docs/system-overview.html`.
 
-**Sprint 1 is built.** Foundation, the full data model, and the WooCommerce
-connector. Sprints 2 to 6 are specced and not started.
+**Sprints 1, 2 and 3 are built.** The connector, the CSV ingest and join
+engine, and the decision engine with the milestone ladder. Sprints 4 to 6
+(React dashboard, owner input and exports, the Claude agent) are specced and
+not started.
 
 ```
 dashboard/
-  api/                 Laravel application (PHP 8.2+, Postgres)
-    app/Services/Woo/  the connector: signed client, idempotent sync
-    app/Console/       wgh:sync, wgh:fx
-    database/          migrations for every table in the spec, milestone ladder
-    tests/Feature/     the sprint 1 contract as tests
-  docs/                the spec and the system map
+  api/                       Laravel application (PHP 8.2+, MariaDB or Postgres)
+    app/Services/Woo/        the connector: signed client, idempotent sync
+    app/Services/Ads/        CSV parsers, spend import, the join engine
+    app/Services/Decisions/  verdicts, patterns, the milestone ladder
+    app/Console/             wgh:sync, wgh:import, wgh:judge, wgh:fx
+    database/                every table in the spec, milestone ladder seeded
+    tests/Feature/           the sprint 1 to 3 contracts as tests
+  docs/                      the spec, the system map, tracking templates
 ```
 
 ---
@@ -172,6 +176,70 @@ Do not use WordPress's pseudo-cron for this. On a low traffic site it fires late
 or not at all, which is already a known issue with the scheduled articles.
 
 ---
+
+## The monthly loop
+
+```bash
+# 1. Record the rate, at least monthly. Nothing converts USD to GHS without it.
+php artisan wgh:fx 11.85
+
+# 2. Import each platform export. The platform is detected from the file.
+php artisan wgh:import ~/exports/google-keywords.csv
+php artisan wgh:import ~/exports/meta-campaigns.csv
+php artisan wgh:import ~/exports/tiktok-promote.csv
+
+# 3. Join it against sales and produce verdicts.
+php artisan wgh:judge
+```
+
+`wgh:import --judge` does steps 2 and 3 in one go.
+
+Re-importing the same file is safe and expected: it reports "already imported,
+nothing changed". A figure that has been revised by the platform is treated as
+a restatement and overwrites, never accumulates.
+
+### What wgh:judge tells you
+
+Four verdicts, and the difference between two of them is where the money is:
+
+| | |
+|---|---|
+| **KEEP** | Cost per order is at or under profit per order. Scale it. |
+| **WATCH** | Too early to judge. Says exactly how many days and clicks remain. |
+| **FIX** | Clicks and WhatsApp taps but no sale, OR it sells at a loss. The page or the price is the fault, not the keyword. |
+| **KILL** | Old enough AND spent enough AND sold nothing. Both conditions, always. |
+
+FIX is the one that pays for the system. A keyword bringing people who open
+WhatsApp and then do not buy looks identical, in a spreadsheet, to a keyword
+bringing the wrong people entirely. The first is a page problem worth fixing
+and the second is a targeting problem worth killing, and pausing the first
+switches off demand you already paid to create.
+
+Nothing is killed on thin data: it needs 14 days AND enough spend to have
+risked one order's profit. Time alone would kill a keyword that spent forty
+cents; spend alone would kill one that had two days.
+
+Every verdict writes an immutable `decisions` row carrying the exact numbers
+behind it. The model refuses to save a verdict with no evidence.
+
+### Unmatched spend
+
+Spend that matches no attribution row is reported near the top of the output,
+never hidden in an "other" bucket. It means one of two things and both are
+worth money: a tracking gap, where the money works but is invisible, or a real
+leak, where clicks never reached a tap. Hiding it makes every cost per order
+look better than it is.
+
+The commonest cause by far is the Google Ads Final URL suffix not being set.
+See `docs/TRACKING-TEMPLATES.md`.
+
+### The profit line
+
+`WGH_PROFIT_PER_ORDER_USD` in `.env` is the single most important number in the
+configuration: it is the line between a keyword that earns and one that bleeds.
+It starts at the spec's $8.75 estimate and **must** be replaced with the real
+margin once dealer costs are known. Until then every verdict says so in its
+evidence, and they are directionally right rather than exact.
 
 ## Day to day
 

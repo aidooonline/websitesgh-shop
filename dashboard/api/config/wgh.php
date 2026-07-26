@@ -41,6 +41,43 @@ return [
         'spend' => 'USD',
     ],
 
+    /*
+     * The numbers the decision engine judges by.
+     *
+     * profit_per_order_usd is the single most important figure in this file:
+     * it is the line between a keyword that earns and one that bleeds. It
+     * starts at the spec's estimate and MUST be replaced with the real margin
+     * once dealer costs are entered, at which point every verdict sharpens.
+     * Until then verdicts are directionally right, not exact, and the engine
+     * says so in its evidence.
+     */
+    'decisions' => [
+        'profit_per_order_usd' => (float) env('WGH_PROFIT_PER_ORDER_USD', 8.75),
+
+        // Nothing is killed before BOTH are true. Time alone kills a keyword
+        // that has barely spent; spend alone kills one that has had two days.
+        'min_days_to_judge' => (int) env('WGH_MIN_DAYS', 14),
+        'min_clicks_to_judge' => (int) env('WGH_MIN_CLICKS', 100),
+
+        // A keyword drawing taps but no sale is a landing page or price
+        // problem, not a keyword problem. Killing it is the expensive mistake
+        // this threshold exists to prevent.
+        'fix_min_taps' => (int) env('WGH_FIX_MIN_TAPS', 3),
+    ],
+
+    /*
+     * The offline conversion loop. These drive the milestone ladder, and they
+     * come from how Smart Bidding actually behaves: it needs roughly 30
+     * conversions in 30 days to stabilise, and it wants uploads at least
+     * weekly, because consistency matters more than volume early on.
+     */
+    'loop' => [
+        'smart_bidding_floor' => 30,
+        'export_overdue_days' => 7,
+        'match_rate_strong' => 0.60,
+        'match_rate_thin' => 0.40,
+    ],
+
     'display_timezone' => 'Africa/Accra',
 
 ];
