@@ -45,6 +45,7 @@ function wghs_attr_install() {
 	dbDelta( "CREATE TABLE {$table} (
 		id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 		created_at DATETIME NOT NULL,
+		updated_at DATETIME NULL DEFAULT NULL,
 		click_id VARCHAR(191) NOT NULL DEFAULT '',
 		click_type VARCHAR(10) NOT NULL DEFAULT '',
 		product_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -67,15 +68,58 @@ function wghs_attr_install() {
 		KEY status (status),
 		KEY click_id (click_id(32)),
 		KEY created_at (created_at),
+		KEY updated_at (updated_at),
 		KEY ref (ref),
 		KEY cust_phone (cust_phone)
 	) {$charset};" );
-	update_option( 'wghs_attr_db_version', '1.2' );
+
+	// Backfill, so the dashboard's delta cursor has a value on every historic
+	// row from the first sync. Without this, every pre-existing row would look
+	// like it had never been touched and COALESCE would carry the work forever.
+	$wpdb->query( "UPDATE {$table} SET updated_at = created_at WHERE updated_at IS NULL" );
+
+	update_option( 'wghs_attr_db_version', '1.3' );
 }
 add_action( 'after_switch_theme', 'wghs_attr_install' );
 add_action( 'admin_init', function () {
-	if ( '1.2' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
+	if ( '1.3' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
 } );
+
+/* --------------------------------------------------------------------------
+ * Write helpers.
+ *
+ * Every write goes through these two so updated_at can never be forgotten at
+ * one call site. It is forgotten exactly once and then the dashboard holds a
+ * stale copy of a converted row and reports a sale that happened as no sale.
+ * The stamp is explicit UTC, matching created_at, never MySQL CURRENT_TIMESTAMP,
+ * which would follow the server session timezone and mix local time into a
+ * UTC table.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Insert an attribution row, stamping updated_at.
+ *
+ * @param array $data Column data.
+ * @return int|false Insert result from wpdb.
+ */
+function wghs_attr_insert( array $data ) {
+	global $wpdb;
+	$data['updated_at'] = current_time( 'mysql', true );
+	return $wpdb->insert( wghs_attr_table(), $data );
+}
+
+/**
+ * Update attribution rows, stamping updated_at.
+ *
+ * @param array $data  Column data.
+ * @param array $where Where clause.
+ * @return int|false Update result from wpdb.
+ */
+function wghs_attr_update( array $data, array $where ) {
+	global $wpdb;
+	$data['updated_at'] = current_time( 'mysql', true );
+	return $wpdb->update( wghs_attr_table(), $data, $where );
+}
 
 /* --------------------------------------------------------------------------
  * Front end: capture the click IDs and UTMs, log WhatsApp taps.
@@ -186,7 +230,7 @@ add_action( 'rest_api_init', function () {
 			) );
 			if ( $dupe ) { return new WP_REST_Response( array( 'ok' => true, 'dupe' => true ), 200 ); }
 
-			$wpdb->insert( wghs_attr_table(), array(
+			wghs_attr_insert( array(
 				'created_at'   => current_time( 'mysql', true ),
 				'click_id'     => $click_id,
 				'click_type'   => in_array( $p['click_type'] ?? '', array( 'gclid', 'gbraid', 'wbraid' ), true ) ? $p['click_type'] : '',
@@ -236,7 +280,7 @@ add_action( 'woocommerce_add_to_cart', function ( $cart_item_key, $product_id, $
 		$utm[ $k ] = ! empty( $_COOKIE[ 'wghs_' . $k ] ) ? substr( sanitize_text_field( wp_unslash( $_COOKIE[ 'wghs_' . $k ] ) ), 0, 120 ) : '';
 	}
 
-	$wpdb->insert( wghs_attr_table(), array(
+	wghs_attr_insert( array(
 		'created_at'   => current_time( 'mysql', true ),
 		'click_id'     => $click_id,
 		'click_type'   => $type,
@@ -288,11 +332,11 @@ add_action( 'woocommerce_checkout_order_processed', function ( $order_id ) {
 			'order_id'     => $order_id,
 		);
 		if ( $pending ) {
-			$wpdb->update( wghs_attr_table(), $data, array( 'id' => $pending ) );
+			wghs_attr_update( $data, array( 'id' => $pending ) );
 		} else {
 			$items = $order->get_items();
 			$first = $items ? reset( $items ) : null;
-			$wpdb->insert( wghs_attr_table(), array_merge( $data, array(
+			wghs_attr_insert( array_merge( $data, array(
 				'created_at'   => current_time( 'mysql', true ),
 				'click_id'     => $click_id,
 				'click_type'   => $type,
@@ -493,15 +537,15 @@ add_action( 'wp_ajax_wghs_attr_update', function () {
 	if ( ! $id ) { wp_send_json_error(); }
 
 	if ( 'convert' === $act ) {
-		$wpdb->update( wghs_attr_table(), array(
+		wghs_attr_update( array(
 			'status'       => 'converted',
 			'converted_at' => current_time( 'mysql', true ),
 			'conv_value'   => $val,
 		), array( 'id' => $id ) );
 	} elseif ( 'dismiss' === $act ) {
-		$wpdb->update( wghs_attr_table(), array( 'status' => 'dismissed' ), array( 'id' => $id ) );
+		wghs_attr_update( array( 'status' => 'dismissed' ), array( 'id' => $id ) );
 	} elseif ( 'pend' === $act ) {
-		$wpdb->update( wghs_attr_table(), array( 'status' => 'pending', 'converted_at' => null, 'exported' => 0 ), array( 'id' => $id ) );
+		wghs_attr_update( array( 'status' => 'pending', 'converted_at' => null, 'exported' => 0 ), array( 'id' => $id ) );
 	}
 	wp_send_json_success();
 } );
@@ -547,7 +591,7 @@ add_action( 'admin_post_wghs_attr_export', function () {
 	fclose( $out );
 
 	if ( $ids ) {
-		$wpdb->query( "UPDATE {$table} SET exported = 1 WHERE id IN (" . implode( ',', $ids ) . ')' );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET exported = 1, updated_at = %s WHERE id IN (" . implode( ',', $ids ) . ')', current_time( 'mysql', true ) ) );
 	}
 	exit;
 } );

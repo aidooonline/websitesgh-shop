@@ -5,7 +5,7 @@ single question.** Most of what you would think to ask is answered here. He has
 already spent a long time on this and repeating settled questions is the main
 way an agent wastes his time.
 
-Last updated: 26 July 2026.
+Last updated: 26 July 2026. Sprint 1 of the dashboard is built.
 
 ### What is in this file
 
@@ -114,7 +114,7 @@ Then **LiteSpeed Purge All**. Pushes still need the PAT; scrub it afterwards.
 | Shop build | **Live and functionally complete.** Polish only. |
 | Content | **20 articles.** 5 live, 15 scheduled at 3-day intervals to 8 Sept. |
 | Marketing assets | **Built, not launched.** Nothing is spending. |
-| WGH Intelligence dashboard | **Fully specced, zero code written.** Sprints 1 to 6. |
+| WGH Intelligence dashboard | **Sprint 1 built.** Sprints 2 to 6 specced, not started. |
 
 ---
 
@@ -172,7 +172,7 @@ Laravel API + Postgres + React, code inside this repo under `/dashboard`, hosted
 on the same server.
 
 1. **Foundation + WooCommerce connector.** Signed REST pull, cursor delta,
-   idempotent.
+   idempotent. **BUILT.**
 2. **CSV ingest + join engine.** Per-platform parsers, spend to tap to order to
    profit, unmatched spend surfaced not hidden.
 3. **Decision engine.** Keep / Watch / Fix / Kill on keywords, products,
@@ -183,8 +183,20 @@ on the same server.
 6. **Claude selling agent.** Claude for reasoning, fal.ai for bulk. Balanced
    personality. Fires on data import. Advises, never acts.
 
-**This was blocked on keyword volumes. The forecast came back, so it is
-unblocked. Sprint 1 is the next thing to build.**
+**Sprint 1 is built and pushed.** Code in `dashboard/api`, install steps in
+`dashboard/README.md`, shop endpoint in `inc/dashboard-export.php`. Its
+acceptance test is a command: `php artisan wgh:sync --verify`. It has not yet
+been run against the live shop, because that needs the server. **Sprint 2 is the
+next thing to build**, and it should not start until sprint 1's acceptance test
+has passed on real data.
+
+What sprint 1 added to the shop, which matters if you touch attribution:
+
+- `wp_wghs_attribution` gained `updated_at`, db version 1.3, backfilled on
+  admin_init. The dashboard's delta cursor rides on it.
+- **Every write to that table now goes through `wghs_attr_insert()` or
+  `wghs_attr_update()`.** Do not call `$wpdb->insert`/`update` on it directly,
+  or the row will be invisible to the dashboard until something else touches it.
 
 ---
 
@@ -253,6 +265,24 @@ the class of problem, not just the instance.
 10. **Never `esc_url` a raw image URL into a WhatsApp message expecting a
     preview.** LiteSpeed serves WebP to crawlers, so a `.jpg` link renders no
     thumbnail. Lead with the **product page URL** and let `og:image` do it.
+11. **A delta sync on `created_at` loses every later edit.** Attribution rows
+    are not write-once: pending becomes converted. The cursor must ride on an
+    `updated_at` that every write stamps, which is why all writes go through
+    `wghs_attr_insert()` / `wghs_attr_update()`.
+12. **An exclusive cursor (`> last_seen`) loses every row sharing the last
+    row's second.** The export is `>=` and the dashboard rewinds two minutes,
+    which is only safe because every write is a content-hash guarded upsert.
+13. **A timestamp-only cursor stalls forever** when a whole page shares one
+    second: the next request returns the same page. Paging within a run is by
+    offset; the timestamp is held fixed until the run completes.
+14. **Keying order lines on the product id halves a basket** that contains the
+    same product twice. The WooCommerce line item id is the only stable line
+    identity.
+15. **`0542148020` and `+233542148020` hash to different values.** Enhanced
+    Conversions match on a SHA-256 of an E.164 number, so normalise first or
+    the match rate quietly halves.
+16. **`bcmath` is not a default PHP extension.** Do not reach for `bcsub` in
+    dashboard code without checking; shared cPanel may not have it.
 
 ---
 
@@ -338,6 +368,11 @@ He has answered them already and asking again wastes his time:
 - What currency ads are in. **USD.** Only shop prices are GHS.
 - Whether to add a checkout. **No. WhatsApp is the checkout.**
 - What his WhatsApp number is. **233542148020.**
+- Whether the dashboard should use Postgres or MySQL. **Postgres, per the spec.**
+  The migrations use no Postgres-only type, so if the plan has no Postgres it is
+  one line in `.env` and nothing else moves. Do not ask, just note it.
+- Whether to build a UI in sprint 1. **No.** Sprint 1 is the connector. The
+  React dashboard is sprint 4.
 
 ---
 
@@ -361,6 +396,10 @@ single.php  index.php  sidebar.php  blog detail, listing, sticky rail
 page-about.php                      designed About, inline SVG
 marketing/                          playbook, keywords, forecast findings
 content-factory/                    content strategy, writing standard, GEO layer
+inc/dashboard-export.php            signed wghs/v1/export, Tools > WGH
+                                    Dashboard Access, the shared secret
+dashboard/README.md                 how to install and run the dashboard
+dashboard/api/                      the Laravel app (sprint 1)
 dashboard/docs/                     ENGINEERING-SPEC.md, system-overview.html
 docs/                               older sprint and conversion notes
 ```
@@ -369,10 +408,10 @@ docs/                               older sprint and conversion notes
 
 ## 13. Where to start
 
-Read `dashboard/docs/ENGINEERING-SPEC.md`, then build **Sprint 1**: Laravel,
-Postgres, the full data model, and the WooCommerce connector. Its acceptance test
-is that a real order from the live shop appears in the dashboard database with
-its ref code and click id, and that running the sync twice changes zero rows.
+Read `dashboard/docs/ENGINEERING-SPEC.md` and `dashboard/README.md`. Sprint 1
+is built. Get its acceptance test passing on the live shop
+(`php artisan wgh:sync --verify`), then build **Sprint 2**: the CSV parsers and
+the join engine.
 
 Do not skip the acceptance tests. They are the reason the spec exists.
 

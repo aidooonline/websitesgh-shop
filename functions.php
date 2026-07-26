@@ -131,6 +131,8 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require WGHS_DIR . '/inc/schema.php';
 	require WGHS_DIR . '/inc/tracking.php';
 	require WGHS_DIR . '/inc/attribution.php';
+	// After attribution.php: it uses wghs_attr_table() and the updated_at column.
+	require WGHS_DIR . '/inc/dashboard-export.php';
 	require WGHS_DIR . '/inc/lead-capture.php';
 	require WGHS_DIR . '/inc/express-order.php';
 	require WGHS_DIR . '/inc/enquiries.php';
