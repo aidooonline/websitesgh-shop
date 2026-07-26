@@ -19,3 +19,7 @@ composer.lock
 !/storage/logs/.gitkeep
 /bootstrap/cache/*
 !/bootstrap/cache/.gitkeep
+
+# Generated briefing packs are data, not code.
+/storage/app/briefings/*
+!/storage/app/briefings/.gitkeep

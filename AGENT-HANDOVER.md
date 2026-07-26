@@ -185,7 +185,10 @@ on the same server.
 5. **Owner input, profit truth, Enhanced Conversions export** (gclid + SHA-256
    hashed phone), weekly export reminder.
 6. **Claude selling agent.** Claude for reasoning, fal.ai for bulk. Balanced
-   personality. Fires on data import. Advises, never acts.
+   personality. Fires on data import. Advises, never acts. **The MANUAL half is
+   built**: `wgh:brief --export` writes the exact payload the API would receive,
+   `--import` reads a response back. Sprint 6 proper only has to replace the
+   person carrying the file with a network call.
 
 **Sprint 1 is live and its acceptance test passed on the real shop**, 26 July
 2026: 4 orders, 5 order items, 95 attribution rows pulled; the second run wrote
@@ -208,6 +211,12 @@ detects patterns and evaluates the milestone ladder. Both pass their acceptance
 tests on constructed data in the real export formats. **Neither is done by our
 own standard until real spend flows through them**, which needs the owner to set
 the Google Ads Final URL suffix and start a campaign.
+
+There is also a working **manual briefing loop**, which the owner asked for so
+he is not forced into an API cost: `wgh:brief --export` produces a
+self-describing pack, he sends it to an analyst or a model, and
+`wgh:brief --import` stores the answer. The pack is the same payload sprint 6
+will send, so none of it is throwaway.
 
 **Sprint 4 is the next thing to build**: the React dashboard. Note that the
 Laravel app currently has NO HTTP layer at all: no routes/api.php, no app/Http,

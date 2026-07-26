@@ -241,6 +241,44 @@ It starts at the spec's $8.75 estimate and **must** be replaced with the real
 margin once dealer costs are known. Until then every verdict says so in its
 evidence, and they are directionally right rather than exact.
 
+## Getting advice without an API key
+
+Sprint 6 will hand the consolidated picture to Claude automatically. Until then
+the same loop runs by hand, and the payload is identical: only the way it
+travels differs.
+
+```bash
+php artisan wgh:brief --export
+```
+
+That writes two files:
+
+- **`wgh-briefing-<period>.md`** is the one to send. It is self-describing: it
+  carries the goal, the constraints of this business, every number, the engine's
+  verdicts, the patterns, the unmatched spend, the state of the conversion loop,
+  and the exact template of the reply expected back. It can be handed to any
+  analyst or any model with no covering note.
+- **`wgh-data-<period>.csv`** is the same per-keyword and per-channel numbers
+  flattened for a spreadsheet.
+
+Send the markdown file. When the answer comes back:
+
+```bash
+php artisan wgh:brief --import=response.md
+php artisan wgh:brief --show
+```
+
+The parser is deliberately forgiving about headings, because a response copied
+out of a chat window arrives with its formatting mangled and rejecting good
+advice over a stray character would end the habit. It is strict about one thing:
+there must be a "Do this now" section. A briefing that does not end in a single
+move is an essay, and storing one would leave a record that later reads as
+though the system had nothing to say.
+
+Every briefing is stored in `agent_briefings` with `model_used` recording where
+it actually came from, so in six months it is still possible to ask who said
+this and get a straight answer.
+
 ## Day to day
 
 ```bash

@@ -80,6 +80,12 @@ class JoinEngine
             'impressions' => (int) $spend->sum('impressions'),
             'taps' => $events->whereNotIn('status', ['cart'])->count(),
             'carts' => $events->where('status', 'cart')->count(),
+            // Taps that came FROM the cart specifically. The funnel is not
+            // strictly sequential here: a visitor can message from a product
+            // page without ever adding to the basket. Dividing all taps by
+            // carts therefore produces rates above 100%, which is nonsense and
+            // destroys trust in every other number on the page.
+            'cart_taps' => $events->where('placement', 'cart_whatsapp')->count(),
             'orders' => $events->where('status', 'converted')->count(),
             'revenue_ghs' => $this->sum($events->where('status', 'converted')->pluck('conv_value_ghs')),
             'unmatched_spend_usd' => $this->sum(collect($unmatched)->pluck('spend_usd')),
