@@ -5,7 +5,8 @@ single question.** Most of what you would think to ask is answered here. He has
 already spent a long time on this and repeating settled questions is the main
 way an agent wastes his time.
 
-Last updated: 26 July 2026. Sprint 1 of the dashboard is built.
+Last updated: 26 July 2026. Sprint 1 of the dashboard is live and its
+acceptance test passes on real data.
 
 ### What is in this file
 
@@ -80,6 +81,9 @@ be the third:
 | Theme path | `~/shop.websitesgh.com/wp-content/themes/websitesgh-shop` |
 | Forked from | `aidooonline/techplugghv2` (Aurora v2), fully de-branded |
 | WhatsApp / MoMo | `0542148020`, international `233542148020` |
+| Dashboard DB | **MariaDB 11.4.12**, its own database, NOT the WordPress one |
+| Dashboard path | `<theme>/dashboard/api`, Laravel 12.64, PHP 8.3.31 |
+| Server timezone | **EDT (UTC-4)**. Convert before writing any cron line. |
 | SEO plugin | The SEO Framework |
 | Cache | LiteSpeed |
 
@@ -114,7 +118,7 @@ Then **LiteSpeed Purge All**. Pushes still need the PAT; scrub it afterwards.
 | Shop build | **Live and functionally complete.** Polish only. |
 | Content | **20 articles.** 5 live, 15 scheduled at 3-day intervals to 8 Sept. |
 | Marketing assets | **Built, not launched.** Nothing is spending. |
-| WGH Intelligence dashboard | **Sprint 1 built.** Sprints 2 to 6 specced, not started. |
+| WGH Intelligence dashboard | **Sprint 1 live, acceptance test passed on real data.** Sprints 2 to 6 specced, not started. |
 
 ---
 
@@ -183,12 +187,32 @@ on the same server.
 6. **Claude selling agent.** Claude for reasoning, fal.ai for bulk. Balanced
    personality. Fires on data import. Advises, never acts.
 
-**Sprint 1 is built and pushed.** Code in `dashboard/api`, install steps in
-`dashboard/README.md`, shop endpoint in `inc/dashboard-export.php`. Its
-acceptance test is a command: `php artisan wgh:sync --verify`. It has not yet
-been run against the live shop, because that needs the server. **Sprint 2 is the
-next thing to build**, and it should not start until sprint 1's acceptance test
-has passed on real data.
+**Sprint 1 is live and its acceptance test passed on the real shop**, 26 July
+2026: 4 orders, 5 order items, 95 attribution rows pulled; the second run wrote
+zero rows; every table fingerprint identical; counts match the shop. Code in
+`dashboard/api`, install steps in `dashboard/README.md`, shop endpoint in
+`inc/dashboard-export.php`. Re-run it any time with
+`php artisan wgh:sync --verify`.
+
+**One part of the acceptance test is still unproven: no order yet carries both
+a ref code and a click id**, because nothing is spending, so no gclid has ever
+reached an order. Attribution taps are logging fine (95 rows). To close it,
+visit the shop with `?gclid=TEST-WGH-1` on the URL, add to cart, tap WhatsApp,
+then mark that row Sold in WooCommerce > Attribution and re-run the sync. Do
+this before trusting any spend-to-profit number in sprint 2.
+
+**Sprint 2 is the next thing to build**: the CSV parsers and the join engine.
+
+The stack ended up MariaDB, not Postgres. See section 11 for why. Nothing else
+changed: the migrations were written driver-neutral for exactly this.
+
+What sprint 1 added to the shop, which matters if you touch attribution:
+
+- `wp_wghs_attribution` gained `updated_at`, db version 1.3, backfilled on
+  admin_init. The dashboard's delta cursor rides on it.
+- **Every write to that table now goes through `wghs_attr_insert()` or
+  `wghs_attr_update()`.** Do not call `$wpdb->insert`/`update` on it directly,
+  or the row will be invisible to the dashboard until something else touches it.
 
 What sprint 1 added to the shop, which matters if you touch attribution:
 
@@ -282,7 +306,15 @@ the class of problem, not just the instance.
     Conversions match on a SHA-256 of an E.164 number, so normalise first or
     the match rate quietly halves.
 16. **`bcmath` is not a default PHP extension.** Do not reach for `bcsub` in
-    dashboard code without checking; shared cPanel may not have it.
+    dashboard code without checking; shared cPanel does not have it.
+17. **MySQL reinterprets `TIMESTAMP` through the session timezone**, and this
+    server runs EDT. The mysql connection pins `'timezone' => '+00:00'`. Remove
+    it and every historical timestamp shifts an hour when the server rolls to
+    EST in November, moving revenue between reporting periods. Postgres is
+    immune; `timestamptz` stores an absolute instant.
+18. **Silent artisan failures are `display_errors=Off` in the CLI php.ini.**
+    A missing `vendor/` prints nothing at all. Diagnose with
+    `php -d display_errors=1 -d error_reporting=E_ALL artisan ...`.
 
 ---
 
@@ -368,9 +400,13 @@ He has answered them already and asking again wastes his time:
 - What currency ads are in. **USD.** Only shop prices are GHS.
 - Whether to add a checkout. **No. WhatsApp is the checkout.**
 - What his WhatsApp number is. **233542148020.**
-- Whether the dashboard should use Postgres or MySQL. **Postgres, per the spec.**
-  The migrations use no Postgres-only type, so if the plan has no Postgres it is
-  one line in `.env` and nothing else moves. Do not ask, just note it.
+- Which database the dashboard uses. **MariaDB 11.4.12, in its own database.**
+  Namecheap's shared Postgres is 10.23, end of life since 2022, so the spec's
+  Postgres preference lost to a maintained engine. The migrations are
+  driver-neutral, so this cost nothing.
+- Whether the dashboard can share the WordPress database. **No.** `migrate:fresh`
+  drops every table in the database it points at, and a WordPress restore would
+  erase the decision history, which cannot be rebuilt.
 - Whether to build a UI in sprint 1. **No.** Sprint 1 is the connector. The
   React dashboard is sprint 4.
 
@@ -409,9 +445,8 @@ docs/                               older sprint and conversion notes
 ## 13. Where to start
 
 Read `dashboard/docs/ENGINEERING-SPEC.md` and `dashboard/README.md`. Sprint 1
-is built. Get its acceptance test passing on the live shop
-(`php artisan wgh:sync --verify`), then build **Sprint 2**: the CSV parsers and
-the join engine.
+is live and passing. Close the gclid gap described in section 5, then build
+**Sprint 2**: the CSV parsers and the join engine.
 
 Do not skip the acceptance tests. They are the reason the spec exists.
 
