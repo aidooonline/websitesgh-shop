@@ -552,4 +552,10 @@ ul.products li.product {
   .wghs-ab__close p { @apply mt-1 text-wgh-ink2; }
   .wghs-ab__closebtns { @apply flex flex-wrap gap-3; }
 
+
+  /* Proof figure: claim struck through, reality in green. The gap between the
+     two is the argument, so it is shown rather than described. */
+  .wghs-proof__was { @apply text-3xl sm:text-4xl font-extrabold text-wgh-ink3 line-through decoration-2; }
+  .wghs-proof__arrow { @apply mx-3 text-2xl sm:text-3xl align-middle text-wgh-ink3; }
+  .wghs-proof__is { @apply text-5xl sm:text-6xl font-extrabold text-wgh-green; }
 }

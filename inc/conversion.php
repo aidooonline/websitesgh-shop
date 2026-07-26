@@ -216,8 +216,13 @@ function wghs_running_cost_note() {
 	if ( ! $product instanceof WC_Product ) { return; }
 	$key     = function_exists( 'wghs_art_key' ) ? wghs_art_key( $product->get_name() ) : '';
 	$classes = wghs_running_classes();
-	// Only heat-heavy appliances carry the note. Skip low-draw items entirely.
-	$heat = array( 'cooker', 'iron', 'kettle', 'grooming' );
+	/* Narrowed deliberately. A kettle at roughly GHS 24 a month or an iron at
+	 * GHS 16 is not why anyone chooses one over another, and putting the figure
+	 * on every product made the shop look like it cared about pesewas rather
+	 * than about whether the thing is any good. The note now appears only where
+	 * running cost genuinely changes a decision: a hot plate runs to about
+	 * GHS 92 a month, which is real money and worth saying. */
+	$heat = array( 'cooker' );
 	if ( ! in_array( $key, $heat, true ) || empty( $classes[ $key ] ) ) { return; }
 
 	list( $watts, $mins, $label ) = $classes[ $key ];
@@ -227,7 +232,7 @@ function wghs_running_cost_note() {
 		esc_html__( 'Running cost:', 'wghshop' ),
 		esc_html( sprintf(
 			/* translators: 1: GHS amount, 2: appliance label. */
-			__( 'about GHS %1$s a month for %2$s at typical use, at the current PURC rate. A small cost worth knowing on a heat appliance.', 'wghshop' ),
+			__( 'about GHS %1$s a month for %2$s at typical use. Worth knowing on a hot plate, since it is the one appliance where this is real money.', 'wghshop' ),
 			number_format( $cost, 2 ), $label
 		) )
 	);

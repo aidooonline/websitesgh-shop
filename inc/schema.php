@@ -179,7 +179,7 @@ add_action( 'template_redirect', function () {
 	$name = get_bloginfo( 'name' );
 	echo "# {$name}\n\n";
 	echo "> Appliances and electronics shop for Ghana. Pay on delivery in Accra. ";
-	echo "We verify manufacturer claims before selling: real wattages, real power bank capacity, running costs in cedis at current PURC electricity tariffs.\n\n";
+	echo "We verify manufacturer claims before selling: real wattages against what a Ghanaian socket can deliver, real power bank capacity after conversion loss, steel grades on kettles, and coupling material on blenders. Everything is sold pay on delivery, so the buyer checks the item before any money changes hands.\n\n";
 	echo "## Primary data pages\n";
 	echo "- {$home}price-index/ : every product with its current GHS price, verified monthly\n";
 	echo "- {$home}running-costs/ : appliance running costs in GHS per month at PURC rates, working shown\n\n";

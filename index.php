@@ -18,7 +18,7 @@ get_header();
 			<?php echo is_home() && ! is_front_page() ? esc_html( single_post_title( '', false ) ) : esc_html__( 'Guides', 'wghshop' ); ?>
 		</h1>
 		<p class="wghs-blog__standfirst">
-			<?php esc_html_e( 'We check the numbers before we sell you anything. Real wattages, real running costs in cedis, real prices verified this month.', 'wghshop' ); ?>
+			<?php esc_html_e( 'We check the numbers before we sell you anything. What survives daily use, what a spec really means, and what you should pay for it in Accra.', 'wghshop' ); ?>
 		</p>
 	</header>
 
