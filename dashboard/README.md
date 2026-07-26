@@ -407,9 +407,17 @@ Logs are in `storage/logs/sync.log`.
 
 ## Running the tests
 
+The live server runs MariaDB. The default suite runs on SQLite because it is
+instant and needs no server, but SQLite is far more forgiving: it accepts
+`COUNT(*) FILTER (WHERE ...)`, which MariaDB rejects outright, and it collates
+case-sensitively where MariaDB does not. Both differences have already shipped a
+bug. Anything touching `selectRaw`, `whereRaw`, `orderByRaw` or `DB::statement`
+must be run against MariaDB before it goes out.
+
 ```bash
 composer install                  # with dev dependencies
-php artisan test
+php artisan test                          # SQLite, fast
+php artisan test -c phpunit.mysql.xml     # MariaDB, what the server runs
 ```
 
 Twelve feature tests pin the failure modes the spec names, so a later sprint

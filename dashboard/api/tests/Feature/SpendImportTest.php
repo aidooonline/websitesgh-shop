@@ -104,11 +104,22 @@ class SpendImportTest extends TestCase
     {
         (new SpendImporter)->import($this->googleExport());
 
-        // "Binatone Blender" in the file must join against "binatone blender"
-        // in the attribution table. Two casings would be two half-as-profitable
-        // keywords, and neither would ever cross a judging threshold.
-        $this->assertNotNull(AdSpend::where('keyword', 'binatone blender')->first());
-        $this->assertNull(AdSpend::where('keyword', 'Binatone Blender')->first());
+        /*
+         * "Binatone Blender" in the file must join against "binatone blender"
+         * in the attribution table. Two casings would be two half-as-profitable
+         * keywords, and neither would ever cross a judging threshold.
+         *
+         * Assert the STORED TEXT, not a lookup by the original casing. MySQL
+         * and MariaDB collate case-insensitively by default, so the lookup
+         * matches on the live server and misses on SQLite and Postgres: it
+         * would be testing the database's collation rather than this
+         * importer's normalisation, and passing for the wrong reason on two of
+         * the three engines this code has to run on.
+         */
+        $rows = AdSpend::where('keyword', 'binatone blender')->get();
+
+        $this->assertCount(1, $rows, 'one keyword, one row, whatever the file called it');
+        $this->assertSame('binatone blender', (string) $rows->first()->keyword);
     }
 
     public function test_currency_symbols_and_thousands_separators_parse(): void

@@ -424,6 +424,18 @@ the class of problem, not just the instance.
     events, which lumped a bot's basket in with a real WhatsApp message. A
     message is far stronger evidence than a basket and the two are now counted
     and worded separately.
+35. **The test database is not the production database, and SQLite forgives
+    what MariaDB refuses.** `COUNT(*) FILTER (WHERE ...)` is valid SQLite and
+    Postgres and invalid MariaDB. The full suite went green and the live server
+    threw a 1064 syntax error on the owner's terminal. Use portable expressions
+    (`SUM(CASE WHEN ... THEN 1 ELSE 0 END)`), and run
+    `php artisan test -c phpunit.mysql.xml` before pushing anything with a raw
+    SQL expression in it. The live server is MariaDB 11.4.
+36. **MySQL and MariaDB collate case-insensitively by default.** A test that
+    asserted `where('keyword', 'Binatone Blender')` finds nothing passed on
+    SQLite and failed on the live engine, because there the lookup matches the
+    lowercase row. Assert the stored value, never the miss: a lookup-by-casing
+    test measures the database's collation rather than your own normalisation.
 
 ---
 
@@ -642,6 +654,12 @@ print('clean' if not bad else f'EM DASH in {bad}')"
 
 # 5. JSON validity if you touched seed data
 python3 -c "import json; json.load(open('inc/setup-data/articles.json'))"
+
+# 6. Dashboard tests, on BOTH databases. The second one is not optional if you
+#    touched selectRaw, whereRaw, orderByRaw, havingRaw or DB::statement.
+cd dashboard/api
+php artisan test                          # SQLite, fast
+php artisan test -c phpunit.mysql.xml     # MariaDB, what the server actually runs
 ```
 
 ### Commit and push

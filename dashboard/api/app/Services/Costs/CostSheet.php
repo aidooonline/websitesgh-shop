@@ -80,9 +80,17 @@ class CostSheet
             // owner testing his own shop is not either. Counting them ranked
             // products by how thoroughly a bot had crawled them.
             ->where('visitor', 'human')
+            /*
+             * SUM(CASE ...), not COUNT(*) FILTER (...).
+             *
+             * FILTER is Postgres only. Development runs on Postgres and the
+             * live server runs on MariaDB, so the whole suite went green on
+             * syntax the production database rejects outright. Every raw
+             * expression in this codebase has to be portable across both.
+             */
             ->selectRaw("product_id,
-                COUNT(*) FILTER (WHERE status = 'cart') AS baskets,
-                COUNT(*) FILTER (WHERE status <> 'cart') AS taps")
+                SUM(CASE WHEN status = 'cart' THEN 1 ELSE 0 END) AS baskets,
+                SUM(CASE WHEN status <> 'cart' THEN 1 ELSE 0 END) AS taps")
             ->groupBy('product_id')
             ->get()
             ->keyBy('product_id');
