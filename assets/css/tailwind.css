@@ -73,11 +73,6 @@
   .wghs-blog__main { @apply min-w-0; }
 
   /* Lead story */
-  .wghs-lead { @apply grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8 md:items-center; }
-  .wghs-lead__media { @apply block aspect-[16/10] overflow-hidden rounded-lg bg-wgh-line2; }
-  .wghs-lead__title { @apply mt-2 text-2xl sm:text-3xl font-bold leading-tight; }
-  .wghs-lead__title a:hover { @apply text-wgh-green; }
-  .wghs-lead__excerpt { @apply mt-3 leading-relaxed text-wgh-ink2; }
 
   /* River */
   .wghs-river { @apply grid grid-cols-[96px_minmax(0,1fr)] gap-4 border-b border-wgh-line py-6 sm:grid-cols-[168px_minmax(0,1fr)] sm:gap-6; }
@@ -159,6 +154,15 @@
   .wghs-railcard { @apply rounded-lg border border-wgh-line bg-white p-4; }
   .wghs-railcard--flush { @apply border-0 p-0; }
   .wghs-railcard--trust { @apply bg-wgh-greenPale border-transparent; }
+  /* Shop this guide: dark green so the products in the rail are the thing the
+     eye lands on. Names and prices go white and gold against it. */
+  .wghs-railcard--shop { @apply border-transparent bg-wgh-greenInk; }
+  .wghs-railcard--shop .wghs-railcard__label { @apply text-white/60; }
+  .wghs-railcard--shop .wghs-railshop__name { @apply text-white; }
+  .wghs-railcard--shop .wghs-railshop__price { @apply text-wgh-gold; }
+  .wghs-railcard--shop .wghs-railshop__img { @apply border-white/15 bg-white/10; }
+  .wghs-railcard--shop .wghs-railshop a:hover .wghs-railshop__name { @apply text-wgh-gold; }
+  .wghs-railcard--shop .wghs-railcta { @apply border-white/25 text-white hover:bg-white/10; }
   .wghs-railcard__label { @apply mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-ink3; }
 
   .wghs-railshop { @apply flex flex-col gap-3; }
@@ -473,10 +477,8 @@ ul.products li.product {
      Nothing in an editorial card may exceed its box, whatever markup a plugin
      injects. Preflight already sets max-width on img; this pins the media
      boxes so a natural-size image cannot lay itself over the page. */
-  .wghs-lead__media,
   .wghs-river__media,
   .wghs-related__media { @apply relative isolate; }
-  .wghs-lead__media img,
   .wghs-river__media img,
   .wghs-related__media img { @apply absolute inset-0 h-full w-full object-cover; }
 

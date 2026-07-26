@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 				'stock_status' => 'instock',
 			) );
 			if ( $picks ) : ?>
-			<div class="wghs-railcard">
+			<div class="wghs-railcard wghs-railcard--shop">
 				<p class="wghs-railcard__label"><?php esc_html_e( 'Shop this guide', 'wghshop' ); ?></p>
 				<ul class="wghs-railshop">
 					<?php foreach ( $picks as $p ) : ?>

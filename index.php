@@ -29,31 +29,6 @@ get_header();
 
 				<?php while ( have_posts() ) : the_post(); $i++; ?>
 
-					<?php if ( 1 === $i && ! is_paged() ) : ?>
-						<?php // Lead story. Wide, image left, text right. ?>
-						<article class="wghs-lead">
-							<a class="wghs-lead__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
-								<?php
-								if ( has_post_thumbnail() ) {
-									the_post_thumbnail( 'large', array( 'class' => 'wghs-img', 'loading' => 'eager' ) );
-								} else {
-									echo wghs_placeholder_svg( 'wghs-img' );
-								}
-								?>
-							</a>
-							<div class="wghs-lead__text">
-								<?php wghs_post_meta(); ?>
-								<h2 class="wghs-lead__title">
-									<a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-								</h2>
-								<p class="wghs-lead__excerpt"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 38 ) ); ?></p>
-								<a class="wghs-readon" href="<?php the_permalink(); ?>">
-									<?php esc_html_e( 'Read the guide', 'wghshop' ); ?>
-								</a>
-							</div>
-						</article>
-						<hr class="wghs-rule">
-					<?php else : ?>
 						<?php // River. Small image left, text right. Reads like a paper, not a card grid. ?>
 						<article class="wghs-river">
 							<a class="wghs-river__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
@@ -73,7 +48,6 @@ get_header();
 								<p class="wghs-river__excerpt"><?php echo esc_html( wp_trim_words( get_the_excerpt(), 26 ) ); ?></p>
 							</div>
 						</article>
-					<?php endif; ?>
 
 					<?php // In feed ad after the fourth item, mobile and desktop. ?>
 					<?php if ( 4 === $i ) : ?>
