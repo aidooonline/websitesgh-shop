@@ -606,7 +606,16 @@ function wghs_attr_admin_page() {
 
 	$counts = $wpdb->get_results( "SELECT status, COUNT(*) n FROM {$table} GROUP BY status", OBJECT_K );
 	$n      = function ( $k ) use ( $counts ) { return isset( $counts[ $k ] ) ? (int) $counts[ $k ]->n : 0; };
-	$unexported = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE status='converted' AND exported=0 AND click_id <> ''" );
+	// Google click ids ONLY. Since the tap now also captures fbclid, ttclid and
+	// msclkid, a bare "click_id is not empty" test would count a Meta click as
+	// exportable and then upload it to Google Ads as a Google Click ID, where
+	// it matches nothing and quietly poisons the conversion feed that Smart
+	// Bidding learns from.
+	$unexported = (int) $wpdb->get_var(
+		"SELECT COUNT(*) FROM {$table}
+		WHERE status='converted' AND exported=0 AND click_id <> ''
+		AND click_type IN ('gclid','gbraid','wbraid')"
+	);
 
 	$nonce = wp_create_nonce( 'wghs_attr' );
 	$ajax  = admin_url( 'admin-ajax.php' );
@@ -740,6 +749,9 @@ function wghs_attr_admin_page() {
 					<td><input type="number" step="0.01" class="wghs-attr-value small-text" value="<?php echo esc_attr( $r->conv_value > 0 ? $r->conv_value : $r->price ); ?>" <?php disabled( 'converted' === $r->status && $r->exported ); ?>></td>
 					<td><strong><?php echo esc_html( $r->status ); ?></strong><?php echo $r->exported ? ' &middot; ' . esc_html__( 'exported', 'wghshop' ) : ''; ?></td>
 					<td style="white-space:nowrap">
+						<button type="button" class="button button-small wghs-tags-btn" aria-expanded="false">
+							<?php esc_html_e( 'Tags', 'wghshop' ); ?>
+						</button>
 						<?php if ( 'pending' === $r->status ) : ?>
 							<button class="button button-primary wghs-attr-act" data-act="convert"><?php esc_html_e( 'Sold', 'wghshop' ); ?></button>
 							<button class="button wghs-attr-act" data-act="dismiss"><?php esc_html_e( 'Dismiss', 'wghshop' ); ?></button>
@@ -748,6 +760,70 @@ function wghs_attr_admin_page() {
 						<?php elseif ( 'dismissed' === $r->status ) : ?>
 							<button class="button wghs-attr-act" data-act="pend"><?php esc_html_e( 'Restore', 'wghshop' ); ?></button>
 						<?php endif; ?>
+					</td>
+				</tr>
+				<tr class="wghs-tags-row" style="display:none;background:#fbfbfc">
+					<td></td>
+					<td colspan="11" style="padding:12px 14px">
+						<?php $tags = wghs_attr_tag_list( $r ); ?>
+						<?php $present = array_filter( $tags, function ( $t ) { return '' !== $t['raw']; } ); ?>
+
+						<?php if ( ! $present ) : ?>
+							<p style="margin:0;color:#a00">
+								<strong><?php esc_html_e( 'No campaign tags on this visit.', 'wghshop' ); ?></strong><br>
+								<span class="description">
+									<?php esc_html_e( 'The visitor arrived without ad parameters, so this is organic, direct or a link with no tracking on it. Nothing is broken.', 'wghshop' ); ?>
+								</span>
+							</p>
+						<?php else : ?>
+							<table style="border-collapse:collapse">
+								<?php foreach ( $tags as $t ) : ?>
+									<tr>
+										<td style="padding:2px 18px 2px 0;color:#646970;white-space:nowrap"><?php echo esc_html( $t['label'] ); ?></td>
+										<td style="padding:2px 12px 2px 0">
+											<?php if ( '' === $t['raw'] ) : ?>
+												<span style="color:#c3c4c7">&mdash;</span>
+											<?php else : ?>
+												<code style="user-select:all"><?php echo esc_html( $t['raw'] ); ?></code>
+												<?php if ( '' !== $t['note'] ) : ?>
+													<small style="color:#646970"> <?php echo esc_html( $t['note'] ); ?></small>
+												<?php endif; ?>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</table>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $r->cart_items ) ) : ?>
+							<p style="margin:10px 0 0"><strong><?php esc_html_e( 'Basket at the moment of the tap', 'wghshop' ); ?></strong></p>
+							<table class="widefat striped" style="max-width:520px;margin-top:4px">
+								<thead><tr>
+									<th><?php esc_html_e( 'Product', 'wghshop' ); ?></th>
+									<th style="width:60px"><?php esc_html_e( 'Qty', 'wghshop' ); ?></th>
+									<th style="width:110px"><?php esc_html_e( 'Line (GHS)', 'wghshop' ); ?></th>
+								</tr></thead>
+								<tbody>
+								<?php foreach ( explode( ',', (string) $r->cart_items ) as $line ) : ?>
+									<?php
+									$parts = explode( ':', $line );
+									if ( count( $parts ) < 3 ) { continue; }
+									$pid  = (int) $parts[0];
+									$pobj = function_exists( 'wc_get_product' ) ? wc_get_product( $pid ) : null;
+									?>
+									<tr>
+										<td><?php echo $pobj ? esc_html( $pobj->get_name() ) : '#' . (int) $pid; ?></td>
+										<td><?php echo (int) $parts[1]; ?></td>
+										<td><?php echo esc_html( number_format( (float) $parts[2], 2 ) ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+								</tbody>
+							</table>
+						<?php endif; ?>
+
+						<p class="description" style="margin:10px 0 0">
+							<?php esc_html_e( 'None of this goes into the Google Ads export. That file carries only the click ID, conversion name, time, value and currency, which is all Google accepts. These tags are for the dashboard.', 'wghshop' ); ?>
+						</p>
 					</td>
 				</tr>
 			<?php endforeach; ?>
@@ -760,7 +836,9 @@ function wghs_attr_admin_page() {
 		var NONCE = '<?php echo esc_js( $nonce ); ?>';
 		var bar   = document.querySelector('.wghs-bulkbar');
 
-		function boxes() { return Array.prototype.slice.call(document.querySelectorAll('.wghs-cb')); }
+		/* Only real data rows carry a .wghs-cb, so the expanded tag rows can
+		   never be swept into a bulk selection. */
+		function boxes() { return Array.prototype.slice.call(document.querySelectorAll('tbody .wghs-cb')); }
 		function picked() { return boxes().filter(function (c) { return c.checked; }); }
 
 		function refresh() {
@@ -806,6 +884,17 @@ function wghs_attr_admin_page() {
 				one.disabled = true;
 				post({ id: tr.dataset.id, act: one.dataset.act, value: rowValue(tr) })
 					.then(function () { location.reload(); });
+				return;
+			}
+
+			var tags = e.target.closest('.wghs-tags-btn');
+			if (tags) {
+				var row = tags.closest('tr').nextElementSibling;
+				if (row && row.classList.contains('wghs-tags-row')) {
+					var open = row.style.display !== 'none';
+					row.style.display = open ? 'none' : 'table-row';
+					tags.setAttribute('aria-expanded', open ? 'false' : 'true');
+				}
 				return;
 			}
 
@@ -919,6 +1008,78 @@ function wghs_attr_match_label( $code ) {
 	return $map[ strtolower( (string) $code ) ] ?? (string) $code;
 }
 
+/**
+ * Human label for a Google network letter.
+ *
+ * @param string $code ValueTrack {network} value.
+ * @return string
+ */
+function wghs_attr_network_label( $code ) {
+	$map = array(
+		'g'   => __( 'Google search', 'wghshop' ),
+		's'   => __( 'search partner', 'wghshop' ),
+		'd'   => __( 'Display', 'wghshop' ),
+		'ytv' => __( 'YouTube', 'wghshop' ),
+		'vp'  => __( 'video partner', 'wghshop' ),
+		'gtv' => __( 'Google TV', 'wghshop' ),
+		'x'   => __( 'Performance Max', 'wghshop' ),
+		'e'   => __( 'app engagement', 'wghshop' ),
+	);
+	return $map[ strtolower( (string) $code ) ] ?? (string) $code;
+}
+
+/**
+ * Human label for a Google device letter.
+ *
+ * @param string $code ValueTrack {device} value.
+ * @return string
+ */
+function wghs_attr_device_label( $code ) {
+	$map = array(
+		'm' => __( 'mobile', 'wghshop' ),
+		't' => __( 'tablet', 'wghshop' ),
+		'c' => __( 'computer', 'wghshop' ),
+	);
+	return $map[ strtolower( (string) $code ) ] ?? (string) $code;
+}
+
+/**
+ * Every campaign field on a row, labelled, for the Tags panel.
+ *
+ * Returns the raw value too, because the raw value is what the dashboard joins
+ * on and what you paste into Google when something does not reconcile.
+ *
+ * @param object $r Attribution row.
+ * @return array<int, array{label:string, raw:string, note:string}>
+ */
+function wghs_attr_tag_list( $r ) {
+	$get = function ( $k ) use ( $r ) { return isset( $r->$k ) ? (string) $r->$k : ''; };
+
+	$fields = array(
+		array( __( 'utm_source', 'wghshop' ),   $get( 'utm_source' ),   '' ),
+		array( __( 'utm_medium', 'wghshop' ),   $get( 'utm_medium' ),   '' ),
+		array( __( 'utm_campaign', 'wghshop' ), $get( 'utm_campaign' ), '' ),
+		array( __( 'utm_term (keyword bid on)', 'wghshop' ), $get( 'utm_term' ), '' ),
+		array( __( 'utm_content', 'wghshop' ),  $get( 'utm_content' ),  '' ),
+		array( __( 'utm_id', 'wghshop' ),       $get( 'utm_id' ),       '' ),
+		array( __( 'match type', 'wghshop' ),   $get( 'match_type' ),   $get( 'match_type' ) ? wghs_attr_match_label( $get( 'match_type' ) ) : '' ),
+		array( __( 'campaign id', 'wghshop' ),  $get( 'campaign_id' ),  '' ),
+		array( __( 'ad group id', 'wghshop' ),  $get( 'adgroup_id' ),   '' ),
+		array( __( 'creative id', 'wghshop' ),  $get( 'creative_id' ),  '' ),
+		array( __( 'target id', 'wghshop' ),    $get( 'target_id' ),    '' ),
+		array( __( 'network', 'wghshop' ),      $get( 'network' ),      $get( 'network' ) ? wghs_attr_network_label( $get( 'network' ) ) : '' ),
+		array( __( 'device', 'wghshop' ),       $get( 'device' ),       $get( 'device' ) ? wghs_attr_device_label( $get( 'device' ) ) : '' ),
+		array( __( 'ad placement', 'wghshop' ), $get( 'ad_placement' ), '' ),
+		array( __( 'click id', 'wghshop' ),     $get( 'click_id' ),     $get( 'click_type' ) ),
+	);
+
+	$out = array();
+	foreach ( $fields as $f ) {
+		$out[] = array( 'label' => $f[0], 'raw' => $f[1], 'note' => $f[2] );
+	}
+	return $out;
+}
+
 add_action( 'wp_ajax_wghs_attr_update', function () {
 	check_ajax_referer( 'wghs_attr' );
 	if ( ! current_user_can( 'manage_woocommerce' ) ) { wp_send_json_error(); }
@@ -960,7 +1121,10 @@ add_action( 'admin_post_wghs_attr_export', function () {
 	global $wpdb;
 	$table = wghs_attr_table();
 	$rows  = $wpdb->get_results(
-		"SELECT * FROM {$table} WHERE status = 'converted' AND exported = 0 AND click_id <> '' ORDER BY converted_at ASC"
+		"SELECT * FROM {$table}
+		WHERE status = 'converted' AND exported = 0 AND click_id <> ''
+		AND click_type IN ('gclid','gbraid','wbraid')
+		ORDER BY converted_at ASC"
 	);
 	$conv_name = get_theme_mod( 'wghs_offline_conv_name', 'WhatsApp Sale' );
 	$currency  = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'GHS';

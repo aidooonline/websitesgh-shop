@@ -329,6 +329,12 @@ the class of problem, not just the instance.
 21. **`{keyword}` is the keyword BID ON, not the search query.** Never label
     `utm_term` "what people searched". The real query is only in the Search
     Terms report.
+22. **`click_id <> ''` no longer means "a Google click".** The tap now also
+    captures fbclid, ttclid and msclkid. Every query feeding the Google Ads
+    offline conversion export must also test
+    `click_type IN ('gclid','gbraid','wbraid')`, or a Meta click gets uploaded
+    to Google as a Google Click ID, matches nothing, and poisons the very
+    conversion feed Smart Bidding learns from.
 
 ---
 
