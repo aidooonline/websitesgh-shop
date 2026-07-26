@@ -226,7 +226,12 @@ class Costs extends Command
             $example
         ));
 
-        $this->line('  Enter them in one line, as <options=bold>id=dealer_cost:delivery_cost</>:');
+        $this->newLine();
+        $this->line('  <options=bold>Easiest way:</> WooCommerce > Product Costs in wp-admin. Every product on one');
+        $this->line('  screen, two boxes each, and the margin appears as you type. Then run this');
+        $this->line('  command again and the costs come across.');
+        $this->newLine();
+        $this->line('  Or enter them here, as <options=bold>id=dealer_cost:delivery_cost</>:');
         $this->newLine();
         $this->line('    php artisan wgh:costs --quick="'.$pairs.'"');
         $this->newLine();
@@ -466,7 +471,11 @@ class Costs extends Command
             try {
                 $c = (new CatalogueSync(app(SignedClient::class)))->run();
                 $this->line("  Catalogue: {$c['seen']} product(s) on the shop, {$c['created']} new here, "
-                    ."{$c['price_updated']} price or name change(s).");
+                    ."{$c['price_updated']} change(s).");
+
+                if ($c['costs_pulled'] > 0) {
+                    $this->line("  <fg=green>{$c['costs_pulled']} dealer cost(s) came from WooCommerce > Product Costs.</>");
+                }
                 $this->newLine();
             } catch (Throwable $e) {
                 $this->line('  <fg=yellow>Could not reach the shop for the product list.</> '.$e->getMessage());

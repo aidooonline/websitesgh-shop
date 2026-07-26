@@ -16,12 +16,18 @@ use RuntimeException;
  * product cannot be sold profitably before anybody knows what it costs. Waiting
  * for a sale to learn the margin means learning it after the money is spent.
  *
- * WHAT IT WILL NEVER DO
- * It never touches a dealer cost, a delivery cost, a supplier or a confirmation.
- * Those are the owner's, entered by hand, sometimes after a phone call to a
- * supplier, and an automated pull that overwrote them would destroy work that
- * cannot be regenerated. It fills the shelf price and the name, and nothing else
- * on a row that already exists.
+ * WHERE THE COST NOW LIVES
+ * Dealer costs are entered at WooCommerce > Product Costs and stored as product
+ * meta, next to the price they are measured against. They arrive here with the
+ * catalogue. That is deliberate: one place to change a cost rather than two
+ * that can disagree, entry happens where the owner already works instead of in
+ * a terminal he has to be talked through, and a cost survives this database
+ * being rebuilt from scratch.
+ *
+ * The shop is therefore the source of truth for any cost it HAS. It is not the
+ * source of truth for a cost it does not have: a blank on the shop leaves
+ * whatever is here alone, so a cost typed with wgh:costs --quick before the
+ * screen existed is not wiped out by the first sync that follows.
  *
  * THE SHELF PRICE IS REFRESHED, DELIBERATELY
  * A price change moves the margin without anybody touching the cost, and a
@@ -41,7 +47,7 @@ class CatalogueSync
     }
 
     /**
-     * @return array{seen:int, created:int, price_updated:int, untouched:int, already_costed:int}
+     * @return array{seen:int, created:int, price_updated:int, untouched:int, costs_pulled:int, already_costed:int}
      */
     public function run(): array
     {
@@ -53,6 +59,7 @@ class CatalogueSync
         $created = 0;
         $priceUpdated = 0;
         $untouched = 0;
+        $costsPulled = 0;
 
         do {
             $payload = $this->client->fetch([
@@ -82,6 +89,14 @@ class CatalogueSync
                 $name = mb_substr(trim((string) ($row['name'] ?? '')) ?: ('#'.$id), 0, 191);
                 $price = $this->money($row['price'] ?? null);
 
+                // Blank on the shop means not entered. It must never arrive
+                // here as zero: a zero dealer cost makes a product look like
+                // pure profit and bends every verdict that touches it.
+                $dealer = $this->money($row['dealer_cost'] ?? null);
+                $delivery = $this->money($row['delivery_cost'] ?? null);
+                $supplier = trim((string) ($row['supplier'] ?? '')) ?: null;
+                $quoted = ! empty($row['cost_quoted']);
+
                 $known = ProductCost::where('woo_product_id', $id)->first();
 
                 if (! $known) {
@@ -89,16 +104,19 @@ class CatalogueSync
                         'woo_product_id' => $id,
                         'product_name' => $name,
                         'sell_price_ghs' => $price,
-                        // Blank, not zero. A zero dealer cost makes a product
-                        // look like pure profit and bends every verdict that
-                        // touches it in the flattering direction.
-                        'dealer_cost_ghs' => null,
-                        'delivery_cost_ghs' => null,
-                        'is_estimate' => true,
+                        'dealer_cost_ghs' => $dealer,
+                        'delivery_cost_ghs' => $delivery,
+                        'supplier' => $supplier ? mb_substr($supplier, 0, 120) : null,
+                        'is_estimate' => ! $quoted,
+                        'confirmed_at' => $quoted ? $now : null,
                         'updated_at' => $now,
                     ]);
 
                     $created++;
+
+                    if ($dealer !== null) {
+                        $costsPulled++;
+                    }
 
                     continue;
                 }
@@ -113,6 +131,37 @@ class CatalogueSync
                 if ($known->product_name !== $name) {
                     $known->product_name = $name;
                     $changed = true;
+                }
+
+                /*
+                 * A cost on the shop wins, because that is where it is entered
+                 * now. A BLANK on the shop does not: it leaves whatever is here
+                 * alone, so a cost typed with wgh:costs --quick before this
+                 * screen existed is not wiped out by the next sync.
+                 */
+                if ($dealer !== null) {
+                    if ((string) $known->dealer_cost_ghs !== (string) $dealer) {
+                        $known->dealer_cost_ghs = $dealer;
+                        $changed = true;
+                    }
+
+                    if ((string) $known->delivery_cost_ghs !== (string) $delivery) {
+                        $known->delivery_cost_ghs = $delivery;
+                        $changed = true;
+                    }
+
+                    if ($supplier !== null && $known->supplier !== $supplier) {
+                        $known->supplier = mb_substr($supplier, 0, 120);
+                        $changed = true;
+                    }
+
+                    if ($known->is_estimate === $quoted) {
+                        $known->is_estimate = ! $quoted;
+                        $known->confirmed_at = $quoted ? $now : null;
+                        $changed = true;
+                    }
+
+                    $costsPulled++;
                 }
 
                 if ($changed) {
@@ -133,6 +182,7 @@ class CatalogueSync
             'created' => $created,
             'price_updated' => $priceUpdated,
             'untouched' => $untouched,
+            'costs_pulled' => $costsPulled,
             'already_costed' => ProductCost::whereNotNull('dealer_cost_ghs')->count(),
         ];
     }

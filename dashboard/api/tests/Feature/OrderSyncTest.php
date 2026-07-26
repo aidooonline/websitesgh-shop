@@ -403,4 +403,100 @@ public function test_keyword_level_campaign_detail_survives_the_sync(): void
 
         $this->assertNotSame($a, $b);
     }
+
+    /* ---------------- the catalogue and its costs ---------------- */
+
+    private function catalogue(array $rows): array
+    {
+        $empty = ['rows' => [], 'has_more' => false, 'next_cursor' => '', 'next_offset' => 0, 'total' => 0];
+
+        return [
+            'ok' => true, 'schema' => 2, 'generated_at' => '2026-07-26T10:00:00Z',
+            'site' => 'https://shop.example', 'currency' => 'GHS',
+            'orders' => $empty, 'attribution' => $empty,
+            'products' => ['rows' => $rows, 'has_more' => false, 'next_cursor' => '',
+                'next_offset' => count($rows), 'total' => count($rows)],
+        ];
+    }
+
+    public function test_a_cost_entered_in_wordpress_reaches_the_dashboard(): void
+    {
+        /*
+         * Three terminal-based ways to enter a dealer cost were built and all
+         * three failed on contact with the live server. The owner lives in
+         * wp-admin, so the cost is entered there, stored as product meta beside
+         * the price it is measured against, and rides in with the catalogue.
+         */
+        $this->shopReturns($this->catalogue([[
+            'product_id' => 36, 'sku' => 'WGH-MW', 'name' => '20L Microwave Oven',
+            'price' => '950.00', 'regular' => '950.00', 'stock' => 4, 'in_stock' => 1,
+            'dealer_cost' => '700.00', 'delivery_cost' => '25.00',
+            'supplier' => 'Tema Depot', 'cost_quoted' => 1,
+        ]]));
+
+        (new \App\Services\Woo\CatalogueSync(\App\Services\Woo\SignedClient::fromConfig()))->run();
+
+        $c = \App\Models\ProductCost::where('woo_product_id', 36)->first();
+
+        $this->assertSame('700.00', (string) $c->dealer_cost_ghs);
+        $this->assertSame('25.00', (string) $c->delivery_cost_ghs);
+        $this->assertSame('Tema Depot', $c->supplier);
+        $this->assertFalse($c->is_estimate, 'the quoted box was ticked');
+        $this->assertSame(225.0, $c->unitProfit());
+    }
+
+    public function test_a_blank_cost_on_the_shop_never_arrives_as_zero(): void
+    {
+        // A zero dealer cost makes a product look like pure profit and bends
+        // every verdict that touches it in the flattering direction.
+        $this->shopReturns($this->catalogue([[
+            'product_id' => 36, 'name' => 'Microwave', 'price' => '950.00',
+            'dealer_cost' => '', 'delivery_cost' => '', 'supplier' => '', 'cost_quoted' => 0,
+        ]]));
+
+        (new \App\Services\Woo\CatalogueSync(\App\Services\Woo\SignedClient::fromConfig()))->run();
+
+        $c = \App\Models\ProductCost::where('woo_product_id', 36)->first();
+
+        $this->assertNull($c->dealer_cost_ghs);
+        $this->assertNull($c->unitProfit(), 'unknown stays unknown');
+    }
+
+    public function test_a_blank_on_the_shop_does_not_wipe_a_cost_typed_here(): void
+    {
+        // Costs entered with wgh:costs --quick before the wp-admin screen
+        // existed must survive the first sync that follows it.
+        \App\Models\ProductCost::create([
+            'woo_product_id' => 36, 'product_name' => 'Microwave', 'sell_price_ghs' => '950.00',
+            'dealer_cost_ghs' => '640.00', 'delivery_cost_ghs' => '25.00',
+            'is_estimate' => true, 'updated_at' => \Carbon\CarbonImmutable::now('UTC'),
+        ]);
+
+        $this->shopReturns($this->catalogue([[
+            'product_id' => 36, 'name' => 'Microwave', 'price' => '950.00',
+            'dealer_cost' => '', 'delivery_cost' => '', 'supplier' => '', 'cost_quoted' => 0,
+        ]]));
+
+        (new \App\Services\Woo\CatalogueSync(\App\Services\Woo\SignedClient::fromConfig()))->run();
+
+        $this->assertSame('640.00', (string) \App\Models\ProductCost::where('woo_product_id', 36)->first()->dealer_cost_ghs);
+    }
+
+    public function test_a_cost_on_the_shop_wins_over_one_typed_here(): void
+    {
+        // One place to change a cost, not two that can disagree.
+        \App\Models\ProductCost::create([
+            'woo_product_id' => 36, 'product_name' => 'Microwave', 'sell_price_ghs' => '950.00',
+            'dealer_cost_ghs' => '640.00', 'is_estimate' => true, 'updated_at' => \Carbon\CarbonImmutable::now('UTC'),
+        ]);
+
+        $this->shopReturns($this->catalogue([[
+            'product_id' => 36, 'name' => 'Microwave', 'price' => '950.00',
+            'dealer_cost' => '705.50', 'delivery_cost' => '30.00', 'supplier' => '', 'cost_quoted' => 0,
+        ]]));
+
+        (new \App\Services\Woo\CatalogueSync(\App\Services\Woo\SignedClient::fromConfig()))->run();
+
+        $this->assertSame('705.50', (string) \App\Models\ProductCost::where('woo_product_id', 36)->first()->dealer_cost_ghs);
+    }
 }

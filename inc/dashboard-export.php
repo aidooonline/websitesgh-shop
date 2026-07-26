@@ -569,6 +569,7 @@ function wghs_export_products( $limit, $offset = 0 ) {
  * @return array
  */
 function wghs_export_product_row( $product, $parent_name = '' ) {
+	$id   = (int) $product->get_id();
 	$name = $product->get_name();
 
 	if ( '' !== $parent_name && false === strpos( $name, $parent_name ) ) {
@@ -576,7 +577,7 @@ function wghs_export_product_row( $product, $parent_name = '' ) {
 	}
 
 	return array(
-		'product_id' => (int) $product->get_id(),
+		'product_id' => $id,
 		'sku'        => (string) $product->get_sku(),
 		'name'       => (string) $name,
 		// The price a customer actually pays today, sale price included. The
@@ -586,7 +587,37 @@ function wghs_export_product_row( $product, $parent_name = '' ) {
 		'regular'    => wc_format_decimal( $product->get_regular_price(), 2 ),
 		'stock'      => null === $product->get_stock_quantity() ? '' : (int) $product->get_stock_quantity(),
 		'in_stock'   => $product->is_in_stock() ? 1 : 0,
+
+		/*
+		 * The dealer cost travels with the product, not in a separate file.
+		 *
+		 * It is entered at WooCommerce > Product Costs, stored as meta next to
+		 * the price it is measured against, and read from here. That means one
+		 * place to change it rather than two that can disagree, and a cost
+		 * survives the dashboard database being rebuilt from scratch.
+		 *
+		 * Empty string, never zero, for anything not entered. A zero dealer cost
+		 * makes a product look like pure profit and bends every verdict that
+		 * touches it in the flattering direction.
+		 */
+		'dealer_cost'   => wghs_export_cost_field( $id, WGHS_COST_META ),
+		'delivery_cost' => wghs_export_cost_field( $id, WGHS_DELIVERY_META ),
+		'supplier'      => (string) get_post_meta( $id, WGHS_SUPPLIER_META, true ),
+		'cost_quoted'   => '1' === get_post_meta( $id, WGHS_QUOTED_META, true ) ? 1 : 0,
 	);
+}
+
+/**
+ * A stored cost, or an empty string. Never a zero standing in for unknown.
+ *
+ * @param int    $product_id Product or variation id.
+ * @param string $key        Meta key.
+ * @return string
+ */
+function wghs_export_cost_field( $product_id, $key ) {
+	$raw = get_post_meta( (int) $product_id, $key, true );
+
+	return ( '' === $raw || null === $raw ) ? '' : wc_format_decimal( $raw, 2 );
 }
 
 /* --------------------------------------------------------------------------

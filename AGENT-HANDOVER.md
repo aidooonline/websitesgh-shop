@@ -98,7 +98,7 @@ git pull https://github.com/aidooonline/websitesgh-shop.git main
 
 Then **LiteSpeed Purge All**. Pushes still need the PAT; scrub it afterwards.
 
-### Two admin screens you will use constantly
+### Three admin screens you will use constantly
 
 - **Appearance > Shop Diagnostics.** Shows live state with actual values
   (permalinks, each page, `show_on_front`, `page_for_posts`, each menu with its
@@ -459,6 +459,23 @@ the class of problem, not just the instance.
     36 and so on, so the copied command failed. Examples in output must be
     generated from his own data, which is why `--list` now prints a ready-made
     `--quick` line built from real rows.
+40. **He will paste the example numbers.** Given
+    `--quick="36=700:25, 33=75:20"` as a format demonstration, he ran it
+    verbatim, and two invented dealer costs became the measured margin the whole
+    system judged against. This is not carelessness: typing real figures into a
+    shell means holding them in your head while getting the punctuation right,
+    so the example is the path of least resistance. Never put a plausible-looking
+    number in an example. Use `<what you pay>` placeholders, or better, build
+    the input where the real number is already on screen beside it.
+41. **The entry belongs in wp-admin, not the terminal.** Four attempts at dealer
+    cost entry failed for four different reasons and one common one: he lives in
+    WordPress admin and the work kept being put somewhere else. WooCommerce >
+    Product Costs is now the answer: every product on one screen, best sellers
+    first, the selling price beside the box, and the margin computed live as he
+    types so a wrong number announces itself immediately. Costs are product
+    meta, ride to the dashboard with the catalogue, and the shop is the source
+    of truth for any cost it HAS (a blank on the shop leaves the dashboard's
+    value alone). Prefer this shape for anything else he has to enter by hand.
 
 ---
 

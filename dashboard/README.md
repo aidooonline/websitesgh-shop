@@ -252,6 +252,24 @@ month here. Profit per order has no ceiling, and it is a multiplier on every
 keyword at once. Raise it and the whole account gets more affordable the same
 day.
 
+### The easy way: WooCommerce > Product Costs
+
+In wp-admin, next to Attribution. Every product on one screen, best sellers
+first, what you sell it for beside the box, and the margin computed as you type,
+so a wrong number turns red in front of you instead of surfacing as a strange
+verdict a week later. Fill in what you know, leave the rest blank, press Save.
+
+Then bring them across:
+
+```bash
+php artisan wgh:costs --export      # says how many costs came from the shop
+```
+
+The shop owns the cost. A cost entered there wins; a blank there leaves whatever
+the dashboard already has alone, so nothing typed with `--quick` gets wiped.
+
+### From the terminal
+
 Two commands, no spreadsheet, no prompts:
 
 ```bash
