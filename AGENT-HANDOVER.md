@@ -7,6 +7,35 @@ way an agent wastes his time.
 
 Last updated: 26 July 2026.
 
+### What is in this file
+
+| | |
+|---|---|
+| 1 | The owner and the rules that never change |
+| 2 | Repo, server, deploy, the two admin screens |
+| 3 | Status at a glance |
+| 4 | What is built |
+| 5 | What is not built: the six dashboard sprints |
+| 6 | Decisions already settled. Do not reopen. |
+| 7 | Ten bugs and their root causes. Do not reintroduce. |
+| 8 | The content and messaging position |
+| 9 | The 50 products are placeholders |
+| 10 | Pending owner actions |
+| 11 | Do not ask him these |
+| 12 | File map |
+| 13 | Where to start |
+| 14 | **How we actually work.** The loop, autonomy, reading his messages. |
+| 15 | **Operational runbook.** Exact verify, commit, push, deploy commands. |
+| 16 | **What you cannot do.** No server, no live site access. |
+| 17 | Deliverable standards |
+| 18 | His other projects. Do not touch. |
+| 19 | Things that look like bugs but are not |
+
+**If you read only three: 14, 15 and 16.** They are what stop you asking him
+things you can answer yourself.
+
+---
+
 ---
 
 ## 1. Who the owner is, and the rules that never change
@@ -346,3 +375,186 @@ is that a real order from the live shop appears in the dashboard database with
 its ref code and click id, and that running the sync twice changes zero rows.
 
 Do not skip the acceptance tests. They are the reason the spec exists.
+
+---
+
+## 14. How we actually work. This is the part that stops the questions.
+
+### The loop
+
+You do not have server access. Stephen deploys. Every change goes:
+
+1. **You edit, build, verify, commit and push.** Never ask permission first.
+2. **You give him the pull command** at the end of the message. He runs it and
+   hits LiteSpeed Purge All.
+3. **He sends a screenshot**, usually with red circles or arrows drawn on it, and
+   a short line about what is wrong.
+4. **You diagnose from the screenshot and the code**, not from the live site,
+   because you cannot reach it.
+
+That is the whole rhythm. Do not break it by waiting for approval between steps.
+
+### He expects autonomous execution
+
+Do not ask "shall I do X?" for anything inside the brief. Do it, then tell him
+what you did and why. He will correct you if it is wrong, and he corrects fast.
+
+**Push directly to `main`.** No branches, no pull requests, unless he says so.
+
+The only things worth asking about are genuine forks in the road where the wrong
+choice costs real money or is hard to reverse, and even then, give him a
+recommendation with reasons rather than an open question.
+
+### Reading his messages
+
+- **He is terse and often uses voice input.** Expect transcription artefacts.
+  "80$ a day" may mean 80 dollars a month. "constipation" meant "computation".
+  Read for intent, and if a number looks absurd, address both readings rather
+  than picking one and being wrong.
+- **When he pushes back, he is usually right.** He has caught real errors
+  repeatedly: the keyword volume assumption, the electricity over-emphasis, the
+  missing articles. Do not defend. Check, admit plainly, fix.
+- **"still not working" means test differently, not repeat the fix.** Twice the
+  real cause was deployment or caching rather than code. Check the Diagnostics
+  page and the asset version before assuming your fix was wrong.
+- **He notices when you claim without verifying.** Never write "this is fixed"
+  unless you have grepped the compiled output or run the check.
+
+---
+
+## 15. Operational runbook
+
+### Before every push, run all of this
+
+```bash
+cd /path/to/repo
+
+# 1. PHP lint every file
+find . -name "*.php" -not -path "./.git/*" -not -path "./node_modules/*" > /tmp/p.txt
+while read f; do php -l "$f" | grep -q "No syntax errors" || echo "FAIL $f"; done < /tmp/p.txt
+
+# 2. Rebuild CSS. MANDATORY after touching assets/css/tailwind.css.
+npm run build
+
+# 3. Prove the CSS actually compiled. Do not trust the build output alone.
+grep -o "\.your-new-class{[^}]*}" assets/css/main.css
+
+# 4. Em dash check across everything
+python3 -c "
+import glob
+bad=[f for f in glob.glob('**/*.*', recursive=True)
+     if '.git' not in f and 'node_modules' not in f
+     and f.rsplit('.',1)[-1] in ('php','css','js','md','json')
+     and '\u2014' in open(f, encoding='utf-8', errors='ignore').read()]
+print('clean' if not bad else f'EM DASH in {bad}')"
+
+# 5. JSON validity if you touched seed data
+python3 -c "import json; json.load(open('inc/setup-data/articles.json'))"
+```
+
+### Commit and push
+
+```bash
+export GH_PAT='<his token, in memory, expires ~Aug 2026>'
+git config user.email "aidooonline@gmail.com"
+git config user.name "Stephen Aidoo"
+git add -A
+git commit -q -m "Short subject line
+
+Body explaining WHY, not just what. He reads these."
+git remote set-url origin "https://aidooonline:${GH_PAT}@github.com/aidooonline/websitesgh-shop.git"
+git push -q origin main
+git remote set-url origin https://github.com/aidooonline/websitesgh-shop.git   # scrub
+
+# Confirm it actually landed
+git fetch -q origin main
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] && echo "PUSH CONFIRMED"
+```
+
+**Commit messages are long and explain reasoning.** He reads them and they are
+part of the project record. Say what was wrong, what the root cause was, and why
+the fix is the right one.
+
+### The pull command to give him, every time
+
+```bash
+cd ~/shop.websitesgh.com/wp-content/themes/websitesgh-shop
+git pull https://github.com/aidooonline/websitesgh-shop.git main
+```
+
+Then tell him to **Purge All**. If you changed anything that the Repair button
+handles (pages, menus, article dates, categories), tell him to run
+**Appearance > Shop Diagnostics > Repair** as well.
+
+---
+
+## 16. What you cannot do. Know this before you promise anything.
+
+- **No SSH, no server access, no database access.** Stephen runs every command on
+  the server.
+- **You cannot load `shop.websitesgh.com`.** It is not in the sandbox network
+  allowlist, so `curl` and `web_fetch` return nothing. You cannot inspect the
+  live HTML or check whether a fix landed. **Diagnose from the code and from his
+  screenshots.** If you genuinely need live data, ask him to run the Diagnostics
+  page and send it, or to view source and read you a specific line.
+- **You cannot see the rendered result of your own CSS.** Verify by grepping
+  `assets/css/main.css` for the compiled rule and reasoning about it.
+- **WordPress admin actions are his.** Running setup, purging cache, setting
+  featured images, assigning menus. Build the tooling, tell him which button.
+
+Allowlisted domains that do work: `github.com`, `raw.githubusercontent.com`,
+`api.github.com`, `websitesgh.com`, `*.imaanihomes.com`, `techpluggh.com`,
+`*.gra.gov.gh`, `*.bog.gov.gh`, npm and pypi.
+
+---
+
+## 17. Deliverable standards
+
+**Marketing and strategy documents are HTML, built to the Iridak playbook
+standard.** He has used this across projects and expects it:
+
+- Warm off-white background `#f8f6f2`, ink `#20211C`, orange accent `#e8630a`
+- Bebas Neue for display, DM Sans for body, DM Mono for labels and meta
+- Full-height cover page, then a table of contents, then numbered sections
+- Tables for anything comparative, badge pills for match types and tiers
+- Callout cards for decisions and warnings
+- Delivered as a downloadable file, not pasted into chat
+
+**Where files go:** build in the working directory, copy final deliverables to
+`/mnt/user-data/outputs/`, then call `present_files` so he can download them.
+Share files, not folders. No long explanation after the link.
+
+**Code files** are committed to the repo, not presented as downloads.
+
+---
+
+## 18. His other projects. Do not touch them.
+
+Stephen runs several repos in parallel. If he mentions one, it is context, not an
+instruction to go and change it:
+
+- `aidooonline/websitesgh-v3` and `websitesgh-datahouse`, the main websitesgh.com
+  platform
+- `aidooonline/regalia-theme`, the Imaani Homes Regalia relaunch
+- `aidooonline/leadcapture`, the multi-tenant lead system
+- `aidooonline/kasqoreels-api` and `kasqoreels-app`, Kasqo
+- `aidooonline/techplugghv2`, TechPlug GH, which this theme was forked from
+
+Each has its own handover file and its own rules. **Stay in this repo unless he
+explicitly moves you.**
+
+---
+
+## 19. Things that look like bugs but are not
+
+- **`/companies-in-ghan/` and `/expore/`** on websitesgh.com are intentional SEO
+  slugs. Never "fix" them. They do not appear in this repo but he may mention
+  them.
+- **The cart page must be the classic shortcode**, not the block cart. The
+  WhatsApp button hooks `woocommerce_proceed_to_checkout`, which block carts do
+  not fire. Setup forces this; do not undo it.
+- **`aria-hidden="true"` on the article media links** in `index.php` is
+  deliberate. The title link is the real one and duplicating it for screen
+  readers is noise.
+- **Scheduled posts sitting past their date** are a wp-cron issue on a low-traffic
+  site, not a code bug. A real server cron fixes it.
