@@ -461,6 +461,9 @@ function wghs_export_attribution( $since, $limit, $offset = 0 ) {
 			'conv_value_ghs' => round( (float) $r['conv_value'], 2 ),
 			'order_id'       => (int) $r['order_id'],
 			'exported'       => (int) $r['exported'] ? true : false,
+			// human, bot or staff. The dashboard decides what to count; the
+			// shop only reports what it saw. See wghs_attr_visitor_kind().
+			'visitor'        => (string) ( $r['visitor'] ?? 'human' ),
 			'ref'            => (string) $r['ref'],
 			'cust_name'      => (string) $r['cust_name'],
 			'cust_phone'     => (string) $r['cust_phone'],

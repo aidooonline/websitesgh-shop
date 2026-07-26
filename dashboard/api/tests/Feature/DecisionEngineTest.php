@@ -467,4 +467,57 @@ class DecisionEngineTest extends TestCase
         $this->assertNotContains('G-C', array_column($result['active_guardrails'], 'code'));
         $this->assertNull(Milestone::where('gate_code', 'G-C')->first()->reached_at);
     }
+
+    public function test_a_crawler_filling_the_basket_is_not_a_funnel(): void
+    {
+        /*
+         * WooCommerce accepts add-to-cart as a plain GET and those links sit on
+         * every category page, so a crawler walking the shop fills the basket
+         * dozens of times with no person behind it. On the live shop this read
+         * as 87 add-to-cart against 8 WhatsApp messages, which looks like a
+         * catastrophic closing problem and is not one.
+         */
+        foreach (range(1, 20) as $i) {
+            AttributionEvent::create([
+                'woo_attr_id' => $i, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+                'status' => 'cart', 'product_id' => 500 + $i, 'visitor' => 'bot',
+                'payload_hash' => hash('sha256', 'bot'.$i), 'synced_at' => CarbonImmutable::now('UTC'),
+            ]);
+        }
+
+        AttributionEvent::create([        // the owner testing his own shop
+            'woo_attr_id' => 90, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+            'status' => 'cart', 'product_id' => 700, 'visitor' => 'staff',
+            'payload_hash' => hash('sha256', 'staff'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        AttributionEvent::create([        // one real person
+            'woo_attr_id' => 91, 'created_at' => '2026-07-10 12:00:00', 'updated_at' => '2026-07-10 12:00:00',
+            'status' => 'cart', 'product_id' => 700, 'visitor' => 'human',
+            'payload_hash' => hash('sha256', 'human'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $t = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28')['totals'];
+
+        $this->assertSame(1, $t['carts'], 'one person put something in a basket, not 22');
+        $this->assertSame(20, $t['excluded_bot']);
+        $this->assertSame(1, $t['excluded_staff']);
+    }
+
+    public function test_rows_from_a_shop_that_cannot_classify_still_count(): void
+    {
+        // An older theme sends no visitor field. Reading that as "not human"
+        // would empty the funnel on the day the dashboard is upgraded, which is
+        // a worse failure than counting a few crawlers.
+        AttributionEvent::create([
+            'woo_attr_id' => 1, 'created_at' => '2026-07-10 10:00:00', 'updated_at' => '2026-07-10 10:00:00',
+            'status' => 'cart', 'product_id' => 700,
+            'payload_hash' => hash('sha256', 'old'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $t = (new \App\Services\Ads\JoinEngine)->build('2026-07-01', '2026-07-28')['totals'];
+
+        $this->assertSame(1, $t['carts']);
+        $this->assertSame(0, $t['excluded_bot']);
+    }
 }

@@ -472,6 +472,30 @@ class ReportRenderer
                 .'straight from a product page, so it is shown beside the funnel rather than inside it.</p>'
             : '';
 
+        /*
+         * Say what was thrown out and why.
+         *
+         * A funnel quietly filtered is a funnel nobody can check. If the bot
+         * count is large it is itself the finding, because it means most of
+         * what looked like demand was a crawler following add-to-cart links.
+         */
+        $bots = (int) ($t['excluded_bot'] ?? 0);
+        $staff = (int) ($t['excluded_staff'] ?? 0);
+
+        if ($bots + $staff > 0) {
+            $parts = [];
+            if ($bots > 0) {
+                $parts[] = $bots.' from crawlers';
+            }
+            if ($staff > 0) {
+                $parts[] = $staff.' from your own logged-in visits';
+            }
+
+            $context .= '<p class="fine">Not counted above: '.$this->e(implode(' and ', $parts))
+                .'. WooCommerce accepts add-to-cart as a plain link, so a crawler walking the shop '
+                .'fills the basket without any person behind it. The rows are kept, just not counted.</p>';
+        }
+
         return '<section><h2>Where people stop</h2>'
             .'<p class="q">Of the people who opened WhatsApp, how many actually bought?</p>'
             .$svg

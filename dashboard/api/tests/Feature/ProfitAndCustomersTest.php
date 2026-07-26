@@ -88,10 +88,17 @@ class ProfitAndCustomersTest extends TestCase
          */
         $this->order(1, [[700, 1, 400.0]]);          // sold
 
-        AttributionEvent::create([                    // advertised, never sold
+        AttributionEvent::create([                    // messaged about, never sold
             'woo_attr_id' => 1, 'created_at' => '2026-07-05 10:00:00', 'updated_at' => '2026-07-05 10:00:00',
-            'status' => 'pending', 'product_id' => 800, 'price_ghs' => '500.00',
+            'status' => 'pending', 'product_id' => 800, 'price_ghs' => '500.00', 'visitor' => 'human',
             'payload_hash' => hash('sha256', 'tap'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        // A crawler walking add-to-cart links. Must not rank a product.
+        AttributionEvent::create([
+            'woo_attr_id' => 2, 'created_at' => '2026-07-05 11:00:00', 'updated_at' => '2026-07-05 11:00:00',
+            'status' => 'cart', 'product_id' => 950, 'price_ghs' => '300.00', 'visitor' => 'bot',
+            'payload_hash' => hash('sha256', 'bot'), 'synced_at' => CarbonImmutable::now('UTC'),
         ]);
 
         ProductCost::create([                         // catalogue only
@@ -102,9 +109,9 @@ class ProfitAndCustomersTest extends TestCase
         $dir = sys_get_temp_dir().'/wgh-sheet-order';
         $r = (new CostSheet)->export($dir);
 
-        $this->assertSame(3, $r['rows']);
+        $this->assertSame(3, $r['rows'], 'the crawler did not add a product to the sheet');
         $this->assertSame(1, $r['sold']);
-        $this->assertSame(1, $r['advertised_only']);
+        $this->assertSame(1, $r['messaged_only']);
         $this->assertSame(2, $r['needed_now'], 'the catalogue row is not urgent, the other two are');
 
         $lines = array_values(array_filter(explode("\n", (string) file_get_contents($r['path']))));
@@ -112,7 +119,7 @@ class ProfitAndCustomersTest extends TestCase
 
         $this->assertSame([700, 800, 900], $ids, 'sold, then advertised, then the rest');
         $this->assertStringContainsString('SOLD 1 unit', $lines[1]);
-        $this->assertStringContainsString('no sale yet', $lines[2]);
+        $this->assertStringContainsString('1 WhatsApp message, no sale yet', $lines[2]);
     }
 
     public function test_the_extra_guidance_column_does_not_break_the_import(): void

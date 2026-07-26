@@ -408,6 +408,22 @@ the class of problem, not just the instance.
     rebuild it inflated lifetime value, the repeat rate and every area total at
     once, all in the flattering direction. Filter `cancelled`, `failed` and
     `refunded` wherever revenue is summed.
+33. **WooCommerce accepts add-to-cart as a plain GET, and crawlers follow it.**
+    `?add-to-cart=123` links sit on every shop and category page, so a bot
+    walking the site fills the basket dozens of times with no human behind it.
+    The live shop read 87 add-to-cart against 8 WhatsApp messages with zero ad
+    spend, which looks like a catastrophic closing problem and may be almost
+    entirely crawlers. Nothing recorded a user agent, a session or an IP, so
+    those 87 rows can never be classified. Every attribution row now carries
+    `visitor` as human, bot or staff, set at insert. The shop LABELS, it never
+    drops; the dashboard decides what to count, and the report says how many
+    were excluded. The owner logged into his own shop is `staff`: he is on the
+    site daily and was being counted as demand.
+34. **A product name is not the only thing that needs disambiguating: so does
+    the word "interest".** The cost sheet ranked products by all attribution
+    events, which lumped a bot's basket in with a real WhatsApp message. A
+    message is far stronger evidence than a basket and the two are now counted
+    and worded separately.
 
 ---
 

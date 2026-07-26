@@ -72,6 +72,7 @@ function wghs_attr_install() {
 		conv_value DECIMAL(10,2) NOT NULL DEFAULT 0,
 		order_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 		exported TINYINT(1) NOT NULL DEFAULT 0,
+		visitor VARCHAR(8) NOT NULL DEFAULT 'human',
 		ref VARCHAR(12) NOT NULL DEFAULT '',
 		cust_name VARCHAR(120) NOT NULL DEFAULT '',
 		cust_phone VARCHAR(24) NOT NULL DEFAULT '',
@@ -84,6 +85,7 @@ function wghs_attr_install() {
 		KEY utm_term (utm_term(64)),
 		KEY campaign_id (campaign_id),
 		KEY ref (ref),
+		KEY visitor (visitor),
 		KEY cust_phone (cust_phone)
 	) {$charset};" );
 
@@ -92,11 +94,11 @@ function wghs_attr_install() {
 	// like it had never been touched and COALESCE would carry the work forever.
 	$wpdb->query( "UPDATE {$table} SET updated_at = created_at WHERE updated_at IS NULL" );
 
-	update_option( 'wghs_attr_db_version', '1.4' );
+	update_option( 'wghs_attr_db_version', '1.5' );
 }
 add_action( 'after_switch_theme', 'wghs_attr_install' );
 add_action( 'admin_init', function () {
-	if ( '1.4' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
+	if ( '1.5' !== get_option( 'wghs_attr_db_version' ) ) { wghs_attr_install(); }
 } );
 
 /* --------------------------------------------------------------------------
@@ -116,9 +118,80 @@ add_action( 'admin_init', function () {
  * @param array $data Column data.
  * @return int|false Insert result from wpdb.
  */
+/**
+ * Who is this, really: a customer, a crawler, or the shop owner testing?
+ *
+ * WHY THIS COLUMN HAD TO EXIST
+ * The funnel read 87 add-to-cart against 8 WhatsApp messages and nobody could
+ * say whether that was a real closing problem or a bot problem, because the
+ * table recorded no user agent, no session and no IP. That is not a number you
+ * can act on: one reading says fix the cart page, the other says ignore it, and
+ * they lead to opposite work. Anything that cannot tell those apart is not
+ * measurement.
+ *
+ * WooCommerce accepts add-to-cart as a plain GET (`?add-to-cart=123`), and those
+ * links sit on every shop and category page, so a crawler walking the site adds
+ * to the basket dozens of times without any human intent whatsoever.
+ *
+ * NOTHING IS DROPPED, ONLY LABELLED.
+ * Same rule as cancelled orders, which are kept rather than hidden. A row
+ * deleted at the shop can never be re-examined, and a classifier that turns out
+ * to be wrong would have silently destroyed the evidence of its own mistake.
+ * The dashboard decides what to count; the shop only records what it saw.
+ *
+ * @return string 'human', 'bot' or 'staff'.
+ */
+function wghs_attr_visitor_kind() {
+	// The owner testing his own shop is not a customer, and he is on it daily.
+	if ( function_exists( 'current_user_can' ) && current_user_can( 'edit_posts' ) ) {
+		return 'staff';
+	}
+
+	$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? strtolower( (string) $_SERVER['HTTP_USER_AGENT'] ) : '';
+
+	// No user agent at all is never a browser.
+	if ( '' === $ua ) {
+		return 'bot';
+	}
+
+	$signatures = array(
+		'bot', 'crawl', 'spider', 'slurp', 'archiver', 'scraper', 'monitor',
+		'headless', 'phantom', 'selenium', 'puppeteer', 'playwright',
+		'python-requests', 'python-urllib', 'curl/', 'wget', 'go-http-client',
+		'java/', 'okhttp', 'axios', 'node-fetch', 'httpclient', 'libwww',
+		'ahrefs', 'semrush', 'mj12', 'dotbot', 'petalbot', 'bytespider',
+		'facebookexternalhit', 'preview', 'lighthouse', 'pagespeed', 'gtmetrix',
+		'uptime', 'pingdom', 'statuscake', 'newrelic',
+	);
+
+	foreach ( $signatures as $needle ) {
+		if ( false !== strpos( $ua, $needle ) ) {
+			return 'bot';
+		}
+	}
+
+	/*
+	 * A real browser sends an Accept header asking for HTML. Scripted clients
+	 * that bothered to fake a browser user agent usually do not bother with
+	 * this one, and a genuine browser always sends it.
+	 */
+	$accept = isset( $_SERVER['HTTP_ACCEPT'] ) ? (string) $_SERVER['HTTP_ACCEPT'] : '';
+
+	if ( '' === $accept ) {
+		return 'bot';
+	}
+
+	return 'human';
+}
+
 function wghs_attr_insert( array $data ) {
 	global $wpdb;
 	$data['updated_at'] = current_time( 'mysql', true );
+
+	if ( ! isset( $data['visitor'] ) ) {
+		$data['visitor'] = wghs_attr_visitor_kind();
+	}
+
 	return $wpdb->insert( wghs_attr_table(), $data );
 }
 

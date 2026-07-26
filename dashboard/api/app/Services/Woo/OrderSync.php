@@ -411,6 +411,12 @@ class OrderSync
             'conv_value_ghs' => $this->money($row['conv_value_ghs'] ?? 0),
             'order_id' => (int) ($row['order_id'] ?? 0),
             'exported' => (bool) ($row['exported'] ?? false),
+            // A shop running an older theme sends nothing here. It is read as
+            // 'human' rather than dropped, so an upgrade does not silently
+            // empty the funnel. See migration 000600.
+            'visitor' => in_array($row['visitor'] ?? '', ['human', 'bot', 'staff'], true)
+                ? (string) $row['visitor']
+                : 'human',
             'ref' => $this->nullIfBlank($row['ref'] ?? null),
             'cust_name' => $this->nullIfBlank($row['cust_name'] ?? null),
             'cust_phone' => $phone,

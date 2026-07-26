@@ -78,9 +78,10 @@ class Costs extends Command
         $this->info("Cost sheet written, {$r['rows']} products.");
         $this->line('  '.$r['path']);
         $this->newLine();
-        $this->line("  Sorted so the rows that change a decision are at the top:");
+        $this->line('  Sorted so the rows that change a decision are at the top:');
         $this->line("    {$r['sold']} that have already sold");
-        $this->line("    {$r['advertised_only']} drawing ad taps with no sale yet");
+        $this->line("    {$r['messaged_only']} people messaged about but never bought");
+        $this->line("    {$r['basketed_only']} put in a basket and nothing more");
         $this->newLine();
         $this->line('Download it through cPanel > File Manager, open it in a spreadsheet, and fill');
         $this->line('in two columns: <options=bold>dealer_cost_ghs</> (what you pay the supplier) and');

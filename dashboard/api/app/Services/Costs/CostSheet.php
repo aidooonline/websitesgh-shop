@@ -76,9 +76,16 @@ class CostSheet
          */
         $interest = AttributionEvent::query()
             ->where('product_id', '>', 0)
-            ->selectRaw('product_id, COUNT(*) AS events')
+            // Crawlers walking add-to-cart links are not interest, and the
+            // owner testing his own shop is not either. Counting them ranked
+            // products by how thoroughly a bot had crawled them.
+            ->where('visitor', 'human')
+            ->selectRaw("product_id,
+                COUNT(*) FILTER (WHERE status = 'cart') AS baskets,
+                COUNT(*) FILTER (WHERE status <> 'cart') AS taps")
             ->groupBy('product_id')
-            ->pluck('events', 'product_id');
+            ->get()
+            ->keyBy('product_id');
 
         $existing = ProductCost::all()->keyBy('woo_product_id');
 
@@ -102,6 +109,8 @@ class CostSheet
                 'confirmed' => $known && ! $known->is_estimate ? 'yes' : '',
                 'units' => 0,
                 'events' => 0,
+                'taps' => 0,
+                'baskets' => 0,
             ];
         };
 
@@ -111,10 +120,14 @@ class CostSheet
             $rows[$id]['units'] = (int) $s->units;
         }
 
-        foreach ($interest as $productId => $events) {
+        foreach ($interest as $productId => $row) {
             $id = (int) $productId;
             $touch($id, null, null);
-            $rows[$id]['events'] = (int) $events;
+            // A WhatsApp message is far stronger evidence of intent than a
+            // basket, so the two are kept apart rather than added together.
+            $rows[$id]['taps'] = (int) $row->taps;
+            $rows[$id]['baskets'] = (int) $row->baskets;
+            $rows[$id]['events'] = (int) $row->taps + (int) $row->baskets;
         }
 
         // The catalogue, so a product can be costed before it ever sells.
@@ -129,11 +142,13 @@ class CostSheet
          */
         $rows = array_values($rows);
         usort($rows, function ($a, $b) {
-            $rank = fn ($r) => $r['units'] > 0 ? 0 : ($r['events'] > 0 ? 1 : 2);
+            // Sold, then messaged about, then merely basketed, then the rest.
+            $rank = fn ($r) => $r['units'] > 0 ? 0 : ($r['taps'] > 0 ? 1 : ($r['baskets'] > 0 ? 2 : 3));
 
             return $rank($a) <=> $rank($b)
                 ?: $b['units'] <=> $a['units']
-                ?: $b['events'] <=> $a['events']
+                ?: $b['taps'] <=> $a['taps']
+                ?: $b['baskets'] <=> $a['baskets']
                 ?: strcmp((string) $a['name'], (string) $b['name']);
         });
 
@@ -152,10 +167,15 @@ class CostSheet
 
             if ($r['units'] > 0) {
                 $why = sprintf('SOLD %d unit%s. Cost this one first.', $r['units'], $r['units'] === 1 ? '' : 's');
-            } elseif ($r['events'] > 0) {
+            } elseif ($r['taps'] > 0) {
                 $why = sprintf(
-                    '%d ad tap%s, no sale yet. Cannot tell a bad price from a bad product without this.',
-                    $r['events'], $r['events'] === 1 ? '' : 's'
+                    '%d WhatsApp message%s, no sale yet. Cannot tell a bad price from a bad product without this.',
+                    $r['taps'], $r['taps'] === 1 ? '' : 's'
+                );
+            } elseif ($r['baskets'] > 0) {
+                $why = sprintf(
+                    'Put in a basket %d time%s, never messaged about. Worth knowing what it earns before promoting it.',
+                    $r['baskets'], $r['baskets'] === 1 ? '' : 's'
                 );
             } else {
                 $why = 'Not sold or advertised yet. Fill in when you get to it.';
@@ -186,7 +206,8 @@ class CostSheet
             'rows' => count($rows),
             'already_costed' => $costed,
             'sold' => count(array_filter($rows, fn ($r) => $r['units'] > 0)),
-            'advertised_only' => count(array_filter($rows, fn ($r) => $r['units'] === 0 && $r['events'] > 0)),
+            'messaged_only' => count(array_filter($rows, fn ($r) => $r['units'] === 0 && $r['taps'] > 0)),
+            'basketed_only' => count(array_filter($rows, fn ($r) => $r['units'] === 0 && $r['taps'] === 0 && $r['baskets'] > 0)),
             'needed_now' => $needed,
         ];
     }

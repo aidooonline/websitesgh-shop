@@ -265,9 +265,28 @@ dealer cost, a supplier or a confirmation: those are yours. It fills the shelf
 price and the name and nothing else.
 
 The sheet is sorted so the rows that change a decision are at the top: what has
-sold, then what is drawing ad taps with no sale yet, then the rest of the
-catalogue. The `why_this_matters` column says which is which. That column is
-ignored on import.
+sold, then what people messaged about and never bought, then what was put in a
+basket and nothing more, then the rest of the catalogue. The `why_this_matters`
+column says which is which. That column is ignored on import.
+
+## Bots, and why the funnel used to lie
+
+WooCommerce accepts add-to-cart as a plain link (`?add-to-cart=123`), and those
+links sit on every category page. A crawler walking the shop fills the basket
+dozens of times with no person behind it. On the live shop that read as 87
+add-to-cart against 8 WhatsApp messages with no ad spend at all, which looks
+like a catastrophic closing problem and is not necessarily one.
+
+Every attribution row now carries `visitor`: `human`, `bot`, or `staff`. It is
+set on the shop at the moment the row is written, from the user agent, the
+Accept header, and whether the visitor is logged in and can edit the site. The
+owner testing his own shop is `staff`, because he is on it daily and was being
+counted as demand.
+
+The shop only labels. It never drops a row, for the same reason cancelled orders
+are kept: a classifier that turns out to be wrong must not have destroyed the
+evidence of its own mistake. The dashboard excludes non-human rows from the
+funnel and the report states how many were excluded and why.
 
 Mark `confirmed` as `yes` once a price came from an actual supplier call rather
 than a guess.

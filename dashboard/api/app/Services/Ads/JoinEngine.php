@@ -66,9 +66,30 @@ class JoinEngine
             ->whereDate('period_end', '>=', $from)
             ->get();
 
-        $events = AttributionEvent::query()
+        $everything = AttributionEvent::query()
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->get();
+
+        /*
+         * CRAWLERS AND THE OWNER ARE NOT THE FUNNEL.
+         *
+         * WooCommerce accepts add-to-cart as a plain GET, and those links sit
+         * on every category page, so a crawler walking the shop fills the
+         * basket dozens of times with no human intent behind any of it. Left
+         * in, the funnel read 87 add-to-cart against 8 WhatsApp messages and
+         * looked like a catastrophic closing problem. The shop owner testing
+         * his own site lands in the same bucket, and he is on it daily.
+         *
+         * The rows are kept, never deleted, and counted separately, because a
+         * classifier that turns out to be wrong must not have destroyed the
+         * evidence of its own mistake.
+         */
+        $events = $everything->filter(fn ($e) => ($e->visitor ?? 'human') === 'human')->values();
+
+        $excluded = [
+            'bot' => $everything->where('visitor', 'bot')->count(),
+            'staff' => $everything->where('visitor', 'staff')->count(),
+        ];
 
         $keywords = $this->joinKeywords($spend, $events, $rate);
         $channels = $this->joinChannels($spend, $events, $rate);
@@ -89,6 +110,8 @@ class JoinEngine
             'orders' => $events->where('status', 'converted')->count(),
             'revenue_ghs' => $this->sum($events->where('status', 'converted')->pluck('conv_value_ghs')),
             'unmatched_spend_usd' => $this->sum(collect($unmatched)->pluck('spend_usd')),
+            'excluded_bot' => $excluded['bot'],
+            'excluded_staff' => $excluded['staff'],
         ];
 
         return [
