@@ -194,12 +194,13 @@ zero rows; every table fingerprint identical; counts match the shop. Code in
 `inc/dashboard-export.php`. Re-run it any time with
 `php artisan wgh:sync --verify`.
 
-**One part of the acceptance test is still unproven: no order yet carries both
-a ref code and a click id**, because nothing is spending, so no gclid has ever
-reached an order. Attribution taps are logging fine (95 rows). To close it,
-visit the shop with `?gclid=TEST-WGH-1` on the URL, add to cart, tap WhatsApp,
-then mark that row Sold in WooCommerce > Attribution and re-run the sync. Do
-this before trusting any spend-to-profit number in sprint 2.
+**A WhatsApp sale never creates a WooCommerce order.** WhatsApp is the
+checkout, so the sale IS the attribution row, marked Sold by the owner. The
+acceptance test measured the loop on the `orders` table alone at first, which
+would have read zero forever while everything worked. It now reports both
+halves: WhatsApp sales carrying a ref plus a click id, and on-site orders
+carrying the same. Do not "fix" a zero in the orders column; check the
+attribution column first.
 
 **Sprint 2 is the next thing to build**: the CSV parsers and the join engine.
 
@@ -471,8 +472,11 @@ docs/                               older sprint and conversion notes
 ## 13. Where to start
 
 Read `dashboard/docs/ENGINEERING-SPEC.md` and `dashboard/README.md`. Sprint 1
-is live and passing. Close the gclid gap described in section 5, then build
-**Sprint 2**: the CSV parsers and the join engine.
+is live and passing end to end, keyword level included. Next is **Sprint 2**:
+the CSV parsers and the join engine. Before it can be tested on real data the
+owner must set the Final URL suffix in Google Ads
+(`dashboard/docs/TRACKING-TEMPLATES.md`) and create the offline conversion
+action named exactly `WhatsApp Sale`.
 
 Do not skip the acceptance tests. They are the reason the spec exists.
 

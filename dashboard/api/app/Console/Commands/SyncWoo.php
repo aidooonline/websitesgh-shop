@@ -157,8 +157,56 @@ class SyncWoo extends Command
             $ok = false;
         }
 
-        $withRef = Order::whereNotNull('customer_ref')->whereNotNull('click_id')->count();
-        $this->line("  Orders carrying both a ref code and a click id: {$withRef}");
+        $this->newLine();
+        $this->line('  <options=bold>The ad-to-sale loop</>');
+
+        /*
+         * The spec asks to show a real sale end to end with its ref code and
+         * its click id. Counting that on the ORDERS table alone was wrong, and
+         * would have read zero forever while everything worked perfectly.
+         *
+         * This shop has no checkout: WhatsApp IS the checkout, by settled
+         * design. A WhatsApp sale therefore never creates a WooCommerce order.
+         * The sale is the attribution row, marked Sold by the owner. Measuring
+         * the loop on orders only would have made the main revenue path look
+         * permanently broken and invited somebody to "fix" it.
+         */
+        $waSales = AttributionEvent::where('status', 'converted')
+            ->whereNotNull('ref')
+            ->whereNotNull('click_id')
+            ->count();
+
+        $waSalesWithKeyword = AttributionEvent::where('status', 'converted')
+            ->whereNotNull('click_id')
+            ->whereNotNull('utm_term')
+            ->count();
+
+        $siteOrders = Order::whereNotNull('customer_ref')->whereNotNull('click_id')->count();
+
+        $taps = AttributionEvent::whereIn('placement', ['cart_whatsapp', 'get_it_now', 'mobile_bar', 'product_page', 'generic'])->count();
+        $carts = AttributionEvent::where('status', 'cart')->count();
+        $adTaps = AttributionEvent::whereNotNull('click_id')->count();
+
+        $this->line("  ad-tracked taps ............ {$adTaps}");
+        $this->line("  add to cart stages ......... {$carts}");
+        $this->line("  WhatsApp taps .............. {$taps}");
+        $this->line("  WhatsApp sales with ref + click id ... {$waSales}");
+        $this->line("  ...of those, carrying a keyword ...... {$waSalesWithKeyword}");
+        $this->line("  on-site orders with ref + click id ... {$siteOrders}");
+
+        if ($waSales + $siteOrders > 0) {
+            $this->line('  <fg=green>PASS</> at least one sale traces end to end from ad click to money');
+        } else {
+            $this->line('  <fg=yellow>OPEN</> no sale yet carries both a ref code and a click id.');
+            $this->line('        Expected while nothing is spending. To prove it without an ad,');
+            $this->line('        visit the shop with ?gclid=TEST-WGH-1 plus the tracking parameters,');
+            $this->line('        order on WhatsApp, mark the row Sold, and sync again.');
+        }
+
+        if ($adTaps > 0 && $waSalesWithKeyword === 0 && $waSales > 0) {
+            $this->line('  <fg=yellow>CHECK</> sales carry a click id but no keyword. The Final URL suffix');
+            $this->line('        is probably not set in Google Ads. See dashboard/docs/TRACKING-TEMPLATES.md.');
+        }
 
         $this->newLine();
         $this->line($ok ? '<fg=green>Sprint 1 acceptance test passed.</>' : '<fg=red>Sprint 1 acceptance test FAILED.</>');
