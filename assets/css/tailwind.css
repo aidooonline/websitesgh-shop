@@ -483,57 +483,66 @@ ul.products li.product {
   .wghs-related__media img { @apply absolute inset-0 h-full w-full object-cover; }
 
 
-  /* --- About page -------------------------------------------------------- */
-  .wghs-about__hero { @apply border-b border-wgh-line2 bg-wgh-line2 py-14 sm:py-20; }
-  .wghs-about__kicker { @apply text-xs font-bold uppercase tracking-[.2em] text-wgh-green; }
-  .wghs-about__title { @apply mt-3 text-4xl sm:text-6xl font-extrabold leading-[1.02] tracking-tight; }
-  .wghs-about__dot { @apply text-wgh-gold; }
-  .wghs-about__standfirst { @apply mt-5 max-w-2xl text-lg sm:text-xl leading-relaxed text-wgh-ink2; }
-  .wghs-about__cta { @apply mt-7 flex flex-wrap gap-3; }
-  .wghs-about__section { @apply py-14 sm:py-20; }
-  .wghs-about__h2 { @apply text-3xl sm:text-4xl font-extrabold tracking-tight; }
-  .wghs-about__h2--light { @apply text-white; }
-  .wghs-about__lede { @apply mt-2 text-lg text-wgh-ink2; }
-
-  .wghs-about__proof { @apply -mt-8 grid gap-4 sm:grid-cols-3; }
-  .wghs-proofcard { @apply rounded-2xl border border-wgh-line2 bg-white p-6 shadow-[0_10px_30px_-22px_rgba(0,0,0,.35)]; }
-  .wghs-proofcard__n { @apply text-4xl font-extrabold leading-none text-wgh-green; }
-  .wghs-proofcard__n span { @apply ml-1 text-xl align-top text-wgh-gold; }
-  .wghs-proofcard__l { @apply mt-3 text-sm leading-relaxed text-wgh-ink2; }
-
-  .wghs-about__examples { @apply mt-8 grid gap-6 lg:grid-cols-2; }
-  .wghs-excard { @apply rounded-2xl border border-wgh-line2 bg-white p-7; }
-  .wghs-excard__tag { @apply inline-block rounded-full bg-wgh-line2 px-3 py-1 text-[11px] font-bold uppercase tracking-[.14em] text-wgh-green; }
-  .wghs-excard__h { @apply mt-3 text-2xl font-bold leading-snug; }
-  .wghs-excard p { @apply mt-3 leading-relaxed text-wgh-ink2; }
-  .wghs-excard__math { @apply my-5 flex flex-wrap items-center gap-2 rounded-xl bg-wgh-line2 px-4 py-4 text-sm; }
-  .wghs-excard__math span { @apply font-semibold text-wgh-ink; }
-  .wghs-excard__math em { @apply not-italic text-wgh-ink2; }
-  .wghs-excard__math strong { @apply text-lg font-extrabold text-wgh-green; }
-  .wghs-excard__link { @apply mt-4 inline-block font-semibold text-wgh-green hover:underline; }
-
-  .wghs-about__band { @apply bg-wgh-ink py-14 sm:py-20; }
-  .wghs-about__why { @apply mt-8 grid gap-7 sm:grid-cols-3; }
-  .wghs-about__why h4 { @apply text-lg font-bold text-white; }
-  .wghs-about__why p { @apply mt-2 leading-relaxed text-white/70; }
-
-  .wghs-about__steps { @apply mt-8 grid gap-5 sm:grid-cols-3; }
-  .wghs-stepcard { @apply rounded-2xl border border-wgh-line2 bg-white p-6; }
-  .wghs-stepcard__n { @apply flex h-10 w-10 items-center justify-center rounded-full bg-wgh-green text-lg font-extrabold text-white; }
-  .wghs-stepcard h4 { @apply mt-4 text-base font-bold; }
-  .wghs-stepcard p { @apply mt-2 text-sm leading-relaxed text-wgh-ink2; }
-
-  .wghs-about__close { @apply mb-16 flex flex-col gap-5 rounded-2xl bg-wgh-line2 p-8 sm:flex-row sm:items-center sm:justify-between; }
-  .wghs-about__close h3 { @apply text-2xl font-extrabold; }
-  .wghs-about__close p { @apply mt-1 text-wgh-ink2; }
-  .wghs-about__closebtns { @apply flex flex-wrap gap-3; }
-
-
   /* --- Order sent confirmation ------------------------------------------- */
   .wghs-sent { @apply my-6 flex gap-4 rounded-2xl border border-wgh-green/30 bg-wgh-greenPale p-6; }
   .wghs-sent__tick { @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-wgh-green text-xl font-bold text-white; }
   .wghs-sent__h { @apply text-xl font-extrabold text-wgh-greenInk; }
   .wghs-sent__p { @apply mt-1 leading-relaxed text-wgh-ink2; }
   .wghs-sent__actions { @apply mt-4 flex flex-wrap gap-3; }
+
+  /* --- About page, visual ------------------------------------------------
+     Built from numbers and inline SVG rather than paragraphs, because the
+     brand is "we check the numbers" and no photography is available. */
+  .wghs-ab__hero { @apply border-b border-wgh-line2 bg-wgh-line2/40 py-12 sm:py-16; }
+  .wghs-ab__herogrid { @apply grid items-center gap-10 lg:grid-cols-[1.05fr_1fr]; }
+  .wghs-ab__kicker { @apply text-[11px] font-bold uppercase tracking-[.22em] text-wgh-green; }
+  .wghs-ab__h1 { @apply mt-3 text-5xl sm:text-7xl font-extrabold leading-[.95] tracking-tight; }
+  .wghs-ab__hl { @apply relative inline-block text-wgh-green; }
+  .wghs-ab__hl::after { content:""; @apply absolute left-0 right-0 bottom-1 -z-10 h-3 bg-wgh-gold/35; }
+  .wghs-ab__sub { @apply mt-5 max-w-xl text-lg leading-relaxed text-wgh-ink2; }
+  .wghs-ab__btns { @apply mt-7 flex flex-wrap gap-3; }
+
+  .wghs-ab__fig { @apply rounded-2xl border border-wgh-line bg-white p-4 shadow-[0_18px_50px_-30px_rgba(0,0,0,.5)]; }
+  .wghs-ab__fig--flat { @apply shadow-none; }
+  .wghs-ab__fig svg { @apply block h-auto w-full; }
+  .wghs-ab__fig figcaption { @apply mt-3 px-2 pb-1 text-center text-xs text-wgh-ink3; }
+  .ab-lab { font-size: 11px; font-weight: 700; letter-spacing: .12em; fill: #8a857b; }
+  .ab-big { font-size: 26px; font-weight: 800; }
+  .ab-note { font-size: 13px; font-weight: 600; }
+
+  .wghs-ab__band { @apply bg-wgh-greenInk py-10 sm:py-12; }
+  .wghs-ab__stats { @apply grid gap-8 sm:grid-cols-2 lg:grid-cols-4; }
+  .wghs-ab__stat { @apply border-l-2 border-wgh-gold/50 pl-4; }
+  .wghs-ab__n { @apply block text-4xl font-extrabold leading-none text-white; }
+  .wghs-ab__n i { @apply not-italic text-xl text-wgh-gold; }
+  .wghs-ab__sl { @apply mt-2 block text-[13px] leading-relaxed text-white/65; }
+
+  .wghs-ab__sec { @apply py-14 sm:py-20; }
+  .wghs-ab__split { @apply grid items-center gap-10 lg:grid-cols-2; }
+  .wghs-ab__h2 { @apply text-3xl sm:text-4xl font-extrabold tracking-tight; }
+  .wghs-ab__h2--light { @apply text-white; }
+  .wghs-ab__lede { @apply mt-2 text-lg text-wgh-ink2; }
+  .wghs-ab__p { @apply mt-4 leading-relaxed text-wgh-ink2; }
+  .wghs-ab__links { @apply mt-6 flex flex-wrap gap-5; }
+  .wghs-ab__links a { @apply font-semibold text-wgh-green hover:underline; }
+
+  .wghs-ab__dark { @apply bg-wgh-ink py-14 sm:py-20; }
+  .wghs-ab__why { @apply mt-9 grid gap-6 sm:grid-cols-3; }
+  .wghs-ab__whycard { @apply rounded-2xl border border-white/10 bg-white/5 p-6; }
+  .wghs-ab__whyn { @apply block text-xs font-bold tracking-[.2em] text-wgh-gold; }
+  .wghs-ab__whycard h3 { @apply mt-3 text-lg font-bold text-white; }
+  .wghs-ab__whycard p { @apply mt-2 text-sm leading-relaxed text-white/65; }
+
+  .wghs-ab__track { @apply mt-9 grid list-none gap-6 sm:grid-cols-2 lg:grid-cols-4; }
+  .wghs-ab__track li { @apply relative rounded-2xl border border-wgh-line bg-white p-6; }
+  .wghs-ab__dot { @apply flex h-9 w-9 items-center justify-center rounded-full bg-wgh-green text-sm font-extrabold text-white; }
+  .wghs-ab__dot--gold { @apply bg-wgh-gold text-wgh-ink; }
+  .wghs-ab__track h4 { @apply mt-4 text-base font-bold; }
+  .wghs-ab__track p { @apply mt-2 text-sm leading-relaxed text-wgh-ink2; }
+
+  .wghs-ab__close { @apply mb-16 flex flex-col gap-5 rounded-2xl border border-wgh-line bg-wgh-line2/50 p-8 sm:flex-row sm:items-center sm:justify-between; }
+  .wghs-ab__close h3 { @apply text-2xl font-extrabold; }
+  .wghs-ab__close p { @apply mt-1 text-wgh-ink2; }
+  .wghs-ab__closebtns { @apply flex flex-wrap gap-3; }
 
 }
