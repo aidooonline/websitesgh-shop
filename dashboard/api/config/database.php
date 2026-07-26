@@ -38,6 +38,21 @@ return [
             'username' => env('DB_USERNAME', 'wgh'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
+
+            /*
+             * Pinned to UTC, and this is not optional.
+             *
+             * Laravel maps timestampTz to a plain MySQL TIMESTAMP, and MySQL
+             * converts TIMESTAMP values through the session time_zone on both
+             * write and read. The shop server runs on US Eastern time, so
+             * without this line every stored instant is interpreted in EDT,
+             * and when the server rolls to EST in November every historical
+             * timestamp shifts by an hour. Revenue would silently move across
+             * day boundaries between periods. Postgres has no equivalent
+             * problem because timestamptz stores an absolute instant.
+             */
+            'timezone' => '+00:00',
+
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',

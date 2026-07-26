@@ -88,9 +88,21 @@ The constant wins over the option, and the screen will say so.
 
 In cPanel, create a Postgres database and user, and note the credentials.
 
-If the plan turns out to have no Postgres, use MySQL instead. The migrations use
-no Postgres-only column type, so the only change is `DB_CONNECTION=mysql` and
-`DB_PORT=3306` in `.env`. Nothing else in the application knows which it is.
+Namecheap only ships Postgres on some shared plans, and where it exists it is
+10.23, which reached end of life in 2022. Laravel 12 still supports it, but it
+has had no security patches for years. If cPanel shows no **PostgreSQL
+Databases** icon, or you would rather not run an unpatched engine, use MariaDB
+instead. The migrations use no Postgres-only column type, so the change is
+`DB_CONNECTION=mysql` and `DB_PORT=3306` in `.env`.
+
+One thing on the MariaDB path is handled for you and must not be removed: the
+mysql connection pins its session timezone to `+00:00`. Laravel maps
+`timestampTz` to a plain MySQL `TIMESTAMP`, and MySQL converts TIMESTAMP values
+through the session timezone on both write and read. The server runs on US
+Eastern time, so without the pin every historical timestamp shifts by an hour
+when it rolls from EDT to EST in November, and revenue moves across day
+boundaries between reporting periods. Postgres has no equivalent problem,
+because `timestamptz` stores an absolute instant.
 
 ### 3. Install the application
 
