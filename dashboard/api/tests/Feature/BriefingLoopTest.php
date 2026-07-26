@@ -202,4 +202,130 @@ class BriefingLoopTest extends TestCase
         array_map('unlink', glob($dir.'/*'));
         rmdir($dir);
     }
+
+    /* ---------------- the visual report ---------------- */
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function pack(array $overrides = []): array
+    {
+        return array_merge([
+            'generated_at' => '2026-07-26T00:00:00+00:00',
+            'period' => ['from' => '2026-07-01', 'to' => '2026-07-28'],
+            'currency' => ['spend' => 'USD', 'sales' => 'GHS', 'fx' => ['rate' => '11.850000', 'date' => '2026-07-15']],
+            'totals' => [
+                'spend_usd' => '100.00', 'clicks' => 500, 'impressions' => 9000,
+                'taps' => 40, 'carts' => 31, 'cart_taps' => 0, 'orders' => 10,
+                'revenue_ghs' => '5000.00', 'unmatched_spend_usd' => '20.00',
+            ],
+            'derived' => [
+                'cost_per_order_usd' => '10.00', 'revenue_usd' => '421.94',
+                'cart_to_tap' => '0.0%', 'tap_to_sale' => '25.0%',
+                'carts_per_100_ad_clicks' => '6.2', 'unmatched_share_of_spend' => '20.0%',
+            ],
+            'keywords' => [], 'keywords_omitted' => null, 'channels' => [],
+            'unmatched_spend' => [], 'patterns' => [],
+            'loop' => ['conversions_30d' => 10, 'unexported_conversions' => 2, 'match_rate' => 0.9,
+                'uploadable' => 10, 'with_phone' => 9, 'days_since_export' => 2, 'conversions_total' => 10,
+                'cart_to_whatsapp_rate' => null, 'evaluated_at' => '2026-07-26T00:00:00+00:00'],
+            'milestones' => ['reached' => [], 'next' => null, 'active_guardrails' => []],
+            'assumptions' => ['profit_per_order_usd' => '8.75', 'profit_per_order_is_an_estimate' => true,
+                'why' => 'estimate', 'min_days_to_judge' => 14, 'min_clicks_to_judge' => 100],
+            'constraints' => ['WhatsApp is the checkout.'],
+        ], $overrides);
+    }
+
+    public function test_the_funnel_is_never_drawn_widening(): void
+    {
+        // 31 carts, 0 cart messages, 17 sales shipped once and drew a funnel
+        // that went 31 to 0 to 17. A picture that cannot be true destroys
+        // trust in every other number on the page.
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack([
+            'totals' => [
+                'spend_usd' => '100.00', 'clicks' => 500, 'impressions' => 9000,
+                'taps' => 5, 'carts' => 31, 'cart_taps' => 0, 'orders' => 40,
+                'revenue_ghs' => '5000.00', 'unmatched_spend_usd' => '0.00',
+            ],
+        ]));
+
+        // Sales exceed messages, which is impossible, so the funnel is omitted
+        // rather than drawn wrong.
+        $this->assertStringNotContainsString('Where people stop', $html);
+    }
+
+    public function test_the_funnel_is_drawn_when_the_stages_really_do_nest(): void
+    {
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack());
+
+        $this->assertStringContainsString('Where people stop', $html);
+        $this->assertStringContainsString('25% of those messages', $html);
+    }
+
+    public function test_a_channel_with_no_spend_is_kept_out_of_the_profit_chart(): void
+    {
+        // The unassigned bucket carries real revenue and zero cost, so on a
+        // profit chart it drew a tall "earned" bar and read as the second best
+        // campaign in the account. It is not a campaign at all.
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack([
+            'channels' => [
+                ['platform' => 'meta', 'campaign' => 'CTWA-Blenders', 'spend_usd' => '50.00',
+                    'clicks' => 100, 'carts' => 2, 'taps' => 10, 'orders' => 5,
+                    'revenue_ghs' => '3000.00', 'cost_per_order_usd' => '10.00', 'days' => 28, 'verdict' => 'keep'],
+                ['platform' => 'google', 'campaign' => '(campaign not identified)', 'spend_usd' => '0.00',
+                    'clicks' => 0, 'carts' => 0, 'taps' => 5, 'orders' => 5,
+                    'revenue_ghs' => '2000.00', 'cost_per_order_usd' => null, 'days' => 0, 'verdict' => null],
+            ],
+        ]));
+
+        $this->assertStringContainsString('CTWA-Blenders', $html);
+        $this->assertStringNotContainsString('>google / (campaign not identified)<', $html);
+        // It is not hidden either: it is named as a tracking gap.
+        $this->assertStringContainsString('could not be tied to any campaign', $html);
+    }
+
+    public function test_the_report_never_shows_a_rate_above_one_hundred_percent(): void
+    {
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack());
+
+        preg_match_all('/>(\d+(?:\.\d+)?)%/', $html, $m);
+
+        foreach ($m[1] as $pct) {
+            $this->assertLessThanOrEqual(100.0, (float) $pct, "found {$pct}% in the report");
+        }
+    }
+
+    public function test_the_report_leads_with_the_imported_action_when_there_is_one(): void
+    {
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack(), [
+            'top_action' => 'Pause the three broad terms and move the budget.',
+            'model_used' => 'manual (file import)',
+        ]);
+
+        // The decision goes above the evidence. That is the whole point of the
+        // page: what to do, then why.
+        $this->assertStringContainsString('Do this now', $html);
+        $this->assertStringContainsString('Pause the three broad terms', $html);
+        $this->assertLessThan(
+            strpos($html, 'Ad spend'),
+            strpos($html, 'Pause the three broad terms'),
+            'the action must appear before the numbers'
+        );
+    }
+
+    public function test_every_verdict_colour_is_paired_with_its_word(): void
+    {
+        // Status colour never carries meaning alone.
+        $html = (new \App\Services\Agent\ReportRenderer)->render($this->pack([
+            'keywords' => [
+                ['keyword' => 'blender', 'match_type' => 'b', 'campaign' => 'c', 'spend_usd' => '60.00',
+                    'clicks' => 180, 'carts' => 0, 'taps' => 0, 'orders' => 0, 'revenue_ghs' => '0.00',
+                    'cost_per_order_usd' => null, 'days' => 28, 'join_strength' => 'none',
+                    'verdict' => 'kill', 'engine_reason' => 'Spent with no sale.'],
+            ],
+        ]));
+
+        $this->assertStringContainsString('class="pill kill">kill<', $html);
+        $this->assertStringContainsString('<b>Kill</b>', $html);
+    }
 }

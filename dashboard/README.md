@@ -253,9 +253,22 @@ php artisan wgh:brief --export
 
 That writes three files into `storage/app/briefings/`:
 
-- **`wgh-briefing-<period>.html`** is the one to READ. Open it in a browser. It
-  is a single self-contained page with the verdicts colour coded, and it prints
-  straight to PDF. No server, no login, no network.
+- **`wgh-briefing-<period>.html`** is the one to READ. A one-page visual
+  report: the action to take at the top, four headline numbers, a meter showing
+  progress to Smart Bidding, profit by channel, where the keyword money sits,
+  the funnel, and a table of only the keywords that need a decision. Almost no
+  prose. Self-contained, so it opens on a phone with no signal and prints
+  straight to PDF.
+
+  It is a DIFFERENT document from the markdown, not the same one styled. The
+  markdown explains this business to a stranger because an analyst needs that;
+  the HTML assumes you already know it and gives you the numbers and the
+  decision.
+
+  Charts are hand-drawn SVG with no library and no CDN, and every colour was
+  run through a colourblind-safety validator against this page's actual
+  background rather than eyeballed. Green-and-red for money was deliberately
+  avoided; it is the classic colourblind trap.
 - **`wgh-briefing-<period>.md`** is the one to SEND for analysis. It is
   self-describing: it carries the goal, the constraints of this business, every
   number, the engine's verdicts, the patterns, the unmatched spend, the state of

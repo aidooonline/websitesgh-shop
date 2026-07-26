@@ -23,7 +23,7 @@ class PackWriter
      * @param  array<string, mixed>  $pack
      * @return array{md: string, csv: string, html: string}
      */
-    public function write(array $pack, string $dir): array
+    public function write(array $pack, string $dir, ?array $advice = null): array
     {
         if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
@@ -39,10 +39,11 @@ class PackWriter
 
         file_put_contents($md, $markdown);
         file_put_contents($csv, $this->csv($pack));
-        file_put_contents($html, (new HtmlRenderer)->render(
-            $markdown,
-            "WGH briefing {$pack['period']['from']} to {$pack['period']['to']}"
-        ));
+        // The HTML is NOT the markdown rendered. It is a different document for
+        // a different reader: the owner, who already knows his own business and
+        // wants the numbers and the decision, not the briefing that explains
+        // the business to a stranger.
+        file_put_contents($html, (new ReportRenderer)->render($pack, $advice));
 
         return ['md' => $md, 'csv' => $csv, 'html' => $html];
     }

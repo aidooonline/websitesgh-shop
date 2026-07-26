@@ -57,7 +57,15 @@ class Brief extends Command
 
         try {
             $pack = (new BriefingPack)->build($from, $to);
-            $files = (new PackWriter)->write($pack, $dir);
+
+            // If advice has already been imported for this period, it leads the
+            // page. The owner's own question was "where do I read it", and the
+            // answer should put the decision above the evidence.
+            $advice = AgentBriefing::orderByDesc('created_at')->first();
+
+            $files = (new PackWriter)->write($pack, $dir, $advice?->only([
+                'top_action', 'model_used', 'period_covered',
+            ]));
         } catch (Throwable $e) {
             $this->error($e->getMessage());
 
