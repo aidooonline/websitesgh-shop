@@ -164,6 +164,7 @@ add_action( 'rest_api_init', function () {
 			'orders_offset' => array( 'type' => 'integer', 'default' => 0 ),
 			'attr_offset'   => array( 'type' => 'integer', 'default' => 0 ),
 			'limit'        => array( 'type' => 'integer', 'default' => 200 ),
+			'product_offset' => array( 'type' => 'integer', 'default' => 0 ),
 			'streams'      => array( 'type' => 'string', 'default' => 'orders,attribution' ),
 		),
 	) );
@@ -199,11 +200,13 @@ function wghs_export_handler( WP_REST_Request $req ) {
 	$streams = array_filter( array_map( 'trim', explode( ',', (string) $req->get_param( 'streams' ) ) ) );
 	$empty   = array( 'rows' => array(), 'has_more' => false, 'next_cursor' => '', 'next_offset' => 0, 'total' => 0, 'skipped' => true );
 
-	$orders_offset = max( 0, (int) $req->get_param( 'orders_offset' ) );
-	$attr_offset   = max( 0, (int) $req->get_param( 'attr_offset' ) );
+	$orders_offset  = max( 0, (int) $req->get_param( 'orders_offset' ) );
+	$attr_offset    = max( 0, (int) $req->get_param( 'attr_offset' ) );
+	$product_offset = max( 0, (int) $req->get_param( 'product_offset' ) );
 
-	$orders = in_array( 'orders', $streams, true ) ? wghs_export_orders( $orders_since, $limit, $orders_offset ) : $empty;
-	$attr   = in_array( 'attribution', $streams, true ) ? wghs_export_attribution( $attr_since, $limit, $attr_offset ) : $empty;
+	$orders   = in_array( 'orders', $streams, true ) ? wghs_export_orders( $orders_since, $limit, $orders_offset ) : $empty;
+	$attr     = in_array( 'attribution', $streams, true ) ? wghs_export_attribution( $attr_since, $limit, $attr_offset ) : $empty;
+	$products = in_array( 'products', $streams, true ) ? wghs_export_products( $limit, $product_offset ) : $empty;
 
 	return new WP_REST_Response( array(
 		'ok'            => true,
@@ -213,6 +216,7 @@ function wghs_export_handler( WP_REST_Request $req ) {
 		'currency'      => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'GHS',
 		'orders'        => $orders,
 		'attribution'   => $attr,
+		'products'      => $products,
 	), 200 );
 }
 
@@ -470,6 +474,115 @@ function wghs_export_attribution( $since, $limit, $offset = 0 ) {
 		'next_offset' => $offset + count( $out ),
 		'next_cursor' => $next,
 		'total'       => $total,
+	);
+}
+
+/* --------------------------------------------------------------------------
+ * Products
+ * ------------------------------------------------------------------------ */
+
+/**
+ * The catalogue, so the dashboard can hold a cost against every product.
+ *
+ * WHY THIS STREAM EXISTS AT ALL
+ * The cost sheet was seeded from what had already sold, which on a young shop
+ * meant three rows. That is backwards: the products worth costing FIRST are the
+ * ones ad money is being spent on, and a product cannot sell profitably before
+ * anyone knows what it costs. Seeding from the catalogue means every product
+ * can carry a dealer price from day one, and a margin is known before the first
+ * order rather than after it.
+ *
+ * NO CURSOR HERE, DELIBERATELY
+ * Orders and taps only ever grow, so they page by time. A catalogue is a
+ * snapshot: prices change in place, products get renamed, some are retired. A
+ * modified-since cursor would quietly miss a price edit that did not touch the
+ * modified date, and the whole catalogue is small enough to read in full. It
+ * pages by offset only.
+ *
+ * @param int $limit  Rows per page.
+ * @param int $offset Where to resume.
+ * @return array
+ */
+function wghs_export_products( $limit, $offset = 0 ) {
+	if ( ! function_exists( 'wc_get_products' ) ) {
+		return array( 'rows' => array(), 'has_more' => false, 'next_cursor' => '', 'next_offset' => 0, 'total' => 0 );
+	}
+
+	$total = (int) wp_count_posts( 'product' )->publish;
+
+	$products = wc_get_products( array(
+		'status'  => 'publish',
+		'limit'   => $limit,
+		'offset'  => $offset,
+		'orderby' => 'ID',
+		'order'   => 'ASC',
+		'return'  => 'objects',
+	) );
+
+	$out = array();
+
+	foreach ( $products as $product ) {
+		if ( ! $product ) {
+			continue;
+		}
+
+		/*
+		 * Variations carry their own price and their own id, and the dashboard
+		 * keys costs on the id it sees in an order line. A variable parent
+		 * never appears in an order line, so exporting its price would create a
+		 * cost row nothing can ever match.
+		 */
+		if ( $product->is_type( 'variable' ) ) {
+			foreach ( $product->get_children() as $child_id ) {
+				$child = wc_get_product( $child_id );
+
+				if ( ! $child ) {
+					continue;
+				}
+
+				$out[] = wghs_export_product_row( $child, $product->get_name() );
+			}
+
+			continue;
+		}
+
+		$out[] = wghs_export_product_row( $product );
+	}
+
+	return array(
+		'rows'        => $out,
+		'has_more'    => ( $offset + count( $products ) ) < $total,
+		'next_offset' => $offset + count( $products ),
+		'next_cursor' => '',
+		'total'       => $total,
+	);
+}
+
+/**
+ * One catalogue row.
+ *
+ * @param WC_Product $product     The product or variation.
+ * @param string     $parent_name Parent name, for variations.
+ * @return array
+ */
+function wghs_export_product_row( $product, $parent_name = '' ) {
+	$name = $product->get_name();
+
+	if ( '' !== $parent_name && false === strpos( $name, $parent_name ) ) {
+		$name = $parent_name . ' ' . $name;
+	}
+
+	return array(
+		'product_id' => (int) $product->get_id(),
+		'sku'        => (string) $product->get_sku(),
+		'name'       => (string) $name,
+		// The price a customer actually pays today, sale price included. The
+		// margin has to be measured against what was charged, not against the
+		// number crossed out beside it.
+		'price'      => wc_format_decimal( $product->get_price(), 2 ),
+		'regular'    => wc_format_decimal( $product->get_regular_price(), 2 ),
+		'stock'      => null === $product->get_stock_quantity() ? '' : (int) $product->get_stock_quantity(),
+		'in_stock'   => $product->is_in_stock() ? 1 : 0,
 	);
 }
 

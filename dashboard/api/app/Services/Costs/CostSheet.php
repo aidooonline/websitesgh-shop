@@ -2,6 +2,7 @@
 
 namespace App\Services\Costs;
 
+use App\Models\AttributionEvent;
 use App\Models\OrderItem;
 use App\Models\ProductCost;
 use Carbon\CarbonImmutable;
@@ -36,6 +37,10 @@ class CostSheet
         'delivery_cost_ghs',
         'supplier',
         'confirmed',
+        // Not read back on import. It exists so the person filling this in on a
+        // phone knows which rows out of fifty are worth the supplier call, and
+        // does not start at row one and give up at row twelve.
+        'why_this_matters',
     ];
 
     /**
@@ -51,58 +56,126 @@ class CostSheet
 
         $path = rtrim($dir, '/').'/wgh-product-costs.csv';
 
-        // Products that have actually been sold, most-sold first, so the ones
-        // worth costing first are at the top of the file rather than buried
-        // alphabetically halfway down.
+        // Units sold, per product.
         $sold = OrderItem::query()
             ->selectRaw('woo_product_id, MAX(product_name) AS product_name,
                 SUM(qty) AS units, AVG(unit_price_ghs) AS avg_price')
             ->groupBy('woo_product_id')
-            ->orderByDesc('units')
-            ->get();
+            ->get()
+            ->keyBy('woo_product_id');
+
+        /*
+         * Ad interest, per product: taps and baskets that never became a sale.
+         *
+         * These are the rows the first version missed entirely, and they are
+         * arguably the most urgent of all. A product pulling WhatsApp taps and
+         * closing none of them is either priced wrong or sold at a loss, and
+         * there is no way to tell which without its dealer cost. Ranking them
+         * below "has sold" but above the untouched catalogue puts the open
+         * questions where they get answered.
+         */
+        $interest = AttributionEvent::query()
+            ->where('product_id', '>', 0)
+            ->selectRaw('product_id, COUNT(*) AS events')
+            ->groupBy('product_id')
+            ->pluck('events', 'product_id');
 
         $existing = ProductCost::all()->keyBy('woo_product_id');
+
+        /** @var array<int, array<string, mixed>> $rows */
+        $rows = [];
+
+        $touch = function (int $id, ?string $name, ?string $price) use (&$rows, $existing) {
+            if (isset($rows[$id])) {
+                return;
+            }
+
+            $known = $existing->get($id);
+
+            $rows[$id] = [
+                'id' => $id,
+                'name' => $known->product_name ?? $name ?? ('#'.$id),
+                'price' => $known?->sell_price_ghs ?? $price,
+                'dealer' => $known?->dealer_cost_ghs ?? '',
+                'delivery' => $known?->delivery_cost_ghs ?? '',
+                'supplier' => $known?->supplier ?? '',
+                'confirmed' => $known && ! $known->is_estimate ? 'yes' : '',
+                'units' => 0,
+                'events' => 0,
+            ];
+        };
+
+        foreach ($sold as $s) {
+            $id = (int) $s->woo_product_id;
+            $touch($id, $s->product_name, number_format((float) $s->avg_price, 2, '.', ''));
+            $rows[$id]['units'] = (int) $s->units;
+        }
+
+        foreach ($interest as $productId => $events) {
+            $id = (int) $productId;
+            $touch($id, null, null);
+            $rows[$id]['events'] = (int) $events;
+        }
+
+        // The catalogue, so a product can be costed before it ever sells.
+        foreach ($existing as $known) {
+            $touch((int) $known->woo_product_id, $known->product_name, $known->sell_price_ghs);
+        }
+
+        /*
+         * Sold first, by units. Then products drawing ad interest but no sale.
+         * Then the rest of the catalogue. Sorting alphabetically would bury the
+         * three products carrying the business under forty that are not.
+         */
+        $rows = array_values($rows);
+        usort($rows, function ($a, $b) {
+            $rank = fn ($r) => $r['units'] > 0 ? 0 : ($r['events'] > 0 ? 1 : 2);
+
+            return $rank($a) <=> $rank($b)
+                ?: $b['units'] <=> $a['units']
+                ?: $b['events'] <=> $a['events']
+                ?: strcmp((string) $a['name'], (string) $b['name']);
+        });
 
         $fh = fopen($path, 'w');
         fputcsv($fh, self::HEADER);
 
         $costed = 0;
+        $needed = 0;
 
-        foreach ($sold as $s) {
-            $known = $existing->get($s->woo_product_id);
+        foreach ($rows as $r) {
+            $hasCost = $r['dealer'] !== '' && $r['dealer'] !== null;
 
-            if ($known && $known->isComplete()) {
+            if ($hasCost) {
                 $costed++;
             }
 
-            fputcsv($fh, [
-                $s->woo_product_id,
-                $known->product_name ?? $s->product_name,
-                // The observed selling price is pre-filled so the only columns
-                // needing a human are the two the supplier actually tells you.
-                $known?->sell_price_ghs ?? number_format((float) $s->avg_price, 2, '.', ''),
-                $known?->dealer_cost_ghs ?? '',
-                $known?->delivery_cost_ghs ?? '',
-                $known?->supplier ?? '',
-                $known && ! $known->is_estimate ? 'yes' : '',
-            ]);
-        }
+            if ($r['units'] > 0) {
+                $why = sprintf('SOLD %d unit%s. Cost this one first.', $r['units'], $r['units'] === 1 ? '' : 's');
+            } elseif ($r['events'] > 0) {
+                $why = sprintf(
+                    '%d ad tap%s, no sale yet. Cannot tell a bad price from a bad product without this.',
+                    $r['events'], $r['events'] === 1 ? '' : 's'
+                );
+            } else {
+                $why = 'Not sold or advertised yet. Fill in when you get to it.';
+            }
 
-        // Anything already costed but not yet sold stays in the file, or a
-        // re-export would quietly drop work already done.
-        foreach ($existing as $known) {
-            if ($sold->firstWhere('woo_product_id', $known->woo_product_id)) {
-                continue;
+            if (! $hasCost && ($r['units'] > 0 || $r['events'] > 0)) {
+                $needed++;
             }
 
             fputcsv($fh, [
-                $known->woo_product_id,
-                $known->product_name,
-                $known->sell_price_ghs,
-                $known->dealer_cost_ghs,
-                $known->delivery_cost_ghs,
-                $known->supplier,
-                $known->is_estimate ? '' : 'yes',
+                $r['id'],
+                $r['name'],
+                // The observed selling price is pre-filled so the only columns
+                // needing a human are the two the supplier actually tells you.
+                $r['price'],
+                $r['dealer'],
+                $r['delivery'],
+                $r['supplier'],
+                $r['confirmed'],
+                $why,
             ]);
         }
 
@@ -110,8 +183,11 @@ class CostSheet
 
         return [
             'path' => $path,
-            'rows' => $sold->count() + max(0, $existing->count() - $sold->count()),
+            'rows' => count($rows),
             'already_costed' => $costed,
+            'sold' => count(array_filter($rows, fn ($r) => $r['units'] > 0)),
+            'advertised_only' => count(array_filter($rows, fn ($r) => $r['units'] === 0 && $r['events'] > 0)),
+            'needed_now' => $needed,
         ];
     }
 

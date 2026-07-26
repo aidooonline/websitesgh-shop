@@ -211,7 +211,12 @@ class ProfitEngine
                 $revenue += (float) $l->unit_price_ghs * (int) $l->qty;
             }
 
-            $unitProfit = $cost?->unitProfit();
+            // Measured against what the customer actually paid over this
+            // period, not against today's shelf price. A price change would
+            // otherwise restate last month's profit at a price nobody paid, and
+            // put it beside a revenue figure that came from real order lines.
+            $charged = $units > 0 ? round($revenue / $units, 2) : null;
+            $unitProfit = $cost?->unitProfit($charged);
 
             $rows[] = [
                 'product_id' => (int) $productId,
@@ -220,7 +225,7 @@ class ProfitEngine
                 'revenue_ghs' => number_format($revenue, 2, '.', ''),
                 'unit_price_ghs' => $units > 0 ? number_format($revenue / $units, 2, '.', '') : null,
                 'unit_profit_ghs' => $unitProfit !== null ? number_format($unitProfit, 2, '.', '') : null,
-                'margin_percent' => $cost?->marginPercent(),
+                'margin_percent' => $cost?->marginPercent($charged),
                 'total_profit_ghs' => $unitProfit !== null ? number_format($unitProfit * $units, 2, '.', '') : null,
                 'cost_known' => $unitProfit !== null,
                 'cost_confirmed' => $cost !== null && ! $cost->is_estimate,

@@ -32,30 +32,41 @@ class ProductCost extends Model
      * Null, never zero and never a guess. A missing cost that silently becomes
      * zero turns every product into pure profit and every verdict into
      * nonsense in the flattering direction.
+     *
+     * PASS THE PRICE THAT WAS ACTUALLY CHARGED WHERE YOU HAVE IT.
+     * The shelf price on this row follows the shop and moves when the shop
+     * moves. Historical profit measured against today's shelf price restates
+     * the past at a price nobody paid, and it disagrees with the revenue figure
+     * sitting beside it, which comes from real order lines. Given a charged
+     * price, this uses it; the shelf price is the fallback for a product that
+     * has not sold yet.
      */
-    public function unitProfit(): ?float
+    public function unitProfit(?float $chargedPrice = null): ?float
     {
-        if ($this->sell_price_ghs === null || $this->dealer_cost_ghs === null) {
+        $price = $chargedPrice ?? ($this->sell_price_ghs !== null ? (float) $this->sell_price_ghs : null);
+
+        if ($price === null || $this->dealer_cost_ghs === null) {
             return null;
         }
 
         return round(
-            (float) $this->sell_price_ghs
+            $price
             - (float) $this->dealer_cost_ghs
             - (float) ($this->delivery_cost_ghs ?? 0),
             2
         );
     }
 
-    public function marginPercent(): ?float
+    public function marginPercent(?float $chargedPrice = null): ?float
     {
-        $profit = $this->unitProfit();
+        $profit = $this->unitProfit($chargedPrice);
+        $price = $chargedPrice ?? ($this->sell_price_ghs !== null ? (float) $this->sell_price_ghs : 0.0);
 
-        if ($profit === null || (float) $this->sell_price_ghs <= 0) {
+        if ($profit === null || $price <= 0) {
             return null;
         }
 
-        return round($profit / (float) $this->sell_price_ghs * 100, 1);
+        return round($profit / $price * 100, 1);
     }
 
     public function isComplete(): bool

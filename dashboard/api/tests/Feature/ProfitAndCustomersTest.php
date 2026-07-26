@@ -75,6 +75,85 @@ class ProfitAndCustomersTest extends TestCase
         ]);
     }
 
+    /* ---------------- the cost sheet ---------------- */
+
+    public function test_the_sheet_leads_with_what_sold_then_what_is_advertised(): void
+    {
+        /*
+         * Seeded only from what had already sold, the sheet came out with three
+         * rows on a fifty product shop, and they were the wrong three: a product
+         * pulling ad taps and closing none of them is the one that cannot be
+         * judged without a cost, because there is no way to tell a bad price
+         * from a bad product.
+         */
+        $this->order(1, [[700, 1, 400.0]]);          // sold
+
+        AttributionEvent::create([                    // advertised, never sold
+            'woo_attr_id' => 1, 'created_at' => '2026-07-05 10:00:00', 'updated_at' => '2026-07-05 10:00:00',
+            'status' => 'pending', 'product_id' => 800, 'price_ghs' => '500.00',
+            'payload_hash' => hash('sha256', 'tap'), 'synced_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        ProductCost::create([                         // catalogue only
+            'woo_product_id' => 900, 'product_name' => 'Never Touched',
+            'sell_price_ghs' => 300, 'is_estimate' => true, 'updated_at' => CarbonImmutable::now('UTC'),
+        ]);
+
+        $dir = sys_get_temp_dir().'/wgh-sheet-order';
+        $r = (new CostSheet)->export($dir);
+
+        $this->assertSame(3, $r['rows']);
+        $this->assertSame(1, $r['sold']);
+        $this->assertSame(1, $r['advertised_only']);
+        $this->assertSame(2, $r['needed_now'], 'the catalogue row is not urgent, the other two are');
+
+        $lines = array_values(array_filter(explode("\n", (string) file_get_contents($r['path']))));
+        $ids = array_map(fn ($l) => (int) str_getcsv($l)[0], array_slice($lines, 1));
+
+        $this->assertSame([700, 800, 900], $ids, 'sold, then advertised, then the rest');
+        $this->assertStringContainsString('SOLD 1 unit', $lines[1]);
+        $this->assertStringContainsString('no sale yet', $lines[2]);
+    }
+
+    public function test_the_extra_guidance_column_does_not_break_the_import(): void
+    {
+        // The column exists for the human filling the sheet in. Import reads by
+        // header name, so it must simply ignore anything it does not know.
+        $path = sys_get_temp_dir().'/wgh-costs-extra.csv';
+        file_put_contents($path,
+            "product_id,product_name,sell_price_ghs,dealer_cost_ghs,delivery_cost_ghs,supplier,confirmed,why_this_matters\n"
+            ."100,Blender,400.00,250.00,30.00,Tema Depot,yes,SOLD 4 units. Cost this one first.\n");
+
+        $r = (new CostSheet)->import($path);
+
+        $this->assertSame(1, $r['saved']);
+        $this->assertSame(1, $r['complete']);
+        $this->assertSame('250.00', (string) ProductCost::first()->dealer_cost_ghs);
+    }
+
+    public function test_a_price_change_does_not_restate_last_months_profit(): void
+    {
+        /*
+         * The catalogue pull refreshes the shelf price, because a price change
+         * moves the margin without anybody touching the cost. But historical
+         * profit measured against TODAY's shelf price restates the past at a
+         * price nobody paid, and it lands beside a revenue figure that came
+         * from real order lines. The two would disagree on the same row.
+         */
+        $this->order(1, [[100, 2, 400.0]]);      // charged 400 each
+        $this->cost(100, 250.0, 400.0, 30.0);    // shelf 400, cost 280
+
+        // The shop raises the price. The catalogue pull writes it through.
+        ProductCost::where('woo_product_id', 100)->update(['sell_price_ghs' => 600.00]);
+
+        $rows = (new ProfitEngine)->productMargins('2026-07-01', '2026-07-28');
+
+        $this->assertSame('800.00', $rows[0]['revenue_ghs']);
+        $this->assertSame('120.00', $rows[0]['unit_profit_ghs'], '400 charged less 280 of cost');
+        $this->assertSame('240.00', $rows[0]['total_profit_ghs']);
+        $this->assertSame(30.0, $rows[0]['margin_percent']);
+    }
+
     /* ---------------- profit ---------------- */
 
     public function test_a_basket_with_one_uncosted_line_produces_no_profit_figure(): void

@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Services\Costs\CostSheet;
 use App\Services\Costs\ProfitEngine;
+use App\Services\Woo\CatalogueSync;
+use App\Services\Woo\SignedClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Throwable;
@@ -21,6 +23,8 @@ class Costs extends Command
         {--export : Write the cost sheet to fill in}
         {--import= : Read a filled cost sheet back}
         {--show : Show what margins are known so far}
+        {--pull : Refresh the product list from the shop before exporting}
+        {--sold-only : Only list products that have already sold}
         {--dir= : Where to write the sheet. Defaults to storage/app/costs.}';
 
     protected $description = 'Enter dealer costs, so profit per order stops being a guess';
@@ -42,6 +46,27 @@ class Costs extends Command
     {
         $dir = $this->option('dir') ?: storage_path('app/costs');
 
+        /*
+         * Pull the catalogue first, unless told not to.
+         *
+         * Seeding only from what has already sold produced a three-row sheet on
+         * a fifty-product shop, which is the wrong three rows: the products
+         * worth costing FIRST are the ones ad money is being spent on, and a
+         * product cannot be sold profitably before anyone knows what it costs.
+         */
+        if (! $this->option('sold-only')) {
+            try {
+                $c = (new CatalogueSync(app(SignedClient::class)))->run();
+                $this->line("  Catalogue: {$c['seen']} product(s) on the shop, {$c['created']} new here, "
+                    ."{$c['price_updated']} price or name change(s).");
+                $this->newLine();
+            } catch (Throwable $e) {
+                $this->line('  <fg=yellow>Could not reach the shop for the product list.</> '.$e->getMessage());
+                $this->line('  Falling back to products that have already sold.');
+                $this->newLine();
+            }
+        }
+
         try {
             $r = (new CostSheet)->export($dir);
         } catch (Throwable $e) {
@@ -52,6 +77,10 @@ class Costs extends Command
 
         $this->info("Cost sheet written, {$r['rows']} products.");
         $this->line('  '.$r['path']);
+        $this->newLine();
+        $this->line("  Sorted so the rows that change a decision are at the top:");
+        $this->line("    {$r['sold']} that have already sold");
+        $this->line("    {$r['advertised_only']} drawing ad taps with no sale yet");
         $this->newLine();
         $this->line('Download it through cPanel > File Manager, open it in a spreadsheet, and fill');
         $this->line('in two columns: <options=bold>dealer_cost_ghs</> (what you pay the supplier) and');
@@ -67,6 +96,12 @@ class Costs extends Command
         if ($r['already_costed'] > 0) {
             $this->newLine();
             $this->line("  {$r['already_costed']} product(s) already carry a cost and are pre-filled.");
+        }
+
+        if ($r['needed_now'] > 0) {
+            $this->newLine();
+            $this->line("  <fg=yellow>{$r['needed_now']} product(s) are selling or being advertised with no cost on file.</>");
+            $this->line('  Those are the only rows that change a verdict today. The rest can wait.');
         }
 
         return self::SUCCESS;

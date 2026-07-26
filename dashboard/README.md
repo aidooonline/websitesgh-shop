@@ -253,13 +253,22 @@ keyword at once. Raise it and the whole account gets more affordable the same
 day.
 
 ```bash
-php artisan wgh:costs --export              # writes the sheet, most-sold first
+php artisan wgh:costs --export              # pulls the catalogue, writes the sheet
 php artisan wgh:costs --import=path/to.csv  # read it back filled
 php artisan wgh:costs --show                # coverage and the measured margin
+php artisan wgh:costs --export --sold-only  # skip the shop, list only what sold
 ```
 
-The exported CSV pre-fills the selling price it has observed, so the only
-columns needing a human are what the supplier charges and what the rider costs.
+`--export` pulls the product list from the shop first, so every product can hold
+a cost from day one rather than only after it has sold. It never touches a
+dealer cost, a supplier or a confirmation: those are yours. It fills the shelf
+price and the name and nothing else.
+
+The sheet is sorted so the rows that change a decision are at the top: what has
+sold, then what is drawing ad taps with no sale yet, then the rest of the
+catalogue. The `why_this_matters` column says which is which. That column is
+ignored on import.
+
 Mark `confirmed` as `yes` once a price came from an actual supplier call rather
 than a guess.
 
