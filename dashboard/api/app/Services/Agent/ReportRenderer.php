@@ -61,6 +61,9 @@ class ReportRenderer
             $this->profitByChannel($p),
             $this->spendByVerdict($p),
             $this->funnel($t, $d),
+            $this->productProfit($p),
+            $this->customers($p),
+            $this->bundles($p),
             $this->actionTable($p),
             $this->footer($p),
         ];
@@ -139,15 +142,39 @@ class ReportRenderer
         $spend = (float) $t['spend_usd'];
         $net = $rev !== null ? (float) $rev - $spend : null;
 
-        $tiles = [
-            ['Ad spend', '$'.number_format($spend, 2), 'USD, all platforms', null],
-            ['Revenue', 'GHS '.number_format((float) $t['revenue_ghs'], 0), $rev !== null ? 'about $'.number_format((float) $rev, 2) : 'no fx rate recorded', null],
-            [
+        /*
+         * When the margin is measured, the third tile stops being turnover
+         * minus ad spend and becomes something much closer to the truth: what
+         * was left after the dealer, the rider AND the ads. Turnover minus ad
+         * spend always looks healthy, because the largest cost in this business
+         * is not the ads. Labelled as a projection, because the mean margin is
+         * being applied to every order rather than measured on every order.
+         */
+        $ppo = $p['margin']['profit_per_order_usd'] ?? null;
+        $isMeasured = ($p['assumptions']['profit_per_order_source'] ?? '') === 'measured';
+        $orders = (int) $t['orders'];
+
+        if ($isMeasured && $ppo !== null && $orders > 0) {
+            $real = (float) $ppo * $orders - $spend;
+            $third = [
+                'Kept after everything',
+                $real >= 0 ? '+$'.number_format($real, 2) : '-$'.number_format(abs($real), 2),
+                'dealer, delivery and ads paid',
+                $real >= 0 ? 'good' : 'bad',
+            ];
+        } else {
+            $third = [
                 'Return less spend',
                 $net === null ? 'n/a' : ($net >= 0 ? '+$'.number_format($net, 2) : '-$'.number_format(abs($net), 2)),
                 'before dealer and delivery cost',
                 $net === null ? null : ($net >= 0 ? 'good' : 'bad'),
-            ],
+            ];
+        }
+
+        $tiles = [
+            ['Ad spend', '$'.number_format($spend, 2), 'USD, all platforms', null],
+            ['Revenue', 'GHS '.number_format((float) $t['revenue_ghs'], 0), $rev !== null ? 'about $'.number_format((float) $rev, 2) : 'no fx rate recorded', null],
+            $third,
             [
                 'Spend with no story',
                 '$'.number_format((float) $t['unmatched_spend_usd'], 2),
@@ -452,6 +479,247 @@ class ReportRenderer
     }
 
     /**
+     * What each product actually left after the dealer was paid.
+     *
+     * The chart every other chart on this page depends on. Cost per order is
+     * nearly as low as it will go; profit per order has no ceiling, and it is
+     * the number every KEEP and KILL is measured against. Until this section
+     * existed the system knew what things sold for and not what they earned.
+     */
+    private function productProfit(array $p): string
+    {
+        $rows = array_values(array_filter(
+            $p['products']['rows'] ?? [],
+            fn ($r) => $r['cost_known'] && $r['total_profit_ghs'] !== null
+        ));
+
+        $uncosted = $p['products']['uncosted'] ?? ['count' => 0];
+
+        if (! $rows) {
+            $n = (int) ($uncosted['count'] ?? 0);
+            $prompt = $n > 0
+                ? 'No product has a dealer cost yet, so nothing here can be told apart from a bad seller. '
+                    .'Run <code>php artisan wgh:costs --export</code>, fill in what the supplier charges, and import it back.'
+                : 'Nothing sold in this period.';
+
+            return '<section><h2>What each product earns</h2><p class="q">'.$prompt.'</p></section>';
+        }
+
+        usort($rows, fn ($a, $b) => (float) $b['total_profit_ghs'] <=> (float) $a['total_profit_ghs']);
+        $rows = array_slice($rows, 0, 8);
+
+        $max = 0.0;
+        foreach ($rows as $r) {
+            $max = max($max, abs((float) $r['total_profit_ghs']));
+        }
+        $max = $max ?: 1.0;
+
+        $rowH = 34;
+        $w = 720;
+        $labelW = 240;
+        $plotW = $w - $labelW - 110;
+        $h = count($rows) * $rowH + 26;
+
+        // Any product losing money pushes the chart to a diverging one with a
+        // zero baseline. When everything earns, it stays a plain ranked bar.
+        $anyLoss = false;
+        foreach ($rows as $r) {
+            $anyLoss = $anyLoss || (float) $r['total_profit_ghs'] < 0;
+        }
+        $mid = $anyLoss ? $labelW + $plotW / 2 : (float) $labelW;
+        $half = $anyLoss ? $plotW / 2 - 6 : $plotW;
+
+        $svg = '<svg viewBox="0 0 '.$w.' '.$h.'" width="100%" height="'.$h.'" role="img" '
+            .'aria-label="Profit left by each product after dealer and delivery cost, in cedis">';
+        $svg .= '<line x1="'.$mid.'" y1="4" x2="'.$mid.'" y2="'.($h - 22).'" stroke="var(--baseline)" stroke-width="1"/>';
+
+        foreach ($rows as $i => $r) {
+            $val = (float) $r['total_profit_ghs'];
+            $y = $i * $rowH + 6;
+            $len = max(2, abs($val) / $max * $half);
+            $pos = $val >= 0;
+            $x = $pos ? $mid : $mid - $len;
+            $fill = $pos ? 'var(--pos)' : 'var(--neg)';
+            $money = ($pos ? '+' : '-').'GHS '.number_format(abs($val), 0);
+            $marginTxt = $r['margin_percent'] !== null ? $r['margin_percent'].'%' : '';
+
+            $tip = $this->e(sprintf(
+                '%s: %s from %d unit%s, %s margin, GHS %s a unit%s',
+                $r['label'] ?? $r['name'], $money, (int) $r['units'], (int) $r['units'] === 1 ? '' : 's',
+                $marginTxt ?: 'unknown', (string) $r['unit_profit_ghs'],
+                $r['cost_confirmed'] ? ', dealer price confirmed' : ', dealer price not yet confirmed'
+            ));
+
+            $svg .= '<text x="'.($labelW - 12).'" y="'.($y + 15).'" text-anchor="end" class="cat">'
+                .$this->e($this->trim((string) ($r['label'] ?? $r['name']), 32)).'</text>';
+            $svg .= '<rect x="'.round($x, 1).'" y="'.$y.'" width="'.round($len, 1).'" height="20" rx="4" fill="'.$fill.'">'
+                .'<title>'.$tip.'</title></rect>';
+            $svg .= '<text x="'.round($pos ? $x + $len + 8 : $x - 8, 1).'" y="'.($y + 15).'" '
+                .'text-anchor="'.($pos ? 'start' : 'end').'" class="val">'.$this->e($money).'</text>';
+            if ($marginTxt !== '') {
+                $svg .= '<text x="'.round($pos ? $x + $len + 8 : $x - 8, 1).'" y="'.($y + 27).'" '
+                    .'text-anchor="'.($pos ? 'start' : 'end').'" class="axis">'.$this->e($marginTxt).'</text>';
+            }
+        }
+
+        if ($anyLoss) {
+            $svg .= '<text x="'.($mid - 8).'" y="'.($h - 6).'" text-anchor="end" class="axis">loses</text>';
+            $svg .= '<text x="'.($mid + 8).'" y="'.($h - 6).'" text-anchor="start" class="axis">earns</text>';
+        }
+        $svg .= '</svg>';
+
+        $gap = '';
+        if ((int) ($uncosted['count'] ?? 0) > 0) {
+            $names = $uncosted['names'] ? ' '.$this->e(implode(', ', array_slice($uncosted['names'], 0, 4))).'.' : '';
+            $gap = '<p class="warn"><span class="dot bad"></span><strong>'.(int) $uncosted['count']
+                .' product'.((int) $uncosted['count'] === 1 ? '' : 's').' sold GHS '
+                .$this->e(number_format((float) ($uncosted['revenue_ghs'] ?? 0), 0))
+                .' with no dealer cost on file.</strong> They are missing from this chart entirely, '
+                .'because a blank cost is never read as free.'.$names.'</p>';
+        }
+
+        return '<section><h2>What each product earns</h2>'
+            .'<p class="q">After the dealer and the rider are paid, what is actually left?</p>'
+            .$svg.$gap.'</section>';
+    }
+
+    /**
+     * The buyer, and the second sale.
+     *
+     * The cheapest revenue in this business is somebody who has already bought
+     * once. None of it was measured until now.
+     */
+    private function customers(array $p): string
+    {
+        $c = $p['customers'] ?? [];
+
+        if ((int) ($c['buyers'] ?? 0) === 0) {
+            return '';
+        }
+
+        $rate = $c['repeat_rate'];
+        $benchmark = 25.0;   // Typical ecommerce repeat rate, the honest yardstick.
+        $w = min(1.0, $rate !== null ? (float) $rate / $benchmark : 0) * 100;
+        $fill = $rate !== null && (float) $rate >= $benchmark ? self::STATUS['keep'] : self::FUNNEL[1];
+
+        $gapDays = $c['median_days_to_second_order'] ?? null;
+        $note = $rate === null
+            ? 'Not enough named buyers to read a repeat rate.'
+            : sprintf(
+                '<strong>%s%% of buyers came back on another day</strong> against a typical %d%%. %s',
+                $rate, (int) $benchmark,
+                $gapDays !== null && $gapDays > 0
+                    ? 'The second order lands about '.$gapDays.' day'.($gapDays === 1 ? '' : 's')
+                        .' after the first, which is when a follow-up message is timely rather than annoying.'
+                    : 'No second visit yet, so there is no reorder window to aim at.'
+            );
+
+        $identified = $c['identified_share'] ?? null;
+        $caveat = $identified !== null && $identified < 95
+            ? '<p class="warn"><span class="dot bad"></span><strong>Only '.$this->e((string) $identified)
+                .'% of sales have a phone number attached.</strong> A repeat rate read off part of the '
+                .'buyers is a floor, not the truth. Capture the number at the point the sale is marked.</p>'
+            : '';
+
+        $tiles = '<section class="kpis">';
+        foreach ([
+            ['Buyers', (string) $c['buyers'], 'people we can name'],
+            ['Came back', (string) ($c['repeat_buyers'] ?? 0), 'bought more than once'],
+            ['Average order', 'GHS '.number_format((float) ($c['average_order_ghs'] ?? 0), 0), 'across every sale'],
+            ['Repeat share', ($c['repeat_share_of_revenue'] ?? 0).'%', 'of revenue, from returners'],
+        ] as [$k, $v, $n]) {
+            $tiles .= '<div class="tile"><div class="k">'.$this->e($k).'</div>'
+                .'<div class="v">'.$this->e($v).'</div><div class="n">'.$this->e($n).'</div></div>';
+        }
+        $tiles .= '</section>';
+
+        return '<section><h2>Who buys, and who comes back</h2>'
+            .'<p class="q">The second sale costs nothing in ad spend. How much of it are we getting?</p>'
+            .'<div class="meter" role="img" aria-label="Repeat purchase rate against a 25 percent benchmark">'
+            .'<div class="meter-fill" style="width:'.round($w, 1).'%;background:'.$fill.'"></div></div>'
+            .'<p class="meter-cap">'.$note.'</p>'
+            .$caveat
+            .$tiles
+            .$this->areas($p)
+            .'</section>';
+    }
+
+    /**
+     * Where the buyers are. Direct input to Meta targeting and delivery runs.
+     */
+    private function areas(array $p): string
+    {
+        $rows = array_slice($p['areas'] ?? [], 0, 6);
+
+        if (count($rows) < 2) {
+            return '';
+        }
+
+        $max = 0.0;
+        foreach ($rows as $r) {
+            $max = max($max, (float) $r['revenue_ghs']);
+        }
+        $max = $max ?: 1.0;
+
+        $rowH = 28;
+        $w = 720;
+        $labelW = 180;
+        $plotW = $w - $labelW - 120;
+        $h = count($rows) * $rowH + 4;
+
+        // One measure, one series, so a single hue. A rainbow here would imply
+        // the areas are categories that mean something different from each other.
+        $svg = '<svg viewBox="0 0 '.$w.' '.$h.'" width="100%" height="'.$h.'" role="img" '
+            .'aria-label="Revenue by delivery area, in cedis">';
+
+        foreach ($rows as $i => $r) {
+            $y = $i * $rowH + 4;
+            $len = max(2, (float) $r['revenue_ghs'] / $max * $plotW);
+
+            $svg .= '<text x="'.($labelW - 12).'" y="'.($y + 14).'" text-anchor="end" class="cat">'
+                .$this->e($this->trim((string) $r['area'], 22)).'</text>';
+            $svg .= '<rect x="'.$labelW.'" y="'.$y.'" width="'.round($len, 1).'" height="18" rx="4" fill="'.self::FUNNEL[1].'">'
+                .'<title>'.$this->e($r['area'].': GHS '.number_format((float) $r['revenue_ghs'], 2).' from '
+                    .$r['orders'].' order'.((int) $r['orders'] === 1 ? '' : 's').', '.$r['buyers'].' buyer'
+                    .((int) $r['buyers'] === 1 ? '' : 's')).'</title></rect>';
+            $svg .= '<text x="'.round($labelW + $len + 8, 1).'" y="'.($y + 14).'" class="val">GHS '
+                .$this->e(number_format((float) $r['revenue_ghs'], 0)).'</text>';
+        }
+        $svg .= '</svg>';
+
+        // All time, not the reporting period. A buyer is not a period, and a
+        // targeting list built on three weeks of orders would swing every month.
+        return '<h3>Where they are</h3>'.$svg
+            .'<p class="fine">Every order ever recorded, not just this period. Meta is the primary '
+            .'paid channel and it targets by location, so this is the list to point it at.</p>';
+    }
+
+    /**
+     * What sells with what, by lift.
+     */
+    private function bundles(array $p): string
+    {
+        $rows = array_slice($p['bundles'] ?? [], 0, 4);
+
+        if (! $rows) {
+            return '';
+        }
+
+        $items = '';
+        foreach ($rows as $r) {
+            $items .= '<li><span class="pair">'.$this->e($this->trim((string) $r['a'], 30))
+                .' <em>+</em> '.$this->e($this->trim((string) $r['b'], 30)).'</span>'
+                .'<span class="lift">'.$this->e((string) $r['lift']).'x</span>'
+                .'<span class="fine">'.(int) $r['together'].' baskets</span></li>';
+        }
+
+        return '<section><h2>Worth bundling</h2>'
+            .'<p class="q">Pairs that land in the same basket more often than their popularity alone explains. '
+            .'The multiplier is that surprise, not the raw count.</p>'
+            .'<ul class="pairs">'.$items.'</ul></section>';
+    }
+
+    /**
      * Only the rows that need a decision. Everything healthy is a count.
      */
     private function actionTable(array $p): string
@@ -498,10 +766,20 @@ class ReportRenderer
     private function footer(array $p): string
     {
         $gen = $this->e((string) $p['generated_at']);
-        $profit = $this->e((string) $p['assumptions']['profit_per_order_usd']);
+        $a = $p['assumptions'];
+        $profit = $this->e((string) $a['profit_per_order_usd']);
+        $measured = ($a['profit_per_order_source'] ?? 'assumed') === 'measured';
 
-        return '<footer><p class="fine">Generated '.$gen.'. Profit per order assumed at $'.$profit
-            .', which is an estimate until dealer costs are entered, so verdicts are directionally right rather than exact. '
+        // The page must say which of the two it is. A measured margin and a
+        // guessed one produce identical-looking verdicts, and only one of them
+        // is safe to act on without checking.
+        $line = $measured
+            ? 'Every verdict is judged against $'.$profit.' of profit per order, measured from real dealer costs. '
+            : 'Every verdict is judged against $'.$profit.' of profit per order, which is still an estimate, '
+                .'so they are directionally right rather than exact. ';
+
+        return '<footer><p class="fine">Generated '.$gen.'. '.$line
+            .$this->e($this->firstSentences((string) ($a['why'] ?? ''), 2)).' '
             .'The full pack, with the reasoning behind every verdict, is in the .md file beside this one.</p></footer>';
     }
 
@@ -546,6 +824,8 @@ class ReportRenderer
         h1 { font-size:2.5rem; line-height:1.05; margin:0 0 4px; letter-spacing:-.02em; }
         .period { font-family:"DM Mono",ui-monospace,monospace; font-size:.82rem; color:var(--muted); margin:0 0 30px; }
         h2 { font-size:1.15rem; margin:0 0 2px; letter-spacing:-.01em; }
+        h3 { font-size:.82rem; font-family:"DM Mono",ui-monospace,monospace; font-weight:500;
+          letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:26px 0 6px; }
         section { margin:0 0 40px; }
         .q { color:var(--secondary); font-size:.92rem; margin:0 0 16px; }
         .fine { color:var(--muted); font-size:.78rem; margin:8px 0 0; }
@@ -589,6 +869,15 @@ class ReportRenderer
           text-transform:uppercase; letter-spacing:.07em; padding:2px 8px; border-radius:99px;
           border:1px solid currentColor; font-weight:500; }
         .pill.keep{color:#0ca30c} .pill.kill{color:#d03b3b} .pill.fix{color:#b26a00} .pill.watch{color:var(--muted)}
+        .kpis + .kpis, .meter-cap + .kpis, .warn + .kpis { margin-top:18px; }
+        .pairs { list-style:none; margin:4px 0 0; padding:0; }
+        .pairs li { display:flex; align-items:baseline; gap:14px; padding:11px 0;
+          border-bottom:1px solid var(--rule); font-size:.9rem; }
+        .pairs .pair { flex:1; }
+        .pairs .pair em { color:var(--muted); font-style:normal; padding:0 2px; }
+        .pairs .lift { font-family:"DM Mono",ui-monospace,monospace; font-weight:700;
+          color:var(--pos); white-space:nowrap; }
+        .pairs .fine { margin:0; white-space:nowrap; }
         footer { border-top:1px solid var(--rule); padding-top:16px; }
         @media (max-width:640px) { .kpis { grid-template-columns:repeat(2,1fr); } h1 { font-size:2rem; } }
         @media print {

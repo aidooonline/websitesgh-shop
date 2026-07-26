@@ -74,10 +74,33 @@ class RunEngine extends Command
             return self::SUCCESS;
         }
 
-        $engine = new VerdictEngine;
+        // Judge against the MEASURED margin where dealer costs make it
+        // measurable, and against the assumption otherwise. This one line is
+        // the difference between verdicts that reflect the business and
+        // verdicts that reflect a number somebody typed into a config file.
+        $threshold = (new \App\Services\Costs\ProfitEngine)->judgingThreshold(
+            $from, $to, $picture['fx']['rate'] ? (float) $picture['fx']['rate'] : null
+        );
+
+        $this->newLine();
+        $this->line('  <options=bold>Judging against $'.number_format($threshold['value_usd'], 2)
+            .' profit per order</> ('.$threshold['source'].')');
+        $this->line('  '.$threshold['explanation']);
+
+        $engine = new VerdictEngine($threshold);
         $keywords = $engine->judgeKeywords($picture['keywords']);
         $channels = $engine->judgeChannels($picture['channels']);
+        $products = $engine->judgeProducts(
+            (new \App\Services\Costs\ProfitEngine)->productMargins($from, $to)
+        );
         $join->updateRegistry($picture['keywords']);
+
+        // Customers and baskets are recomputed here so one command still gives
+        // the whole picture. Splitting it across two would mean half the system
+        // silently going stale whenever the second one was forgotten.
+        $insights = new \App\Services\Customers\CustomerInsights;
+        $insights->rebuild();
+        $insights->rebuildPairs();
 
         $this->newLine();
         $this->info('Verdicts');
@@ -86,8 +109,19 @@ class RunEngine extends Command
             [
                 ['keywords', $keywords['counts']['keep'], $keywords['counts']['watch'], $keywords['counts']['fix'], $keywords['counts']['kill']],
                 ['channels', $channels['counts']['keep'], $channels['counts']['watch'], $channels['counts']['fix'], $channels['counts']['kill']],
+                ['products', $products['counts']['keep'], $products['counts']['watch'], $products['counts']['fix'], $products['counts']['kill']],
             ]
         );
+
+        $lossMakers = array_values(array_filter($products['verdicts'], fn ($v) => $v['verdict'] === 'kill'));
+
+        if ($lossMakers) {
+            $this->newLine();
+            $this->line('  <fg=red;options=bold>Products that lose money on every sale</>');
+            foreach (array_slice($lossMakers, 0, 5) as $v) {
+                $this->line('   '.$v['entity_ref'].' - '.$v['reason']);
+            }
+        }
 
         foreach (['kill', 'fix', 'keep'] as $verdict) {
             $set = array_values(array_filter($keywords['verdicts'], fn ($v) => $v['verdict'] === $verdict));

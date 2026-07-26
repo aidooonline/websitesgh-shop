@@ -43,9 +43,25 @@ class VerdictEngine
 
     private int $fixMinTaps;
 
-    public function __construct()
+    private string $profitSource = 'assumed';
+
+    private string $profitExplanation = '';
+
+    /**
+     * @param  array{value_usd: float, source: string, explanation: string}|null  $threshold
+     *   The measured profit per order, when costs make it measurable. Passing
+     *   null keeps the config assumption, which is what the system ran on
+     *   before any dealer cost existed.
+     */
+    public function __construct(?array $threshold = null)
     {
         $this->profitPerOrder = (float) config('wgh.decisions.profit_per_order_usd');
+
+        if ($threshold !== null) {
+            $this->profitPerOrder = $threshold['value_usd'];
+            $this->profitSource = $threshold['source'];
+            $this->profitExplanation = $threshold['explanation'];
+        }
         $this->minDays = (int) config('wgh.decisions.min_days_to_judge');
         $this->minClicks = (int) config('wgh.decisions.min_clicks_to_judge');
         $this->fixMinTaps = (int) config('wgh.decisions.fix_min_taps');
@@ -83,7 +99,13 @@ class VerdictEngine
                 'fix_min_taps' => $this->fixMinTaps,
             ],
             'join_strength' => $row['join_strength'] ?? 'unknown',
-            'profit_per_order_is_estimated' => true,
+            // Recorded on every verdict, because a KILL decided against a
+            // guess and a KILL decided against a measured margin are not the
+            // same claim, and six months later nobody will remember which
+            // this was.
+            'profit_per_order_source' => $this->profitSource,
+            'profit_per_order_is_estimated' => $this->profitSource !== 'measured',
+            'profit_per_order_basis' => $this->profitExplanation,
             'judged_at' => CarbonImmutable::now('UTC')->toIso8601String(),
         ];
 
@@ -216,6 +238,106 @@ class VerdictEngine
 
             $counts[$j['verdict']]++;
             $verdicts[] = $j + ['entity_ref' => $ref, 'row' => $row];
+        }
+
+        return ['judged' => count($rows), 'counts' => $counts, 'verdicts' => $verdicts];
+    }
+
+    /**
+     * Judge each product on its own margin.
+     *
+     * The spec names four dimensions and only two were built. This is the one
+     * that was missing and mattered most: Google Search can absorb about $9.55
+     * a month here, so keyword tuning has a small ceiling, while WHICH product
+     * to push, stock and photograph has none.
+     *
+     * Products are judged on margin rather than cost per order, because a
+     * product does not have a cost per order. A product that sells well at a
+     * thin margin is a different problem from one that never sells at all, and
+     * the verdicts say which.
+     *
+     * @param  list<array<string, mixed>>  $rows  From ProfitEngine::productMargins()
+     * @return array{judged:int, counts:array<string,int>, verdicts:list<array<string,mixed>>}
+     */
+    /**
+     * The one stable way to name a product in a decision row.
+     *
+     * Used by whatever writes a product verdict and by whatever reads one back,
+     * so the two can never drift apart.
+     */
+    public static function productRef(string $name, int $productId): string
+    {
+        return $name.' #'.$productId;
+    }
+
+    public function judgeProducts(array $rows): array
+    {
+        $counts = ['keep' => 0, 'watch' => 0, 'fix' => 0, 'kill' => 0];
+        $verdicts = [];
+
+        foreach ($rows as $row) {
+            $units = (int) $row['units'];
+            $margin = $row['margin_percent'];
+            $profit = $row['total_profit_ghs'] !== null ? (float) $row['total_profit_ghs'] : null;
+
+            /*
+             * A PRODUCT NAME IS NOT AN IDENTIFIER.
+             *
+             * Variants share a name, names get edited in WooCommerce, and two
+             * different products can carry the same one. Keyed on the name, two
+             * products collided in the decision log and the report showed the
+             * same blender twice with two different margins and two different
+             * verdicts. The Woo product id is the only stable key, so it goes
+             * in the reference and the name rides along for the reader.
+             */
+            $ref = self::productRef((string) $row['name'], (int) $row['product_id']);
+
+            $evidence = [
+                'product_id' => (int) $row['product_id'],
+                'units' => $units,
+                'revenue_ghs' => $row['revenue_ghs'],
+                'unit_profit_ghs' => $row['unit_profit_ghs'],
+                'margin_percent' => $margin,
+                'total_profit_ghs' => $row['total_profit_ghs'],
+                'cost_known' => $row['cost_known'],
+                'cost_confirmed' => $row['cost_confirmed'],
+                'judged_at' => CarbonImmutable::now('UTC')->toIso8601String(),
+            ];
+
+            if (! $row['cost_known']) {
+                $v = 'watch';
+                $reason = sprintf('Sold %d unit%s for GHS %s, but no dealer cost is entered, so whether it earns anything is unknown.',
+                    $units, $units === 1 ? '' : 's', $row['revenue_ghs']);
+                $action = 'Enter this one on the cost sheet next. It is selling, so it is worth knowing whether it pays.';
+            } elseif ($margin !== null && $margin < 0) {
+                $v = 'kill';
+                $reason = sprintf('Every unit LOSES GHS %s once the dealer and the rider are paid.', number_format(abs((float) $row['unit_profit_ghs']), 2));
+                $action = 'Raise the price or drop the product. Selling more of this makes the month worse, not better.';
+            } elseif ($margin !== null && $margin < 10) {
+                $v = 'fix';
+                $reason = sprintf('Sells, but at only %s%% margin, GHS %s a unit.', $margin, $row['unit_profit_ghs']);
+                $action = 'Renegotiate the dealer price or raise the shelf price. At this margin the ad spend to sell it is hard to justify.';
+            } else {
+                $v = 'keep';
+                $reason = sprintf('%s%% margin, GHS %s profit across %d unit%s.',
+                    $margin, $row['total_profit_ghs'], $units, $units === 1 ? '' : 's');
+                $action = 'Push this one. Feature it, photograph it properly, and put it in the ads before anything else.';
+            }
+
+            Decision::create([
+                'dimension' => 'product',
+                'entity_ref' => $ref,
+                'verdict' => $v,
+                'reason' => $reason,
+                'suggested_action' => $action,
+                'evidence_json' => $evidence,
+                'source' => 'engine',
+                'created_at' => CarbonImmutable::now('UTC'),
+            ]);
+
+            $counts[$v]++;
+            $verdicts[] = ['verdict' => $v, 'reason' => $reason, 'action' => $action,
+                'entity_ref' => $ref, 'row' => $row, 'evidence' => $evidence];
         }
 
         return ['judged' => count($rows), 'counts' => $counts, 'verdicts' => $verdicts];

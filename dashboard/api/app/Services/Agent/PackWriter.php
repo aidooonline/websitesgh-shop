@@ -113,9 +113,13 @@ class PackWriter
 
         $out[] = '## Assumptions you must respect';
         $out[] = '';
-        $out[] = "- Profit per order is assumed to be **\${$p['assumptions']['profit_per_order_usd']}**. ".$p['assumptions']['why'];
+        $measured = ($p['assumptions']['profit_per_order_source'] ?? 'assumed') === 'measured';
+        $out[] = '- Profit per order is '.($measured ? 'MEASURED at' : 'assumed to be')
+            ." **\${$p['assumptions']['profit_per_order_usd']}**. ".$p['assumptions']['why'];
         $out[] = "- Nothing is judged before {$p['assumptions']['min_days_to_judge']} days and {$p['assumptions']['min_clicks_to_judge']} clicks.";
         $out[] = '';
+
+        $out[] = $this->valueSide($p);
 
         if ($p['keywords']) {
             $out[] = '## Keywords';
@@ -242,6 +246,88 @@ class PackWriter
     }
 
     /**
+     * Products, buyers and baskets: what the money was worth, not what it cost.
+     *
+     * Kept as one block so an analyst reading the pack sees the value side as a
+     * single argument rather than three scattered tables. Everything above it
+     * is acquisition; nothing above it can say whether a sale was worth making.
+     *
+     * @param  array<string, mixed>  $p
+     */
+    private function valueSide(array $p): string
+    {
+        $out = [];
+        $rows = $p['products']['rows'] ?? [];
+        $uncosted = $p['products']['uncosted'] ?? ['count' => 0];
+
+        if ($rows) {
+            $out[] = '## Products, by what they leave';
+            $out[] = '';
+            $out[] = '| Product | Units | Rev GHS | Cost known | Unit profit GHS | Margin % | Total profit GHS | Verdict |';
+            $out[] = '|---|---|---|---|---|---|---|---|';
+            foreach ($rows as $r) {
+                $out[] = sprintf(
+                    '| %s | %d | %s | %s | %s | %s | %s | %s |',
+                    $r['label'] ?? $r['name'], $r['units'], $r['revenue_ghs'],
+                    $r['cost_known'] ? ($r['cost_confirmed'] ? 'confirmed' : 'estimated') : 'NO',
+                    $r['unit_profit_ghs'] ?? '-', $r['margin_percent'] ?? '-',
+                    $r['total_profit_ghs'] ?? '-', $r['verdict'] ?? '-'
+                );
+            }
+            $out[] = '';
+
+            if ((int) ($uncosted['count'] ?? 0) > 0) {
+                $out[] = "**{$uncosted['count']} product(s) sold GHS {$uncosted['revenue_ghs']} with no dealer cost on file.**";
+                $out[] = 'They are excluded from every margin figure above rather than counted as free.';
+                if (! empty($uncosted['names'])) {
+                    $out[] = 'Missing: '.implode(', ', $uncosted['names']).'.';
+                }
+                $out[] = '';
+            }
+        }
+
+        $c = $p['customers'] ?? [];
+
+        if ((int) ($c['buyers'] ?? 0) > 0) {
+            $out[] = '## Buyers';
+            $out[] = '';
+            $out[] = "- Buyers we can name: **{$c['buyers']}**, of which {$c['repeat_buyers']} bought more than once.";
+            $out[] = '- Repeat rate: **'.($c['repeat_rate'] ?? 'n/a').'%**. Typical ecommerce is 25 to 30%.';
+            $out[] = '- Median days from first order to second: '.($c['median_days_to_second_order'] ?? 'no second order yet').'.';
+            $out[] = '- Average order: GHS '.($c['average_order_ghs'] ?? 'n/a').'.';
+            $out[] = '- Share of revenue from returning buyers: '.($c['repeat_share_of_revenue'] ?? 0).'%.';
+            $out[] = '- Share of all sales carrying a phone number: '.($c['identified_share'] ?? 'n/a')
+                .'%. Anything below 100 makes the repeat rate a floor rather than the truth.';
+            $out[] = '';
+        }
+
+        if (! empty($p['areas'])) {
+            $out[] = '### Where they are';
+            $out[] = '';
+            $out[] = '| Area | Buyers | Orders | Revenue GHS | Avg order GHS |';
+            $out[] = '|---|---|---|---|---|';
+            foreach (array_slice($p['areas'], 0, 10) as $a) {
+                $out[] = "| {$a['area']} | {$a['buyers']} | {$a['orders']} | {$a['revenue_ghs']} | {$a['average_order_ghs']} |";
+            }
+            $out[] = '';
+        }
+
+        if (! empty($p['bundles'])) {
+            $out[] = '### Worth bundling';
+            $out[] = '';
+            $out[] = 'Lift, not raw count. Two popular products share a basket often simply because';
+            $out[] = 'both are popular; lift above 1 means they appear together more than that alone explains.';
+            $out[] = '';
+            foreach ($p['bundles'] as $b) {
+                $out[] = "- **{$b['a']} + {$b['b']}** ({$b['lift']}x). {$b['reading']}";
+            }
+            $out[] = '';
+        }
+
+        return implode("\n", $out);
+    }
+
+    /**
      * The flat data, for a spreadsheet.
      *
      * @param  array<string, mixed>  $p
@@ -269,6 +355,20 @@ class PackWriter
                 'channel', $c['platform'], '', $c['campaign'], $c['spend_usd'],
                 $c['clicks'], $c['carts'], $c['taps'], $c['orders'], $c['revenue_ghs'],
                 $c['cost_per_order_usd'], $c['days'], $c['verdict'], $c['engine_reason'],
+            ]);
+        }
+
+        // A product has no spend and no clicks, so its numbers sit in the
+        // columns that mean the same thing: units in "orders", takings in
+        // "revenue_ghs", and the margin spelled out in the reason column.
+        foreach ($p['products']['rows'] ?? [] as $r) {
+            fputcsv($fh, [
+                'product', $r['label'] ?? $r['name'], '', '', '', '', '', '', $r['units'], $r['revenue_ghs'],
+                '', '', $r['verdict'] ?? '',
+                $r['cost_known']
+                    ? 'unit profit GHS '.$r['unit_profit_ghs'].', margin '.$r['margin_percent']
+                        .'%, total profit GHS '.$r['total_profit_ghs']
+                    : 'no dealer cost entered, so margin is unknown',
             ]);
         }
 

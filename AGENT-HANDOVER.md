@@ -118,7 +118,7 @@ Then **LiteSpeed Purge All**. Pushes still need the PAT; scrub it afterwards.
 | Shop build | **Live and functionally complete.** Polish only. |
 | Content | **20 articles.** 5 live, 15 scheduled at 3-day intervals to 8 Sept. |
 | Marketing assets | **Built, not launched.** Nothing is spending. |
-| WGH Intelligence dashboard | **Sprints 1, 2 and 3 built.** 1 passed on real data; 2 and 3 pass on constructed data and await real spend. Sprints 4 to 6 not started. |
+| WGH Intelligence dashboard | **Sprints 1, 2 and 3 built, plus the value layer.** 1 passed on real data; the rest pass on constructed data and await real spend. Dealer costs, real profit per order, customers, baskets and the product dimension are in. Sprints 4 to 6 not started. |
 
 ---
 
@@ -381,6 +381,33 @@ the class of problem, not just the instance.
     `click_type IN ('gclid','gbraid','wbraid')`, or a Meta click gets uploaded
     to Google as a Google Click ID, matches nothing, and poisons the very
     conversion feed Smart Bidding learns from.
+28. **One sale seen from two sides is not two sales.** A WhatsApp sale marked
+    converted in the shop AND written as a WooCommerce order is the same money,
+    once from the ad side and once from the till. The customer rebuild counted
+    both and put GHS 33,789 of lifetime revenue into one delivery area in a
+    period whose entire turnover was GHS 10,114. Anywhere orders and
+    attribution events are added together, skip the events carrying an
+    `order_id`. The profit engine already did; the customer layer and the
+    basket analysis did not.
+29. **A second order on the same day is not a returning customer.** It is a
+    forgotten item or a split delivery. Counted as a return it reported a
+    median reorder gap of ZERO days, which would send a win-back message before
+    the customer had left. Repeat is measured in distinct calendar days
+    (`order_days_count`), never in order rows.
+30. **A product name is not an identifier.** Variants share names, names get
+    edited in WooCommerce, and two products can carry the same one. Product
+    decisions keyed on the name collided, and the report showed the same
+    blender twice with two different margins and two different verdicts. Use
+    `VerdictEngine::productRef($name, $wooProductId)` on both sides, always.
+31. **Lift without support is a coincidence.** Lift is a ratio, so a pair seen
+    twice among rare products scores higher than a pair seen thirty-two times.
+    The report offered two 10.889x "bundles" resting on two baskets each. Bundle
+    candidates need at least 3 baskets together, and the count travels with the
+    claim so the strength of the evidence is visible beside it.
+32. **A cancelled order still has a buyer attached.** Left in the customer
+    rebuild it inflated lifetime value, the repeat rate and every area total at
+    once, all in the flattering direction. Filter `cancelled`, `failed` and
+    `refunded` wherever revenue is summed.
 
 ---
 

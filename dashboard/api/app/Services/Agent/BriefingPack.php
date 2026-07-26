@@ -5,7 +5,10 @@ namespace App\Services\Agent;
 use App\Models\Decision;
 use App\Models\Milestone;
 use App\Services\Ads\JoinEngine;
+use App\Services\Costs\ProfitEngine;
+use App\Services\Customers\CustomerInsights;
 use App\Services\Decisions\MilestoneEvaluator;
+use App\Services\Decisions\VerdictEngine;
 use Carbon\CarbonImmutable;
 
 /**
@@ -27,6 +30,9 @@ class BriefingPack
     /** Keywords included in full. Beyond this, the tail is summarised. */
     private const KEYWORD_CAP = 40;
 
+    /** Products carried in full. The tail earns too little to change a decision. */
+    private const PRODUCT_CAP = 20;
+
     /**
      * @return array<string, mixed>
      */
@@ -43,6 +49,21 @@ class BriefingPack
         $patterns = $this->latestPatterns();
 
         $totals = $picture['totals'];
+
+        /*
+         * THE VALUE SIDE.
+         *
+         * Everything above this line answers "what did it cost". None of it
+         * answers "what was it worth", and the second question has no ceiling
+         * while the first is nearly settled: Google Search can absorb about
+         * $9.55 a month here whatever we do. Profit per order is a multiplier on
+         * every keyword at once, so it belongs in the pack beside the spend.
+         */
+        $rate = isset($picture['fx']['rate']) ? (float) $picture['fx']['rate'] : null;
+        $profit = new ProfitEngine;
+        $margin = $profit->profitPerOrder($from, $to, $rate);
+        $threshold = $profit->judgingThreshold($from, $to, $rate);
+        $people = new CustomerInsights;
 
         return [
             'generated_at' => CarbonImmutable::now('UTC')->toIso8601String(),
@@ -62,6 +83,11 @@ class BriefingPack
             ] : null,
             'channels' => array_map(fn ($c) => $this->channelLine($c, $verdicts), $picture['channels']),
             'unmatched_spend' => $picture['unmatched'],
+            'products' => $this->products($profit->productMargins($from, $to), $verdicts),
+            'margin' => $margin,
+            'customers' => $people->summary(),
+            'areas' => $people->byArea(),
+            'bundles' => $people->bundleCandidates(),
             'patterns' => $patterns,
             'loop' => $ladder['facts'],
             'milestones' => [
@@ -71,9 +97,10 @@ class BriefingPack
                 'active_guardrails' => $ladder['active_guardrails'],
             ],
             'assumptions' => [
-                'profit_per_order_usd' => number_format((float) config('wgh.decisions.profit_per_order_usd'), 2, '.', ''),
-                'profit_per_order_is_an_estimate' => true,
-                'why' => 'Dealer costs are not yet entered, so profit per order is the spec estimate rather than a measured margin. Verdicts are directionally right, not exact. Say so if a recommendation depends on it.',
+                'profit_per_order_usd' => number_format($threshold['value_usd'], 2, '.', ''),
+                'profit_per_order_source' => $threshold['source'],
+                'profit_per_order_is_an_estimate' => $threshold['source'] !== 'measured',
+                'why' => $threshold['explanation'],
                 'min_days_to_judge' => (int) config('wgh.decisions.min_days_to_judge'),
                 'min_clicks_to_judge' => (int) config('wgh.decisions.min_clicks_to_judge'),
             ],
@@ -179,13 +206,65 @@ class BriefingPack
     }
 
     /**
+     * What each product left after the dealer was paid.
+     *
+     * Capped, because the tail of a product list is where attention goes to die
+     * and no decision has ever turned on the 34th best seller.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, array<string, array<string, string>>>  $verdicts
+     * @return array<string, mixed>
+     */
+    private function products(array $rows, array $verdicts): array
+    {
+        $shown = array_slice($rows, 0, self::PRODUCT_CAP);
+
+        // Two products wearing one name need the id beside them to be told
+        // apart. Every other product does not, and adding "#1008" to a clean
+        // list is noise, so it is added only where it earns its place.
+        $seen = array_count_values(array_map(fn ($r) => (string) $r['name'], $rows));
+
+        $uncosted = array_values(array_filter($rows, fn ($r) => ! $r['cost_known']));
+        $lostRevenue = 0.0;
+        foreach ($uncosted as $u) {
+            $lostRevenue += (float) $u['revenue_ghs'];
+        }
+
+        return [
+            'rows' => array_map(function ($r) use ($verdicts, $seen) {
+                // Keyed on the Woo id, never the name. Two products can wear one
+                // name; keyed on it, one overwrote the other and the report
+                // showed the same blender twice with two different verdicts.
+                $ref = VerdictEngine::productRef((string) $r['name'], (int) $r['product_id']);
+                $v = $verdicts['product'][$ref] ?? null;
+
+                return $r + [
+                    'ref' => $ref,
+                    'label' => ($seen[(string) $r['name']] ?? 1) > 1 ? $ref : (string) $r['name'],
+                    'verdict' => $v['verdict'] ?? null,
+                    'engine_reason' => $v['reason'] ?? null,
+                ];
+            }, $shown),
+            'omitted' => max(0, count($rows) - count($shown)),
+            // Named as a gap rather than buried, because an uncosted product is
+            // not a product with no margin: it is a product with no answer, and
+            // the fix is one line in the cost sheet.
+            'uncosted' => [
+                'count' => count($uncosted),
+                'revenue_ghs' => number_format($lostRevenue, 2, '.', ''),
+                'names' => array_slice(array_column($uncosted, 'name'), 0, 8),
+            ],
+        ];
+    }
+
+    /**
      * The most recent engine verdict per entity, indexed for lookup.
      *
      * @return array<string, array<string, array<string, string>>>
      */
     private function latestVerdicts(): array
     {
-        $out = ['keyword' => [], 'channel' => []];
+        $out = ['keyword' => [], 'channel' => [], 'product' => []];
 
         $rows = Decision::where('source', 'engine')
             ->whereIn('verdict', ['keep', 'watch', 'fix', 'kill'])

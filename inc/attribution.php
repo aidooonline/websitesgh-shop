@@ -623,6 +623,9 @@ function wghs_attr_admin_page() {
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Attribution', 'wghshop' ); ?></h1>
 		<p><?php esc_html_e( 'Every ad-tracked WhatsApp tap and on-site order. On-site orders auto-convert. For WhatsApp sales: set the value if it differs, then click Sold. Export sends only new converted rows with a Google click ID.', 'wghshop' ); ?></p>
+		<p class="description" style="max-width:760px">
+			<?php esc_html_e( 'Paste the customer number from the chat before clicking Sold. It costs the buyer nothing, it is the only way repeat customers can be counted, and it links this sale back to their earlier taps. It also works for Meta Click-to-WhatsApp sales, which never touch the website at all.', 'wghshop' ); ?>
+		</p>
 
 		<?php if ( $intel ) : ?>
 		<table class="widefat" style="max-width:720px;margin:10px 0">
@@ -746,7 +749,14 @@ function wghs_attr_admin_page() {
 					</td>
 					<td><strong><?php echo esc_html( $r->ref ); ?></strong></td>
 					<td><?php echo $r->click_id ? '<code title="' . esc_attr( $r->click_id ) . '">' . esc_html( substr( $r->click_id, 0, 10 ) ) . '&hellip;</code> <small>' . esc_html( $r->click_type ) . '</small>' : '<small>' . esc_html__( 'none', 'wghshop' ) . '</small>'; ?></td>
-					<td><input type="number" step="0.01" class="wghs-attr-value small-text" value="<?php echo esc_attr( $r->conv_value > 0 ? $r->conv_value : $r->price ); ?>" <?php disabled( 'converted' === $r->status && $r->exported ); ?>></td>
+					<td>
+						<input type="number" step="0.01" class="wghs-attr-value small-text" value="<?php echo esc_attr( $r->conv_value > 0 ? $r->conv_value : $r->price ); ?>" <?php disabled( 'converted' === $r->status && $r->exported ); ?>>
+						<?php if ( 'pending' === $r->status && empty( $r->cust_phone ) ) : ?>
+							<br><input type="tel" class="wghs-attr-phone small-text" style="margin-top:4px"
+								placeholder="<?php esc_attr_e( 'phone from the chat', 'wghshop' ); ?>"
+								title="<?php esc_attr_e( 'Copy the number from the WhatsApp chat. It links this sale to the customer, so repeat buyers can be counted. Nothing is asked of the buyer.', 'wghshop' ); ?>">
+						<?php endif; ?>
+					</td>
 					<td><strong><?php echo esc_html( $r->status ); ?></strong><?php echo $r->exported ? ' &middot; ' . esc_html__( 'exported', 'wghshop' ) : ''; ?></td>
 					<td style="white-space:nowrap">
 						<button type="button" class="button button-small wghs-tags-btn" aria-expanded="false">
@@ -882,7 +892,7 @@ function wghs_attr_admin_page() {
 			if (one) {
 				var tr = one.closest('tr');
 				one.disabled = true;
-				post({ id: tr.dataset.id, act: one.dataset.act, value: rowValue(tr) })
+				post({ id: tr.dataset.id, act: one.dataset.act, value: rowValue(tr), phone: rowPhone(tr) })
 					.then(function () { location.reload(); });
 				return;
 			}
@@ -905,6 +915,11 @@ function wghs_attr_admin_page() {
 		function rowValue(tr) {
 			var f = tr.querySelector('.wghs-attr-value');
 			return f ? f.value : 0;
+		}
+
+		function rowPhone(tr) {
+			var f = tr.querySelector('.wghs-attr-phone');
+			return f ? f.value.trim() : '';
 		}
 
 		function post(extra) {
@@ -969,16 +984,45 @@ function wghs_attr_admin_page() {
  * @param float  $val Conversion value, used by convert only.
  * @return bool Whether a row was changed.
  */
-function wghs_attr_apply( $id, $act, $val = 0 ) {
+function wghs_attr_apply( $id, $act, $val = 0, $phone = '' ) {
+	global $wpdb;
 	$id = absint( $id );
 	if ( ! $id ) { return false; }
 
 	if ( 'convert' === $act ) {
-		return false !== wghs_attr_update( array(
+		$data = array(
 			'status'       => 'converted',
 			'converted_at' => current_time( 'mysql', true ),
 			'conv_value'   => (float) $val,
-		), array( 'id' => $id ) );
+		);
+
+		/*
+		 * The phone number, captured HERE rather than at the tap.
+		 *
+		 * The obvious place to demand a phone number is before the WhatsApp
+		 * button, and it is the wrong place. The tap is the single worst
+		 * moment in the funnel to add friction, WhatsApp hands over the number
+		 * thirty seconds later anyway, and Meta Click-to-WhatsApp ads open
+		 * WhatsApp directly without ever touching this site, so a site-side
+		 * gate cannot cover the primary paid channel at all.
+		 *
+		 * Marking a sale is the opposite: the owner is already looking at the
+		 * chat, the number is on screen, the customer is committed, and it
+		 * works for CTWA sales too. Identity is only needed on BUYERS, and
+		 * this catches every one of them at zero cost to the buyer.
+		 */
+		$phone = preg_replace( '/[^0-9+]/', '', (string) $phone );
+
+		if ( $phone ) {
+			$data['cust_phone'] = substr( $phone, 0, 24 );
+			$ok = false !== wghs_attr_update( $data, array( 'id' => $id ) );
+
+			if ( $ok ) { wghs_attr_backlink_phone( $id, $data['cust_phone'] ); }
+
+			return $ok;
+		}
+
+		return false !== wghs_attr_update( $data, array( 'id' => $id ) );
 	}
 	if ( 'dismiss' === $act ) {
 		return false !== wghs_attr_update( array( 'status' => 'dismissed' ), array( 'id' => $id ) );
@@ -990,6 +1034,53 @@ function wghs_attr_apply( $id, $act, $val = 0 ) {
 		);
 	}
 	return false;
+}
+
+/**
+ * Attach a known phone to this customer's earlier anonymous taps.
+ *
+ * Somebody who skipped the popup three times and then bought is one customer,
+ * not four anonymous events. Once the number is known from the chat, the
+ * earlier taps in the same 90 day window can be claimed, which is what turns a
+ * pile of events into a journey and makes repeat-customer tracking possible at
+ * all.
+ *
+ * Only rows with NO phone are touched, and only ones that share this row's
+ * click id or ref, so it can never merge two different people.
+ *
+ * @param int    $id    The row just marked sold.
+ * @param string $phone E.164-ish phone.
+ * @return int Rows linked.
+ */
+function wghs_attr_backlink_phone( $id, $phone ) {
+	global $wpdb;
+	$table = wghs_attr_table();
+
+	$row = $wpdb->get_row( $wpdb->prepare( "SELECT click_id, ref, created_at FROM {$table} WHERE id = %d", $id ) );
+	if ( ! $row ) { return 0; }
+
+	$since = gmdate( 'Y-m-d H:i:s', strtotime( $row->created_at ) - ( 90 * DAY_IN_SECONDS ) );
+
+	// A shared click id means the same browser and the same ad click. A shared
+	// ref means the same order conversation. Either is strong enough; anything
+	// looser would start merging strangers.
+	if ( ! $row->click_id && ! $row->ref ) { return 0; }
+
+	$where  = array();
+	$params = array( current_time( 'mysql', true ), substr( $phone, 0, 24 ) );
+
+	if ( $row->click_id ) { $where[] = 'click_id = %s'; $params[] = $row->click_id; }
+	if ( $row->ref )      { $where[] = 'ref = %s';      $params[] = $row->ref; }
+
+	$params[] = $since;
+	$params[] = (int) $id;
+
+	$sql = "UPDATE {$table} SET updated_at = %s, cust_phone = %s
+		WHERE ( cust_phone = '' OR cust_phone IS NULL )
+		AND ( " . implode( ' OR ', $where ) . " )
+		AND created_at >= %s AND id <> %d";
+
+	return (int) $wpdb->query( $wpdb->prepare( $sql, $params ) );
 }
 
 /**
@@ -1105,7 +1196,12 @@ add_action( 'wp_ajax_wghs_attr_update', function () {
 		wp_send_json_success( array( 'updated' => $updated ) );
 	}
 
-	$ok = wghs_attr_apply( $_POST['id'] ?? 0, $act, (float) ( $_POST['value'] ?? 0 ) );
+	$ok = wghs_attr_apply(
+		$_POST['id'] ?? 0,
+		$act,
+		(float) ( $_POST['value'] ?? 0 ),
+		sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) )
+	);
 	if ( ! $ok ) { wp_send_json_error(); }
 	wp_send_json_success( array( 'updated' => 1 ) );
 } );
@@ -1129,6 +1225,27 @@ add_action( 'admin_post_wghs_attr_export', function () {
 	$conv_name = get_theme_mod( 'wghs_offline_conv_name', 'WhatsApp Sale' );
 	$currency  = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'GHS';
 
+	/*
+	 * SEND PROFIT, NOT TURNOVER.
+	 *
+	 * Google's Smart Bidding optimises toward whatever number it is given as
+	 * the conversion value. Sending the order total tells it to chase big
+	 * baskets, so it learns to buy customers for a GHS 950 microwave at 8%
+	 * margin in preference to a GHS 320 blender at 30%, and the account gets
+	 * busier and poorer at the same time.
+	 *
+	 * Sending the MARGIN tells it to chase money you keep. Google's own gross
+	 * profit optimisation reports roughly 15% more campaign profit than
+	 * revenue optimisation for the same spend, on machinery already paid for.
+	 *
+	 * The margin percentage lives in the Customizer because it is a business
+	 * fact the owner knows and the theme does not. At 0 the behaviour is
+	 * unchanged and the full value is sent, so this is opt-in and reversible
+	 * in one field.
+	 */
+	$margin_pct = (float) get_theme_mod( 'wghs_gross_margin_pct', 0 );
+	$use_profit = $margin_pct > 0 && $margin_pct < 100;
+
 	header( 'Content-Type: text/csv; charset=utf-8' );
 	header( 'Content-Disposition: attachment; filename=google-ads-conversions-' . gmdate( 'Ymd-His' ) . '.csv' );
 	$out = fopen( 'php://output', 'w' );
@@ -1142,11 +1259,17 @@ add_action( 'admin_post_wghs_attr_export', function () {
 		$time = $r->converted_at && $r->converted_at > $r->created_at
 			? $r->converted_at
 			: gmdate( 'Y-m-d H:i:s', strtotime( $r->created_at ) + 60 );
+		$value = (float) $r->conv_value;
+
+		if ( $use_profit ) {
+			$value = round( $value * ( $margin_pct / 100 ), 2 );
+		}
+
 		fputcsv( $out, array(
 			$r->click_id,
 			$conv_name,
 			$time,
-			number_format( (float) $r->conv_value, 2, '.', '' ),
+			number_format( $value, 2, '.', '' ),
 			$currency,
 		) );
 		$ids[] = (int) $r->id;
@@ -1161,6 +1284,17 @@ add_action( 'admin_post_wghs_attr_export', function () {
 
 /** Customizer: conversion name must match the offline conversion action in Google Ads. */
 add_action( 'customize_register', function ( $wp_customize ) {
+	$wp_customize->add_setting( 'wghs_gross_margin_pct', array(
+		'default'           => 0,
+		'sanitize_callback' => function ( $v ) { return max( 0, min( 100, (float) $v ) ); },
+	) );
+	$wp_customize->add_control( 'wghs_gross_margin_pct', array(
+		'label'       => __( 'Average gross margin, %', 'wghshop' ),
+		'description' => __( 'Leave at 0 to upload the full order value, which is the old behaviour. Set your real average margin (for example 28) and the export uploads PROFIT instead of turnover, so Google bids for the customers who leave you money rather than the ones with the biggest basket. Google reports roughly 15% more campaign profit from this change. Set it once real dealer costs are known; a wrong number here misprices every bid.', 'wghshop' ),
+		'section'     => 'wghs_tracking',
+		'type'        => 'number',
+		'input_attrs' => array( 'min' => 0, 'max' => 100, 'step' => 1 ),
+	) );
 	$wp_customize->add_setting( 'wghs_offline_conv_name', array( 'default' => 'WhatsApp Sale', 'sanitize_callback' => 'sanitize_text_field' ) );
 	$wp_customize->add_control( 'wghs_offline_conv_name', array(
 		'label'       => __( 'Offline conversion name', 'wghshop' ),

@@ -235,11 +235,58 @@ See `docs/TRACKING-TEMPLATES.md`.
 
 ### The profit line
 
-`WGH_PROFIT_PER_ORDER_USD` in `.env` is the single most important number in the
-configuration: it is the line between a keyword that earns and one that bleeds.
-It starts at the spec's $8.75 estimate and **must** be replaced with the real
-margin once dealer costs are known. Until then every verdict says so in its
-evidence, and they are directionally right rather than exact.
+`WGH_PROFIT_PER_ORDER_USD` in `.env` is the fallback, not the answer. It is the
+line between a keyword that earns and one that bleeds, and while it is a guess
+every verdict in the system rests on a guess. It starts at the spec's $8.75.
+
+**Replace it by entering dealer costs, not by editing the file.** Once costs
+exist the engine measures profit per order from real baskets and uses the
+measured figure instead, and every verdict records which of the two it was
+judged against.
+
+## Dealer costs, and what things actually earn
+
+This is the highest-leverage half hour in the whole system. Cost per order is
+close to as low as it will go: Google Search can only absorb about $9.55 a
+month here. Profit per order has no ceiling, and it is a multiplier on every
+keyword at once. Raise it and the whole account gets more affordable the same
+day.
+
+```bash
+php artisan wgh:costs --export              # writes the sheet, most-sold first
+php artisan wgh:costs --import=path/to.csv  # read it back filled
+php artisan wgh:costs --show                # coverage and the measured margin
+```
+
+The exported CSV pre-fills the selling price it has observed, so the only
+columns needing a human are what the supplier charges and what the rider costs.
+Mark `confirmed` as `yes` once a price came from an actual supplier call rather
+than a guess.
+
+**A blank cost is never read as zero.** A zero cost makes a product look like
+pure profit and every verdict touching it comes out wrong in the flattering
+direction. One uncosted line and the whole basket is excluded from the margin,
+and the report names what is missing rather than quietly averaging around it.
+
+## Buyers and baskets
+
+```bash
+php artisan wgh:customers --rebuild
+```
+
+Builds the customer table from hashed phones, which answers three things nothing
+else in the system could: what share of buyers come back, how many days pass
+before they do, and which parts of Accra actually buy. It also finds what sells
+with what, by lift rather than raw count, which is what a bundle should be built
+on.
+
+Two rules the numbers depend on. A sale recorded both as a WhatsApp conversion
+and as a WooCommerce order is ONE sale. A second order on the same day is not a
+customer coming back; repeat is counted in distinct days.
+
+The raw phone never leaves the shop. This database holds only the SHA-256, which
+is enough to know two orders came from the same person and holds nothing worth
+stealing.
 
 ## Getting advice without an API key
 
@@ -317,6 +364,8 @@ php artisan wgh:sync --dry-run    # totals only, writes nothing
 php artisan wgh:sync --verify     # the acceptance test
 php artisan wgh:fx 11.85          # today's GHS per USD
 php artisan wgh:fx --list         # the recorded rates
+php artisan wgh:costs --show      # cost coverage and the measured margin
+php artisan wgh:customers --rebuild
 ```
 
 Record an fx rate at least monthly. Ad spend is USD and sales are GHS, and every
