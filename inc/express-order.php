@@ -401,3 +401,115 @@ function wghs_order_sent_notice() {
 	</div>
 	<?php
 }
+
+
+/* --------------------------------------------------------------------------
+ * One-tap bundle: put the rail's products into the cart and show the cart.
+ *
+ * The sidebar already shows products relevant to the article being read. That
+ * is a warm, contextual shortlist, and until now the only thing a reader could
+ * do with it was click one product at a time. This turns the whole shortlist
+ * into a basket in a single tap, then drops them on the cart where the WhatsApp
+ * order button lives.
+ *
+ * Adds to the existing basket rather than replacing it, because a reader who
+ * already chose something should not lose it.
+ * ------------------------------------------------------------------------ */
+add_action( 'template_redirect', function () {
+	if ( empty( $_GET['wghs_bundle'] ) ) { return; } // phpcs:ignore WordPress.Security.NonceVerification
+	if ( ! function_exists( 'WC' ) || ! WC()->cart ) { return; }
+
+	$raw = sanitize_text_field( wp_unslash( $_GET['wghs_bundle'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+	$ids = array_filter( array_map( 'absint', explode( ',', $raw ) ) );
+	if ( ! $ids ) { return; }
+
+	$added = 0;
+	foreach ( array_slice( $ids, 0, 10 ) as $id ) {
+		$product = wc_get_product( $id );
+		if ( ! $product || ! $product->is_purchasable() || ! $product->is_in_stock() ) { continue; }
+		// Skip anything already in the basket so a second tap does not double up.
+		$dupe = false;
+		foreach ( WC()->cart->get_cart() as $item ) {
+			if ( (int) $item['product_id'] === (int) $id ) { $dupe = true; break; }
+		}
+		if ( $dupe ) { continue; }
+		if ( WC()->cart->add_to_cart( $id ) ) { $added++; }
+	}
+
+	wp_safe_redirect( add_query_arg( 'bundled', (int) $added, wc_get_cart_url() ) );
+	exit;
+} );
+
+/**
+ * Products for the article rail, matched to what is being read.
+ *
+ * Was a random three, which is warm-ish but not relevant. Now it maps the
+ * post's category to the matching product category so a reader of the fan
+ * runtime guide sees fans, not a wireless mouse. Falls back to random only
+ * when nothing matches, so the rail is never empty.
+ *
+ * @param int $limit How many products.
+ * @return WC_Product[]
+ */
+function wghs_rail_products( $limit = 3 ) {
+	if ( ! function_exists( 'wc_get_products' ) ) { return array(); }
+
+	$map = array(
+		'kitchen & home'         => 'kitchen-home',
+		'kitchen and home'       => 'kitchen-home',
+		'phones & audio'         => 'phones-audio',
+		'phones and audio'       => 'phones-audio',
+		'lighting & power'       => 'lighting-power',
+		'lighting and power'     => 'lighting-power',
+		'laundry & garment care' => 'laundry',
+		'personal care'          => 'personal-care',
+	);
+
+	$slug = '';
+	if ( is_singular( 'post' ) ) {
+		foreach ( (array) get_the_category() as $cat ) {
+			$key = strtolower( $cat->name );
+			if ( isset( $map[ $key ] ) ) { $slug = $map[ $key ]; break; }
+		}
+	}
+
+	$args = array(
+		'status'       => 'publish',
+		'limit'        => $limit,
+		'orderby'      => 'rand',
+		'stock_status' => 'instock',
+	);
+	if ( $slug ) {
+		$scoped = wc_get_products( array_merge( $args, array( 'category' => array( $slug ) ) ) );
+		if ( count( $scoped ) >= $limit ) { return $scoped; }
+		// Top up from the general pool if the category is thin.
+		$rest = wc_get_products( array_merge( $args, array( 'limit' => $limit ) ) );
+		$seen = wp_list_pluck( $scoped, 'get_id' );
+		foreach ( $rest as $p ) {
+			if ( count( $scoped ) >= $limit ) { break; }
+			if ( ! in_array( $p->get_id(), array_map( 'intval', $seen ), true ) ) { $scoped[] = $p; }
+		}
+		if ( $scoped ) { return $scoped; }
+	}
+	return wc_get_products( $args );
+}
+
+/* Confirmation when a bundle lands in the cart, so the jump is explained. */
+add_action( 'woocommerce_before_cart', 'wghs_bundled_notice', 6 );
+function wghs_bundled_notice() {
+	if ( ! isset( $_GET['bundled'] ) ) { return; } // phpcs:ignore WordPress.Security.NonceVerification
+	$n = (int) $_GET['bundled']; // phpcs:ignore WordPress.Security.NonceVerification
+	if ( $n < 1 ) { return; }
+	?>
+	<div class="wghs-sent">
+		<div class="wghs-sent__tick" aria-hidden="true">&#10003;</div>
+		<div>
+			<h3 class="wghs-sent__h"><?php
+				/* translators: %d: number of products added. */
+				printf( esc_html( _n( '%d item added from the guide', '%d items added from the guide', $n, 'wghshop' ) ), $n );
+			?></h3>
+			<p class="wghs-sent__p"><?php esc_html_e( 'Remove anything you do not want, then send the order on WhatsApp. You pay the rider when it reaches you, not before.', 'wghshop' ); ?></p>
+		</div>
+	</div>
+	<?php
+}

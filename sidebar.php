@@ -26,13 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 		<?php // Shop the story. Products, not links. This is the money block. ?>
 		<?php
+		// Picked to match what is being read, not at random, and the ids are
+		// reused below so the order button can basket the whole shortlist.
+		$picks     = function_exists( 'wghs_rail_products' ) ? wghs_rail_products( 3 ) : array();
+		$pick_ids  = array();
+		foreach ( $picks as $rp ) { $pick_ids[] = (int) $rp->get_id(); }
 		if ( function_exists( 'wc_get_products' ) ) {
-			$picks = wc_get_products( array(
-				'status'   => 'publish',
-				'limit'    => 3,
-				'orderby'  => 'rand',
-				'stock_status' => 'instock',
-			) );
 			if ( $picks ) : ?>
 			<div class="wghs-railcard wghs-railcard--shop">
 				<p class="wghs-railcard__label"><?php esc_html_e( 'Shop this guide', 'wghshop' ); ?></p>
@@ -66,16 +65,30 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 		<div class="wghs-railcard wghs-railcard--trust">
 			<p class="wghs-railcard__label"><?php esc_html_e( 'How ordering works', 'wghshop' ); ?></p>
 			<ol class="wghs-railsteps">
-				<li><?php esc_html_e( 'Order on the site or on WhatsApp', 'wghshop' ); ?></li>
+				<li><?php esc_html_e( 'Tap the button, the items go to your cart', 'wghshop' ); ?></li>
 				<li><?php esc_html_e( 'We call you to confirm', 'wghshop' ); ?></li>
 				<li><?php esc_html_e( 'Check it, then pay the rider', 'wghshop' ); ?></li>
 			</ol>
-			<?php $wa = function_exists( 'wghs_whatsapp_link' ) ? wghs_whatsapp_link() : ''; ?>
-			<?php if ( $wa ) : ?>
-				<a class="wghs-railcta wghs-railcta--wa" href="<?php echo esc_attr( $wa ); ?>" target="_blank" rel="noopener">
-					<?php esc_html_e( 'Order on WhatsApp', 'wghshop' ); ?>
+			<?php
+			/* One tap puts the shortlist above into the cart and lands the reader
+			 * on the cart, where the WhatsApp order button is. Far better than
+			 * sending them to an empty chat and asking them to describe what they
+			 * want. Falls back to a plain WhatsApp link if there are no picks. */
+			if ( ! empty( $pick_ids ) ) :
+				$bundle_url = add_query_arg( 'wghs_bundle', implode( ',', $pick_ids ), home_url( '/' ) );
+				?>
+				<a class="wghs-railcta wghs-railcta--wa" href="<?php echo esc_url( $bundle_url ); ?>"
+					rel="nofollow" data-wghs-event="rail_bundle">
+					<?php esc_html_e( 'Order, pay on delivery', 'wghshop' ); ?>
 				</a>
-			<?php endif; ?>
+			<?php else :
+				$wa = function_exists( 'wghs_wa_link' ) ? wghs_wa_link( '' ) : '';
+				if ( $wa ) : ?>
+					<a class="wghs-railcta wghs-railcta--wa" href="<?php echo esc_attr( $wa ); ?>" target="_blank" rel="noopener">
+						<?php esc_html_e( 'Order, pay on delivery', 'wghshop' ); ?>
+					</a>
+				<?php endif;
+			endif; ?>
 		</div>
 
 		<?php // Ad slot 2. Lower rail, catches the long scroll on detail pages. ?>
