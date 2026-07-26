@@ -156,13 +156,20 @@
   .wghs-railcard--trust { @apply bg-wgh-greenPale border-transparent; }
   /* Shop this guide: dark green so the products in the rail are the thing the
      eye lands on. Names and prices go white and gold against it. */
-  .wghs-railcard--shop { @apply border-transparent bg-wgh-greenInk; }
-  .wghs-railcard--shop .wghs-railcard__label { @apply text-white/60; }
+  /* Brand green, not the near-black ink. This card is meant to be the
+     brightest thing in the rail, and it should read as the same green as the
+     order button under it. A slight gradient keeps it from looking flat. */
+  .wghs-railcard--shop {
+    @apply border-transparent text-white;
+    background-image: linear-gradient(160deg, #12A76B 0%, #0E8C5A 55%, #0B7449 100%);
+    box-shadow: 0 14px 34px -20px rgba(14,140,90,.75);
+  }
+  .wghs-railcard--shop .wghs-railcard__label { @apply text-white/75; }
   .wghs-railcard--shop .wghs-railshop__name { @apply text-white; }
-  .wghs-railcard--shop .wghs-railshop__price { @apply text-wgh-gold; }
-  .wghs-railcard--shop .wghs-railshop__img { @apply border-white/15 bg-white/10; }
-  .wghs-railcard--shop .wghs-railshop a:hover .wghs-railshop__name { @apply text-wgh-gold; }
-  .wghs-railcard--shop .wghs-railcta { @apply border-white/25 text-white hover:bg-white/10; }
+  .wghs-railcard--shop .wghs-railshop__price { @apply font-extrabold text-wgh-goldPale; }
+  .wghs-railcard--shop .wghs-railshop__img { @apply border-white/25 bg-white/90; }
+  .wghs-railcard--shop .wghs-railshop a:hover .wghs-railshop__name { @apply text-wgh-goldPale; }
+  .wghs-railcard--shop .wghs-railcta { @apply border-white/50 font-semibold text-white hover:bg-white hover:text-wgh-greenInk; }
   .wghs-railcard__label { @apply mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-wgh-ink3; }
 
   .wghs-railshop { @apply flex flex-col gap-3; }
