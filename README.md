@@ -11,6 +11,30 @@ to build.
 
 ---
 
+---
+
+## Starting a new chat or session
+
+A fresh agent does not know which repo this is. Paste this to start:
+
+```
+Project: WebsitesGH Shop, a WhatsApp-first WooCommerce store at
+shop.websitesgh.com. Repo: https://github.com/aidooonline/websitesgh-shop
+(public, clone or fetch raw files directly).
+
+Read AGENT-HANDOVER.md in the repo root IN FULL before doing anything or
+asking me any questions. Then read dashboard/docs/ENGINEERING-SPEC.md.
+
+Task: <what you want done>
+```
+
+Common tasks to put on the last line:
+
+- `build Sprint 1 of the WGH Intelligence dashboard` (the next thing to build)
+- `write the next batch of articles, continuing the calendar in inc/setup-data/articles.json`
+- `finalise the Google Ads campaign, forecast attached`
+- `fix <problem>. Run Appearance > Shop Diagnostics first and work from what it reports`
+
 WooCommerce theme for **shop.websitesgh.com**. Forked from `aidooonline/techplugghv2`
 (Aurora v2) and restyled onto the websitesgh green and gold system.
 
