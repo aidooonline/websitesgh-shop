@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WGH supplier call sheet</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper:#f8f6f2; --ink:#20211C; --secondary:#52514e; --muted:#898781;
+  --rule:#e1e0d9; --accent:#e8630a; --card:#fcfcfb;
+  --in:#2a78d6; --out:#e34948; --good:#0ca30c;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper:#1a1a19; --ink:#fff; --secondary:#c3c2b7; --muted:#898781;
+    --rule:#2c2c2a; --card:#232322; --in:#3987e5; --out:#e66767; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:17px/1.65 "DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; }
+.wrap { max-width:780px; margin:0 auto; padding:48px 24px 90px; }
+.eyebrow { font-family:"DM Mono",ui-monospace,monospace; font-size:.7rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+h1 { font-size:2.7rem; line-height:1.03; margin:0 0 10px; letter-spacing:-.025em; }
+.sub { color:var(--secondary); font-size:1.05rem; margin:0 0 46px; }
+h2 { font-size:1.45rem; margin:56px 0 6px; letter-spacing:-.015em; }
+h2 .n { font-family:"DM Mono",ui-monospace,monospace; font-size:.72rem; color:var(--accent);
+  display:block; letter-spacing:.14em; margin-bottom:7px; }
+p { margin:0 0 16px; }
+.lead { font-size:1.12rem; }
+.card { background:var(--card); border:1px solid var(--rule); border-radius:8px;
+  padding:22px 24px; margin:22px 0; }
+.big { font-size:1.5rem; line-height:1.4; font-weight:500; margin:0; }
+.hi { color:var(--accent); }
+.fine { color:var(--muted); font-size:.85rem; }
+svg { display:block; width:100%; height:auto; margin:22px 0 6px; overflow:visible; }
+.lbl { font-size:13px; fill:var(--ink); font-family:"DM Sans",sans-serif; font-weight:500; }
+.sml { font-size:11.5px; fill:var(--muted); font-family:"DM Mono",ui-monospace,monospace; }
+.val { font-size:13px; fill:var(--ink); font-weight:700; font-family:"DM Mono",ui-monospace,monospace; }
+.step { display:flex; gap:16px; margin:0 0 18px; align-items:flex-start; }
+.step .k { flex:none; width:30px; height:30px; border-radius:99px; background:var(--accent);
+  color:#fff; font-family:"DM Mono",ui-monospace,monospace; font-size:.8rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; }
+.step .t { flex:1; }
+.step .t b { display:block; }
+.step .t span { color:var(--secondary); font-size:.95rem; }
+table { width:100%; border-collapse:collapse; font-size:.94rem; margin:14px 0 0; }
+th { text-align:left; font-family:"DM Mono",ui-monospace,monospace; font-size:.66rem;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted); font-weight:500;
+  padding:0 12px 7px 0; border-bottom:1.5px solid var(--ink); }
+td { padding:11px 12px 11px 0; border-bottom:1px solid var(--rule); vertical-align:top; }
+td.s { white-space:nowrap; font-family:"DM Mono",ui-monospace,monospace; font-size:.78rem; }
+td:first-child { min-width:132px; }
+td:first-child b { white-space:nowrap; }
+.done { color:var(--good); } .wait { color:var(--accent); }
+.legend { display:flex; gap:22px; flex-wrap:wrap; font-size:.85rem; margin-top:10px; }
+.legend i { width:11px; height:11px; border-radius:2px; display:inline-block;
+  margin-right:7px; transform:translateY(1px); }
+blockquote { margin:0; padding:16px 20px; border-left:4px solid var(--accent);
+  background:var(--card); border-radius:0 6px 6px 0; }
+blockquote p:last-child { margin:0; }
+@media (max-width:640px) { h1 { font-size:2rem; } body { font-size:16px; } }
+@media print { body { background:#fff; } .wrap { padding:0; max-width:none; } h2 { break-after:avoid; } }
+</style>
+<style>
+.call { display:flex; gap:16px; padding:18px 0; border-bottom:1px solid var(--rule); }
+.call .rank { flex:none; width:34px; height:34px; border-radius:99px; background:var(--accent);
+  color:#fff; font-family:"DM Mono",ui-monospace,monospace; font-size:.85rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; }
+.call .who { flex:1; }
+.call b { font-size:1.06rem; }
+.loc { color:var(--secondary); font-size:.88rem; margin-top:2px; }
+.numbers { margin:8px 0 6px; }
+a.tel { display:inline-block; font-family:"DM Mono",ui-monospace,monospace; font-size:.95rem;
+  font-weight:700; color:#fff; background:var(--accent); padding:6px 12px; border-radius:6px;
+  text-decoration:none; margin:0 6px 6px 0; }
+a.tel:hover { filter:brightness(1.08); }
+.nonum { color:var(--muted); font-size:.85rem; font-style:italic; }
+.note { color:var(--secondary); font-size:.9rem; }
+td.n { width:52%; } td.t { text-align:right; }
+table.prod td, table.prod th { font-size:.86rem; padding:8px 10px 8px 0; }
+td.num, th.num { text-align:right; padding-right:18px; font-family:"DM Mono",ui-monospace,monospace; white-space:nowrap; }
+td.num.bad { color:#d03b3b; font-weight:700; }
+td.num.warn { color:#b26a00; font-weight:700; }
+td.who2 { color:var(--secondary); font-size:.82rem; }
+.script { background:var(--card); border-left:4px solid var(--accent); padding:18px 22px;
+  border-radius:0 6px 6px 0; margin:20px 0; font-size:1.05rem; }
+.danger { background:var(--card); border-left:4px solid #d03b3b; padding:16px 20px;
+  border-radius:0 6px 6px 0; margin:18px 0; }
+.danger b { color:#d03b3b; }
+ol.ask { padding-left:22px; } ol.ask li { margin-bottom:9px; }
+@media print { a.tel { background:none; color:#000; border:1px solid #000; } }
+</style>
+</head>
+<body><div class="wrap">
+<div class="eyebrow">WGH Sourcing</div>
+<h1>Who to call</h1>
+<p class="sub">Researched 27 July 2026. Tap any number to dial.</p>
+
+<div class="danger">
+<p><b>Before you spend money, read section 5.</b> The Circle electronics market burned in January 2026, Ghana's import certification rules changed on 1 July 2026, and Ghana Standards Authority sealed part of the Ashaiman China Mall warehouse in May 2026 over failed bulbs.</p>
+</div>
+
+<h2><span class="n">01</span>The seven calls, in order</h2>
+<p>Stop when you have three quotes on the products that actually sell.</p>
+<div class="call">
+      <div class="rank">1</div>
+      <div class="who">
+        <b>Interworld Products</b>
+        <div class="loc">Binatone House, Abeka Lapaz</div>
+        <div class="numbers"><a class="tel" href="tel:+233302400233">030 240 0233</a> <a class="tel" href="tel:+233302402344">030 240 2344</a> <a class="tel" href="tel:+233302414326">030 241 4326</a></div>
+        <div class="note">The Binatone importer. Irons, kettles, blenders, fans, personal care. Best single call on this sheet.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">2</div>
+      <div class="who">
+        <b>Goodluck Africa</b>
+        <div class="loc">2 Adjoate St, Osu, behind Koala</div>
+        <div class="numbers"><a class="tel" href="tel:+233307072121">030 707 2121</a> <a class="tel" href="tel:+233204391011">020 439 1011</a></div>
+        <div class="note">The only company found that is multi-brand, authorised AND openly wholesale. LG, Samsung, Nasco, Midea, Binatone.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">3</div>
+      <div class="who">
+        <b>Electroland Ghana</b>
+        <div class="loc">Ring Road Central, opposite GCB</div>
+        <div class="numbers"><a class="tel" href="tel:+233242439437">024 243 9437</a> <a class="tel" href="tel:+233302211318">030 221 1318</a></div>
+        <div class="note">Owns the Nasco brand. Ask for the Tudu branch for trade terms. Sells the Midea 20L microwave at GHS 699.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">4</div>
+      <div class="who">
+        <b>HKSHOP</b>
+        <div class="loc">Tip Toe Lane 22, Circle Mall</div>
+        <div class="numbers"><a class="tel" href="tel:+233551069351">055 106 9351</a></div>
+        <div class="note">Phone accessories in bulk. Cases, chargers, cables, power banks, earphones.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">5</div>
+      <div class="who">
+        <b>Kwatsons Ghana</b>
+        <div class="loc">74 Miamonaa St, South Industrial Area</div>
+        <div class="numbers"><a class="tel" href="tel:+233302765324">030 276 5324</a></div>
+        <div class="note">Describes itself as a home appliance wholesaler to shops. Trading since 1985.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">6</div>
+      <div class="who">
+        <b>Grand Pacific</b>
+        <div class="loc">Dzorwulu</div>
+        <div class="numbers"><a class="tel" href="tel:+233302782868">030 278 2868</a> <a class="tel" href="tel:+233244314429">024 431 4429</a></div>
+        <div class="note">Bulbs, lighting, wiring accessories.</div>
+      </div>
+    </div><div class="call">
+      <div class="rank">7</div>
+      <div class="who">
+        <b>China Mall Ashaiman</b>
+        <div class="loc">Tema Motorway</div>
+        <div class="numbers"><a class="tel" href="tel:+233239311818">023 931 1818</a></div>
+        <div class="note">The only China Mall branch described as wholesale. Read the warning before you buy lighting.</div>
+      </div>
+    </div>
+
+
+<h2><span class="n">02</span>What to say</h2>
+<p>You are not shopping, you are opening a trade account. Say so in the first sentence or you get quoted the walk-in price.</p>
+
+<div class="script">
+"Good morning. My name is Stephen, I run an online shop in Accra delivering across the city. I am looking for a regular supplier, not a one-off purchase. Do you sell to retailers at trade price?"
+</div>
+
+<p>Then, in this order:</p>
+<ol class="ask">
+<li><b>"What is the carton price on [product]?"</b> Carton, not unit. Asking by the carton is the signal that you are trade.</li>
+<li><b>"What is the minimum order?"</b> Nobody in Ghana publishes this. It is always a phone conversation.</li>
+<li><b>"Do I need a registered business or a TIN to open an account?"</b></li>
+<li><b>"What are your payment terms?"</b> Credit is normal in this chain. Ask on the second call, not the first.</li>
+<li><b>"Do you deliver, or do I collect?"</b> Delivery changes the real cost per unit.</li>
+</ol>
+
+<p><b>Write it down the same day</b>, then put the dealer cost into WooCommerce &rsaquo; Product Costs while you still remember which quote was which.</p>
+
+<p class="fine">On haggling: opening at 30 to 50 percent of the quoted price is documented practice in Ghanaian markets, with achieved discounts of 50 to 63 percent. The first number is never the last number, and bundling several products into one order moves it further than arguing about one.</p>
+
+<h2><span class="n">03</span>Every product, and the price you must beat</h2>
+<p>The market column is what the product <b>retails</b> for in Ghana today, checked on Jumia, Jiji and Tonaton on 27 July 2026. It is your ceiling, not your target. Red means a customer can already buy it far cheaper than you are asking.</p>
+<h3>Kitchen and home</h3><table class="prod"><thead><tr><th>Product</th><th class="num">You list</th><th class="num">Market</th><th>Who to call</th></tr></thead><tbody><tr><td>Silver Crest 2L blender</td><td class="num">280</td><td class="num bad">129 to 160</td><td class="who2">No Ghana distributor. Walk Tudu or Opera Square.</td></tr><tr><td>Silver Crest 2.5L blender</td><td class="num">350</td><td class="num">350 to 430</td><td class="who2">Same. Walk it.</td></tr><tr><td>5L digital rice cooker</td><td class="num">320</td><td class="num warn">225 to 240</td><td class="who2">Tudu, or Goodluck Africa</td></tr><tr><td>1.8L stainless kettle</td><td class="num">120</td><td class="num warn">71 to 98</td><td class="who2">Interworld (Binatone), Tudu</td></tr><tr><td>2L electric kettle</td><td class="num">110</td><td class="num">72 to 98</td><td class="who2">Interworld, Tudu</td></tr><tr><td>Hot plate, single</td><td class="num">180</td><td class="num warn">99 to 145</td><td class="who2">Tudu, Opera Square</td></tr><tr><td>Hot plate, double</td><td class="num">320</td><td class="num warn">187 to 230</td><td class="who2">Tudu, Opera Square</td></tr><tr><td>20L microwave</td><td class="num">950</td><td class="num">639 to 950</td><td class="who2">Electroland sells the Midea at 699. Ask trade price.</td></tr><tr><td>Sandwich / toast maker</td><td class="num">180</td><td class="num">149 to 190</td><td class="who2">Tudu, Goodluck Africa</td></tr><tr><td>2.5L deep fryer</td><td class="num">350</td><td class="num bad">not sold in Ghana</td><td class="who2">Smallest anywhere is 3L. Change or drop this listing.</td></tr><tr><td>7 piece cookware set</td><td class="num">420</td><td class="num">700</td><td class="who2">Century Industries, Tudu</td></tr><tr><td>Insulated food flask set</td><td class="num">150</td><td class="num">83 to 170</td><td class="who2">China Mall, Tudu</td></tr></tbody></table><h3>Phone and computer accessories</h3><table class="prod"><thead><tr><th>Product</th><th class="num">You list</th><th class="num">Market</th><th>Who to call</th></tr></thead><tbody><tr><td>10000mAh power bank, LCD</td><td class="num">130</td><td class="num bad">56</td><td class="who2">HKSHOP, Tip Toe Lane</td></tr><tr><td>20000mAh fast charge</td><td class="num">210</td><td class="num warn">81 to 200</td><td class="who2">HKSHOP, Tip Toe Lane</td></tr><tr><td>30000mAh, 4 cables</td><td class="num">320</td><td class="num bad">160 to 186</td><td class="who2">HKSHOP, Tip Toe Lane</td></tr><tr><td>Pro TWS earbuds</td><td class="num">90</td><td class="num">129 to 165</td><td class="who2">HKSHOP. You are UNDER market here.</td></tr><tr><td>Bluetooth headset + case</td><td class="num">120</td><td class="num">129 to 199</td><td class="who2">HKSHOP. Under market.</td></tr><tr><td>Portable Bluetooth speaker</td><td class="num">240</td><td class="num">220</td><td class="who2">HKSHOP, Oraimo trade desk</td></tr><tr><td>20W USB-C charger</td><td class="num">70</td><td class="num">not found</td><td class="who2">HKSHOP, Tip Toe Lane</td></tr><tr><td>3-in-1 charging cable</td><td class="num">45</td><td class="num">not found</td><td class="who2">HKSHOP, Tip Toe Lane</td></tr><tr><td>Car phone holder</td><td class="num">60</td><td class="num">45 to 80</td><td class="who2">HKSHOP, Jiji Dansoman sellers</td></tr><tr><td>Ring light with tripod</td><td class="num">180</td><td class="num">250 to 300</td><td class="who2">Circle sellers. Under market.</td></tr><tr><td>2.4G wireless mouse</td><td class="num">75</td><td class="num bad">29 to 36</td><td class="who2">Jayke Computers</td></tr><tr><td>Keyboard + mouse combo</td><td class="num">190</td><td class="num bad">89</td><td class="who2">Jayke Computers</td></tr><tr><td>64GB flash drive</td><td class="num">85</td><td class="num warn">56 to 69</td><td class="who2">Jayke, Regitech</td></tr><tr><td>128GB flash drive</td><td class="num">140</td><td class="num bad">58 to 79</td><td class="who2">Jayke, Regitech</td></tr><tr><td>Aluminium laptop stand</td><td class="num">150</td><td class="num bad">23 to 43</td><td class="who2">Jayke, Regitech</td></tr><tr><td>4-port USB hub</td><td class="num">80</td><td class="num bad">7-port sells at 29</td><td class="who2">4-port not found. Jayke.</td></tr><tr><td>1080p webcam + mic</td><td class="num">220</td><td class="num bad">64 to 135</td><td class="who2">Jayke, Regitech</td></tr><tr><td>Laptop cooling pad</td><td class="num">180</td><td class="num bad">49 to 130</td><td class="who2">Jayke, Regitech</td></tr></tbody></table><h3>Personal care, garment care, bags, electricals</h3><table class="prod"><thead><tr><th>Product</th><th class="num">You list</th><th class="num">Market</th><th>Who to call</th></tr></thead><tbody><tr><td>Rechargeable hair clipper</td><td class="num">95</td><td class="num">80 to 150</td><td class="who2">Interworld, China Mall</td></tr><tr><td>2000W hair dryer</td><td class="num">220</td><td class="num warn">160</td><td class="who2">Interworld</td></tr><tr><td>Ceramic straightener</td><td class="num">190</td><td class="num bad">78 to 98</td><td class="who2">China Mall, Tudu</td></tr><tr><td>Rechargeable shaver</td><td class="num">160</td><td class="num">340 branded</td><td class="who2">Interworld, China Mall. Under market.</td></tr><tr><td>Facial steamer</td><td class="num">200</td><td class="num">200</td><td class="who2">China Mall</td></tr><tr><td>Digital bathroom scale</td><td class="num">150</td><td class="num">120</td><td class="who2">China Mall, Kwatsons</td></tr><tr><td>1200W dry iron</td><td class="num">190</td><td class="num bad">69 to 115</td><td class="who2">Interworld</td></tr><tr><td>1450W steam iron</td><td class="num">230</td><td class="num warn">160</td><td class="who2">Interworld. Binatone SI-1605 is an exact match.</td></tr><tr><td>Handheld garment steamer</td><td class="num">260</td><td class="num">226 to 370</td><td class="who2">Interworld</td></tr><tr><td>Foldable drying rack</td><td class="num">180</td><td class="num">269 to 299</td><td class="who2">Century Industries, China Mall. Under market.</td></tr><tr><td>Rechargeable lint remover</td><td class="num">90</td><td class="num bad">41 to 47</td><td class="who2">China Mall</td></tr><tr><td>3-in-1 backpack set</td><td class="num">220</td><td class="num bad">59 to 125</td><td class="who2">Kwashieman bag cluster</td></tr><tr><td>5-in-1 backpack set</td><td class="num">250</td><td class="num warn">170 to 189</td><td class="who2">Kwashieman</td></tr><tr><td>Kids cartoon backpack</td><td class="num">130</td><td class="num bad">29 to 94</td><td class="who2">Kwashieman</td></tr><tr><td>Anti-theft laptop backpack</td><td class="num">180</td><td class="num bad">60</td><td class="who2">Kwashieman, Chili Peck</td></tr><tr><td>Insulated lunch bag + bottle</td><td class="num">140</td><td class="num">85 with cutlery</td><td class="who2">No bottle version found. China Mall.</td></tr><tr><td>Rechargeable LED lamp</td><td class="num">160</td><td class="num">138 to 162</td><td class="who2">Grand Pacific, Global Lighting</td></tr><tr><td>10M RGB LED strip</td><td class="num">120</td><td class="num warn">75 to 110</td><td class="who2">Grand Pacific, China Mall</td></tr><tr><td>Solar standing fan</td><td class="num">380</td><td class="num">690 to 896</td><td class="who2">Grand Pacific. Well under market.</td></tr><tr><td>4-socket surge board</td><td class="num">110</td><td class="num">110</td><td class="who2">Tricord, Grand Pacific. No 4-way states surge.</td></tr></tbody></table>
+
+<h2><span class="n">04</span>The rest of the contact list</h2>
+
+<h3>Kitchen, home and general appliances</h3><table><tbody><tr><td class="n"><b>Somotex Ghana</b><div class="loc">Dadeban Rd, North Industrial</div><div class="note">Bruhm and LG. Small appliances likely thin.</div></td><td class="t"><a class="tel" href="tel:+233800100247">0800 100247</a> <a class="tel" href="tel:+233302229641">030 222 9641</a></td></tr><tr><td class="n"><b>Century Industries</b><div class="loc">2nd Palace Link Rd, North Industrial</div><div class="note">Plastics factory, 200+ housewares. Melcom sister company.</div></td><td class="t"><a class="tel" href="tel:+233302251789">030 225 1789</a></td></tr><tr><td class="n"><b>Binatone, Opera Square</b><div class="loc">Glamour Building, Opera Square</div><div class="note">Inside the CBD wholesale zone.</div></td><td class="t"><a class="tel" href="tel:+23358974407">058 974 407</a></td></tr><tr><td class="n"><b>Binatone, Labone HQ</b><div class="loc">9 Jubilee Wells St, Labone</div></td><td class="t"><a class="tel" href="tel:+233302773304">030 277 3304</a> <a class="tel" href="tel:+233302773305">030 277 3305</a></td></tr><tr><td class="n"><b>Binatone, Lapaz</b><div class="loc">B-10/31 Abeka Lapaz, Motorway</div></td><td class="t"><a class="tel" href="tel:+233509453812">050 945 3812</a> <a class="tel" href="tel:+233243303796">024 330 3796</a></td></tr><tr><td class="n"><b>Megamax Electronics</b><div class="loc">144 Dansoman High St</div><div class="note">Listed as a wholesale trader.</div></td><td class="t"><a class="tel" href="tel:+233561288760">056 128 8760</a></td></tr><tr><td class="n"><b>Pick N Pay Ltd</b><div class="loc">Shop 17, Okaishie</div><div class="note">Appliance dealer inside Okaishie.</div></td><td class="t"><a class="tel" href="tel:+233302662212">030 266 2212</a></td></tr><tr><td class="n"><b>Coolprice Ltd</b><div class="loc">Circle Ring Road</div><div class="note">Wholesale status unconfirmed.</div></td><td class="t"><a class="tel" href="tel:+233557845548">055 784 5548</a></td></tr><tr><td class="n"><b>JULAMOS.com</b><div class="loc">Opera Square Branch, Pagan Rd</div><div class="note">Wholesale status unconfirmed.</div></td><td class="t"><a class="tel" href="tel:+233236838749">023 683 8749</a></td></tr></tbody></table><h3>Phone and computer accessories</h3><table><tbody><tr><td class="n"><b>Get4Less Ghana</b><div class="loc">Osu</div><div class="note">Says &#x27;Wholesale and Retail&#x27; on their own site. Premium tier.</div></td><td class="t"><a class="tel" href="tel:+233500290290">050 029 0290</a></td></tr><tr><td class="n"><b>Jayke Computers</b><div class="loc">Adabraka</div><div class="note">Calls itself a wholesale marketplace. Mice, keyboards, drives.</div></td><td class="t"><a class="tel" href="tel:+233202937272">020 293 7272</a></td></tr><tr><td class="n"><b>Regitech Laptop Solutions</b><div class="loc">Santa Maria</div><div class="note">Bulk sale and doorstep delivery.</div></td><td class="t"><a class="tel" href="tel:+233206029750">020 602 9750</a></td></tr><tr><td class="n"><b>Next Computers</b><div class="loc">Osu</div><div class="note">Describes itself as a major importer.</div></td><td class="t"><a class="tel" href="tel:+233208128653">020 812 8653</a> <a class="tel" href="tel:+233302781492">030 278 1492</a></td></tr><tr><td class="n"><b>Technology Distributions Gh</b><div class="loc">147C Olusegun Obasanjo Way, Roman Ridge</div><div class="note">HP, Dell, Lenovo, Microsoft. Listing last updated 2019, verify.</div></td><td class="t"><a class="tel" href="tel:+233244947552">024 494 7552</a></td></tr><tr><td class="n"><b>Franko Trading, Circle</b><div class="loc">Kwame Nkrumah Ave</div><div class="note">Your price benchmark and your competitor. Branch numbers date from 2018.</div></td><td class="t"><a class="tel" href="tel:+233302225651">030 222 5651</a></td></tr><tr><td class="n"><b>Oraimo Ghana care line</b><div class="loc">Online only</div><div class="note">Ask to be routed to the trade desk. No Ghana distributor is published.</div></td><td class="t"><a class="tel" href="tel:+233503619600">050 361 9600</a> <a class="tel" href="tel:+233534529584">053 452 9584</a></td></tr><tr><td class="n"><b>Carlcare Ghana</b><div class="loc">Nsawam Rd, Aseda Twin Towers</div><div class="note">Service centre for Tecno, itel, Infinix, Oraimo. Ask who supplies trade.</div></td><td class="t"><a class="tel" href="tel:+233543727136">054 372 7136</a></td></tr></tbody></table><h3>Lighting and electricals</h3><table><tbody><tr><td class="n"><b>Tricord Limited</b><div class="loc">CUA House, 44 Jones Nelson Rd, Adabraka</div><div class="note">ABB, Eaton, UMS. Import level, since 1984.</div></td><td class="t"><a class="tel" href="tel:+233302229231">030 222 9231</a> <a class="tel" href="tel:+233302221477">030 222 1477</a></td></tr><tr><td class="n"><b>Global Lighting Centre</b><div class="loc">Spintex</div><div class="note">Lighting and ceiling fans.</div></td><td class="t"><a class="tel" href="tel:+233577739848">057 773 9848</a></td></tr><tr><td class="n"><b>Altra Electricals</b><div class="loc">Silver Star Tower, Airport City</div><div class="note">Japan Motors joint venture.</div></td><td class="t"><a class="tel" href="tel:+233302225250">030 222 5250</a> <a class="tel" href="tel:+233302766888">030 276 6888</a></td></tr><tr><td class="n"><b>Friends Electrical &amp; Trading</b><div class="loc">D66/74 Beach Ave, Okaishie</div></td><td class="t"><a class="tel" href="tel:+233302665299">030 266 5299</a></td></tr></tbody></table><h3>Bags and school</h3><table><tbody><tr><td class="n"><b>Kwashieman bag cluster</b><div class="loc">Kwashieman-Odorkor road, near the NPP office, 600m from Kwashieman KFC</div><div class="note">Multiple wholesale sellers at GHS 100 to 170. Walk it.</div></td><td class="t"><span class="nonum">no number found, go in person</span></td></tr><tr><td class="n"><b>Chili Peck Ltd</b><div class="loc">Accra Metropolitan, via Jiji</div><div class="note">The only published wholesale ladder found: min 10 pieces, GHS 65 at 20+, against GHS 80 retail.</div></td><td class="t"><span class="nonum">no number found, go in person</span></td></tr><tr><td class="n"><b>Kingdom Books &amp; Stationery</b><div class="loc">Accra / Osu / Tema</div><div class="note">School bags and stationery.</div></td><td class="t"><a class="tel" href="tel:+233302764101">030 276 4101</a> <a class="tel" href="tel:+233302762791">030 276 2791</a> <a class="tel" href="tel:+233303206042">030 320 6042</a></td></tr></tbody></table><h3>Other China Mall branches</h3><table><tbody><tr><td class="n"><b>China Mall Spintex</b><div class="loc">35 Spintex Road</div><div class="note">Mon to Sat, 09:00 to 19:00.</div></td><td class="t"><a class="tel" href="tel:+233509058888">050 905 8888</a></td></tr><tr><td class="n"><b>China Mall Kasoa</b><div class="loc">Behind West Hills Mall</div><div class="note">Number not found. Closed Sundays.</div></td><td class="t"><span class="nonum">no number found, go in person</span></td></tr></tbody></table>
+
+<h2><span class="n">05</span>Where to walk</h2>
+<p>Phoning gets you the branded tier. The value tier, which is most of your catalogue, has no phone number.</p>
+
+<table><tbody>
+<tr><td class="n"><b>Tudu</b><div class="note">Appliance trade volume. Electroland put a branch here, which is the hard evidence. Next to Makola in the CBD.</div></td><td class="t">go</td></tr>
+<tr><td class="n"><b>Opera Square</b><div class="note">Electricals and home appliances. Home of the Ghana Electrical Dealers Association.</div></td><td class="t">go</td></tr>
+<tr><td class="n"><b>Tip Toe Lane, Circle</b><div class="note">Phones and accessories. Ghana's primary destination for mobile technology. Burned January 2026, phone first.</div></td><td class="t">call first</td></tr>
+<tr><td class="n"><b>Kwashieman-Odorkor road</b><div class="note">School bags, wholesale. Near the NPP office, 600m from Kwashieman KFC.</div></td><td class="t">go</td></tr>
+<tr><td class="n"><b>Makola</b><div class="note">Everything except cars. Plastics hub, school uniforms and stationery.</div></td><td class="t">go</td></tr>
+<tr><td class="n"><b>North Industrial Area</b><div class="note">Not a market. Warehouses. Somotex, Melcom HQ and Century Industries all sit on Dadeban Road.</div></td><td class="t">by appointment</td></tr>
+<tr><td class="n"><b>Okaishie</b><div class="note">Pharmaceuticals, NOT cosmetics. The internet says otherwise and the evidence does not support it. One appliance dealer inside: Pick N Pay, Shop 17.</div></td><td class="t">mostly skip</td></tr>
+<tr><td class="n"><b>Abossey Okai</b><div class="note">Car parts only.</div></td><td class="t">skip</td></tr>
+<tr><td class="n"><b>Kantamanto</b><div class="note">Second-hand clothing.</div></td><td class="t">skip</td></tr>
+<tr><td class="n"><b>Rawlings Park</b><div class="note">Mainly a lorry park, plus fabrics and cosmetics. No evidence of appliance wholesale.</div></td><td class="t">skip</td></tr>
+</tbody></table>
+
+<h2><span class="n">06</span>What will cost you money if you do not know it</h2>
+
+<div class="danger">
+<p><b>Tip Toe Lane burned on 20 January 2026.</b> Three weeks later traders were still asking for help, and no source covers its state after February 2026. Circle has had repeated fires, demolitions and closures over trader nationality disputes. Phone before you travel, and never single-source from Circle.</p>
+</div>
+
+<div class="danger">
+<p><b>Substandard goods, at the exact branch on your list.</b> On 19 May 2026 Ghana Standards Authority sealed part of the Ashaiman China Mall warehouse. Of 15 bulbs sampled, all 15 failed: bulbs sold as 15 watts measured 51 lumens against a 360-lumen minimum, in Chinese-only packaging. English markings are mandatory and Chinese-only packaging has triggered seizures this year.</p>
+<p>Buy there with your eyes open. Check the actual output and insist on English packaging. Ghana National Fire Service recorded 881 domestic fires in the first quarter of 2026, with electrical faults the leading cause. If you sell a bad extension board and a house burns, that is your name on it.</p>
+</div>
+
+<h3>The certification rules changed on 1 July 2026</h3>
+<p>Ghana Standards Authority now issues Certificates of Conformity directly, through the EasyPass portal. Bureau Veritas has stopped. Any guidance dated 2024 or 2025 is out of date.</p>
+<p><b>easypass@gsa.gov.gh</b> &middot; 025 606 1679 / 025 606 1680. Route B, product registration, fits a repeating range: 0.5 percent plus USD 400 a year for 15 items.</p>
+<p>Your electricals are in scope. Cables and wiring accessories need certification under L.I. 2478, and enforcement reaches into shops, not just the port: Customs and Police can seize stock from your storage, and retailers are required to verify compliance before distributing. Fans need Energy Commission registration and an energy label, at efficiency.energycom.gov.gh.</p>
+
+<h3>Foreign-owned suppliers can be closed without warning</h3>
+<p>Retail is legally reserved for Ghanaians; foreign traders may only wholesale. That is why a Chinese or Nigerian supplier sells you cartons rather than pieces. GUTA has repeatedly forced foreign-owned shops shut: Abossey Okai in September 2025, over 200 shops in Kumasi in December 2025, Ashanti threats in February 2026. <b>Always have a second number for every product.</b></p>
+
+<h3>If you ever import directly</h3>
+<p>Roughly 48 percent of CIF in duty and levies before handling and agent fees, so a landed cost of about 1.4 to 1.6 times CIF. Two recent changes help: the COVID-19 Health Recovery Levy was abolished on 1 January 2026, and the VAT registration threshold rose from GHS 200,000 to GHS 750,000, so you are probably below it.</p>
+<p>But conformity minimums make small trial imports uneconomic: a USD 250 to 300 minimum fee, with exemption only below USD 2,000 FOB. At your volume, buying from an Accra importer who already holds the certificate is almost certainly cheaper than importing yourself.</p>
+<p class="fine">Live risk: in April 2026 GUTA alleged the new "Publican" AI valuation system raised duties by up to 300 percent and told traders to stop paying. The strike was suspended on 17 April pending consultation, and no resolution was found after that. Check before committing to a shipment.</p>
+
+<h3>You are late for back to school 2026</h3>
+<p>Basic schools open <b>8 September</b>, senior high <b>18 September</b>. Sea freight from China runs five to seven weeks plus clearing, so a container ordered today will not land in time. Buy local wholesale stock at Kwashieman through August and be shelf-ready by about 20 August. Place the container order in April or May 2027. Free SHS does not cover school bags, so they stay a parent purchase.</p>
+
+<h2><span class="n">07</span>What could not be found</h2>
+<p>These are findings, not gaps in effort. Each one changes what you should do.</p>
+<ul>
+<li><b>An official Silver Crest distributor for Ghana.</b> It moves through independent importers and market traders. Silver Crest is a walking job, not a phoning job.</li>
+<li><b>Any published minimum order, carton price or dealer tier, from any Ghanaian supplier.</b> Not one. Every dealer price is quote-on-phone. That is the market's structure, not a research failure.</li>
+<li><b>A 2.5L deep fryer at any price in Ghana.</b> Smallest available is 3L.</li>
+<li><b>A 4-port USB hub</b>, a <b>4-socket board stating surge protection</b>, a <b>20W USB-C charger</b>, a <b>3-in-1 charging cable</b>, and an <b>insulated lunch bag with a bottle</b>. None found on any Ghanaian marketplace.</li>
+<li><b>An authorised Oraimo or New Age distributor for Ghana.</b> Oraimo's own "where to buy" page lists no physical stores at all.</li>
+<li><b>The brand "Faster".</b> No Ghana presence of any kind.</li>
+<li><b>China Mall minimum orders or dealer terms</b>, and <b>Melcom's trade counter policy.</b></li>
+</ul>
+
+<h2><span class="n">08</span>Two things the prices are telling you</h2>
+
+<div class="card">
+<p class="big">Your listed prices are above the market on most of the catalogue, and on some lines by three to six times.</p>
+</div>
+
+<p>Your GHS 280 blender competes with GHS 129. Your GHS 75 mouse competes with GHS 29. Your GHS 150 laptop stand competes with GHS 23. Those are not dealer prices, they are what a customer can already buy the same thing for today.</p>
+
+<p>This is not a disaster. Your prices were always placeholders, and a WhatsApp shop with fast Accra delivery genuinely sells above a marketplace listing. But no amount of advertising fixes a six-times gap. <b>Reprice against that column before you spend a cedi on ads.</b></p>
+
+<p>You are also <b>under</b> market on several: earbuds, ring lights, drying racks, shavers and the solar fan. Those are the ones to push first.</p>
+
+<p>The other lesson is which door to knock on. Silver Crest 2L retails at GHS 129 to 160; Binatone's 2L retails at GHS 1,400. A ninefold spread on nominally the same product. Your catalogue sits in the value tier, so Interworld and Electroland are right for <b>irons, kettles and the microwave</b> and wrong for most of the rest.</p>
+
+<p>One exception is worth the call on its own. <b>Electroland sells the Midea 20L microwave at GHS 699 retail, against GHS 950 on Jumia for the same unit.</b> That is 26 percent below market before you have negotiated anything.</p>
+
+<p class="fine">Compiled 27 July 2026. Directory listings age badly: assume roughly half of any number sourced only from a business directory is dead, and call before you travel. Numbers taken from a company's own website are the trustworthy tier. Nothing on this sheet was invented; where a fact could not be verified, it says so.</p>
+
+</div></body>
+</html>

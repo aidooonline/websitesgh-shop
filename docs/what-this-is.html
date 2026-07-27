@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WGH Intelligence, in plain English</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper:#f8f6f2; --ink:#20211C; --secondary:#52514e; --muted:#898781;
+  --rule:#e1e0d9; --accent:#e8630a; --card:#fcfcfb;
+  --in:#2a78d6; --out:#e34948; --good:#0ca30c;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper:#1a1a19; --ink:#fff; --secondary:#c3c2b7; --muted:#898781;
+    --rule:#2c2c2a; --card:#232322; --in:#3987e5; --out:#e66767; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink);
+  font:17px/1.65 "DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; }
+.wrap { max-width:780px; margin:0 auto; padding:48px 24px 90px; }
+.eyebrow { font-family:"DM Mono",ui-monospace,monospace; font-size:.7rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+h1 { font-size:2.7rem; line-height:1.03; margin:0 0 10px; letter-spacing:-.025em; }
+.sub { color:var(--secondary); font-size:1.05rem; margin:0 0 46px; }
+h2 { font-size:1.45rem; margin:56px 0 6px; letter-spacing:-.015em; }
+h2 .n { font-family:"DM Mono",ui-monospace,monospace; font-size:.72rem; color:var(--accent);
+  display:block; letter-spacing:.14em; margin-bottom:7px; }
+p { margin:0 0 16px; }
+.lead { font-size:1.12rem; }
+.card { background:var(--card); border:1px solid var(--rule); border-radius:8px;
+  padding:22px 24px; margin:22px 0; }
+.big { font-size:1.5rem; line-height:1.4; font-weight:500; margin:0; }
+.hi { color:var(--accent); }
+.fine { color:var(--muted); font-size:.85rem; }
+svg { display:block; width:100%; height:auto; margin:22px 0 6px; overflow:visible; }
+.lbl { font-size:13px; fill:var(--ink); font-family:"DM Sans",sans-serif; font-weight:500; }
+.sml { font-size:11.5px; fill:var(--muted); font-family:"DM Mono",ui-monospace,monospace; }
+.val { font-size:13px; fill:var(--ink); font-weight:700; font-family:"DM Mono",ui-monospace,monospace; }
+.step { display:flex; gap:16px; margin:0 0 18px; align-items:flex-start; }
+.step .k { flex:none; width:30px; height:30px; border-radius:99px; background:var(--accent);
+  color:#fff; font-family:"DM Mono",ui-monospace,monospace; font-size:.8rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; }
+.step .t { flex:1; }
+.step .t b { display:block; }
+.step .t span { color:var(--secondary); font-size:.95rem; }
+table { width:100%; border-collapse:collapse; font-size:.94rem; margin:14px 0 0; }
+th { text-align:left; font-family:"DM Mono",ui-monospace,monospace; font-size:.66rem;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--muted); font-weight:500;
+  padding:0 12px 7px 0; border-bottom:1.5px solid var(--ink); }
+td { padding:11px 12px 11px 0; border-bottom:1px solid var(--rule); vertical-align:top; }
+td.s { white-space:nowrap; font-family:"DM Mono",ui-monospace,monospace; font-size:.78rem; }
+td:first-child { min-width:132px; }
+td:first-child b { white-space:nowrap; }
+.done { color:var(--good); } .wait { color:var(--accent); }
+.legend { display:flex; gap:22px; flex-wrap:wrap; font-size:.85rem; margin-top:10px; }
+.legend i { width:11px; height:11px; border-radius:2px; display:inline-block;
+  margin-right:7px; transform:translateY(1px); }
+blockquote { margin:0; padding:16px 20px; border-left:4px solid var(--accent);
+  background:var(--card); border-radius:0 6px 6px 0; }
+blockquote p:last-child { margin:0; }
+@media (max-width:640px) { h1 { font-size:2rem; } body { font-size:16px; } }
+@media print { body { background:#fff; } .wrap { padding:0; max-width:none; } h2 { break-after:avoid; } }
+</style>
+</head>
+<body><div class="wrap">
+
+<div class="eyebrow">WGH Intelligence</div>
+<h1>What we are actually building</h1>
+<p class="sub">No jargon. One page.</p>
+
+<h2><span class="n">01</span>How your shop makes money</h2>
+
+<p class="lead">Someone finds a blender, taps WhatsApp, you agree a price, a rider delivers it, they pay cash. That is the whole business.</p>
+
+<svg viewBox="0 0 700 132" role="img" aria-label="Someone sees a product, messages on WhatsApp, you agree the sale, the rider delivers, you get paid">
+  <line x1="52" y1="42" x2="648" y2="42" stroke="var(--rule)" stroke-width="2"/>
+  <g>
+    <circle cx="52" cy="42" r="11" fill="var(--in)"/>
+    <text x="52" y="76" text-anchor="middle" class="lbl">Sees it</text>
+    <text x="52" y="94" text-anchor="middle" class="sml">on the site</text>
+  </g>
+  <g>
+    <circle cx="201" cy="42" r="11" fill="var(--in)"/>
+    <text x="201" y="76" text-anchor="middle" class="lbl">Messages</text>
+    <text x="201" y="94" text-anchor="middle" class="sml">WhatsApp</text>
+  </g>
+  <g>
+    <circle cx="350" cy="42" r="11" fill="var(--in)"/>
+    <text x="350" y="76" text-anchor="middle" class="lbl">You agree</text>
+    <text x="350" y="94" text-anchor="middle" class="sml">the sale</text>
+  </g>
+  <g>
+    <circle cx="499" cy="42" r="11" fill="var(--in)"/>
+    <text x="499" y="76" text-anchor="middle" class="lbl">Rider goes</text>
+    <text x="499" y="94" text-anchor="middle" class="sml">to the door</text>
+  </g>
+  <g>
+    <circle cx="648" cy="42" r="13" fill="var(--good)"/>
+    <text x="648" y="76" text-anchor="middle" class="lbl">Paid</text>
+    <text x="648" y="94" text-anchor="middle" class="sml">cash</text>
+  </g>
+  <text x="201" y="20" text-anchor="middle" class="sml">the sale leaves the website here</text>
+</svg>
+
+<p>That third step is the thing that makes your shop unusual. <strong>The sale happens in a chat, not on the website.</strong> So Google and Meta can see somebody clicked, but they cannot see whether that person ever bought. They are flying blind, and so are you.</p>
+
+<h2><span class="n">02</span>The one number everything hangs on</h2>
+
+<p>When you sell a blender for GHS 400, that 400 is not yours. Here is where it goes.</p>
+
+<svg viewBox="0 0 700 210" role="img" aria-label="Of GHS 400 taken, the dealer keeps 250, the rider 30, ads cost 20, and 100 is left as profit">
+  <g>
+    <text x="150" y="26" text-anchor="end" class="lbl">Customer pays</text>
+    <rect x="162" y="12" width="480" height="22" rx="4" fill="var(--in)"/>
+    <text x="652" y="28" class="val">400</text>
+  </g>
+  <g>
+    <text x="150" y="70" text-anchor="end" class="lbl">Dealer takes</text>
+    <rect x="162" y="56" width="300" height="22" rx="4" fill="var(--out)"/>
+    <text x="472" y="72" class="val">250</text>
+  </g>
+  <g>
+    <text x="150" y="114" text-anchor="end" class="lbl">Rider takes</text>
+    <rect x="162" y="100" width="36" height="22" rx="4" fill="var(--out)"/>
+    <text x="208" y="116" class="val">30</text>
+  </g>
+  <g>
+    <text x="150" y="158" text-anchor="end" class="lbl">Ads cost</text>
+    <rect x="162" y="144" width="24" height="22" rx="4" fill="var(--out)"/>
+    <text x="196" y="160" class="val">20</text>
+  </g>
+  <line x1="162" y1="178" x2="642" y2="178" stroke="var(--rule)" stroke-width="1"/>
+  <g>
+    <text x="150" y="200" text-anchor="end" class="lbl">You keep</text>
+    <rect x="162" y="186" width="120" height="22" rx="4" fill="var(--good)"/>
+    <text x="292" y="202" class="val">100</text>
+  </g>
+</svg>
+<div class="legend">
+  <span><i style="background:var(--in)"></i>money in</span>
+  <span><i style="background:var(--out)"></i>money out</span>
+  <span><i style="background:var(--good)"></i>yours</span>
+</div>
+<p class="fine">Made-up numbers, to show the shape.</p>
+
+<div class="card">
+  <p class="big">That last figure has a name: <span class="hi">profit per order</span>. It is the most important number in your business, and every decision this system makes is really the same question.</p>
+</div>
+
+<p><strong>Is an order worth more than it costs to get?</strong></p>
+
+<p>If a customer leaves you GHS 100 and an ad brings one in for GHS 60, spend more. If the ad costs GHS 140, you are paying to lose money, and selling harder makes it worse. Same ad, same price, opposite answer, and the only thing that decides it is that one number.</p>
+
+<h2><span class="n">03</span>Why this was worth building at all</h2>
+
+<p>You are running a shop where the sale disappears into WhatsApp. Without something watching, you can never answer three questions that decide whether the business grows:</p>
+
+<div class="step"><div class="k">1</div><div class="t"><b>Which ads actually brought a paying customer?</b><span>Not clicks. Not messages. Money.</span></div></div>
+<div class="step"><div class="k">2</div><div class="t"><b>Which products actually make you money?</b><span>The best seller can be the one you earn least on.</span></div></div>
+<div class="step"><div class="k">3</div><div class="t"><b>Do people come back?</b><span>The second sale costs nothing in advertising. It is the cheapest money in retail.</span></div></div>
+
+<p>Guessing at these is how a shop spends a year busy and flat.</p>
+
+<h2><span class="n">04</span>What we have built</h2>
+
+<p>Three things, and they only make sense together.</p>
+
+<table>
+  <thead><tr><th>The piece</th><th>What it does, plainly</th><th>State</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>The watcher</b><br><span class="fine">on your shop</span></td>
+      <td>Every time somebody taps WhatsApp, it quietly notes which product, which ad, and which search brought them. That is the record that would otherwise vanish the moment the chat opens.</td>
+      <td class="s done">working</td>
+    </tr>
+    <tr>
+      <td><b>The book-keeper</b><br><span class="fine">the dashboard</span></td>
+      <td>Pulls those taps and your orders together with what you spent on ads, converts dollars to cedis at a dated rate, and works out what each ad, each product and each customer was really worth.</td>
+      <td class="s done">working</td>
+    </tr>
+    <tr>
+      <td><b>The judge</b><br><span class="fine">the decision engine</span></td>
+      <td>Looks at every keyword and product and says one of four things: <b>keep</b> it, <b>watch</b> it, <b>fix</b> it, or <b>kill</b> it. It writes down the numbers behind every call so you can argue with it.</td>
+      <td class="s done">working</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p><strong>The judge is only as good as your profit per order.</strong> That is why I have spent today chasing dealer costs and not something more interesting. Right now it is guessing at $8.75 an order. Give it the real number and every verdict it has ever made can change side.</p>
+</blockquote>
+
+<h2><span class="n">05</span>Where you are right now</h2>
+
+<table>
+  <thead><tr><th>Question</th><th>The honest answer today</th></tr></thead>
+  <tbody>
+    <tr><td>Are the ads working?</td><td>Nothing is running yet, so there is nothing to judge. The system is ready for the day you switch them on.</td></tr>
+    <tr><td>What do you earn per sale?</td><td><b>Not known.</b> No dealer costs entered. This is the one thing blocking everything else.</td></tr>
+    <tr><td>Do customers come back?</td><td>Nobody has yet. Only 3 sales so far, so that is too early to mean much.</td></tr>
+    <tr><td>What about the 87 baskets?</td><td>Almost certainly robots crawling your site, not shoppers. 35 different products went into baskets and not one person messaged about any of them. From now on the system labels each visit, so within days you will know for sure.</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">06</span>Your part</h2>
+
+<p class="lead">One thing, and it is a screen now, not a command.</p>
+
+<div class="card">
+  <p class="big">In WordPress, go to <span class="hi">WooCommerce &rsaquo; Product Costs</span>. For the products that have sold, type what you pay the supplier and what the rider costs. Press Save.</p>
+</div>
+
+<p>Leave anything you do not know blank. Blank means "unknown" and the system skips it. A zero would tell it the product is pure profit, and it would then give you confident advice built on a lie.</p>
+
+<p>The margin appears beside each box as you type. If a number is wrong, it goes red and says so before you have finished typing it.</p>
+
+<p class="fine">You do not need all fifty. The handful that actually sell are what move the numbers.</p>
+
+</div></body>
+</html>
